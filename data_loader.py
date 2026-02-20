@@ -31,10 +31,9 @@ def load_race_data(year, grand_prix, session_type='R'):
     # fastf1.get_session creates a session object but doesn't download data yet.
     session = fastf1.get_session(year, grand_prix, session_type)
     
-    # session.load() actually downloads the data from the API (or loads from cache).
-    # This includes lap times, car telemetry, weather, etc.
-    # we explicitly request 'weather' and 'laps' though they are loaded by default.
-    session.load()
+    # Only load data needed by preprocessing/training.
+    # This avoids expensive telemetry/position downloads and speeds up multi-race training.
+    session.load(laps=True, telemetry=False, weather=True, messages=False)
     
     return session
 

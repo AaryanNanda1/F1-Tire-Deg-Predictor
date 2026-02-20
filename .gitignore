@@ -39,3 +39,7 @@ MANIFEST
 .vscode/
 .idea/
 *.swp
+
+# Local model artifacts
+models/
+logs/
