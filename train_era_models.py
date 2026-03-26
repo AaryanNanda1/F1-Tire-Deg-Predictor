@@ -1,5 +1,6 @@
 import argparse
 import json
+import shutil
 from datetime import date
 from pathlib import Path
 from typing import Dict, List, Tuple
@@ -9,7 +10,7 @@ import joblib
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingRegressor
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, mean_absolute_error
 from sklearn.model_selection import train_test_split
 
 from data_loader import load_race_data
@@ -70,7 +71,13 @@ def train_and_save(data_df: pd.DataFrame, model_path: Path, features_path: Path)
     X = data_df.drop("LapTimeSeconds", axis=1)
     y = data_df["LapTimeSeconds"]
 
-    model = HistGradientBoostingRegressor(random_state=42)
+    model = HistGradientBoostingRegressor(
+        loss="absolute_error",
+        early_stopping=True,
+        validation_fraction=0.1,
+        n_iter_no_change=10,
+        random_state=42
+    )
     if len(data_df) >= 50:
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=0.2, random_state=42
@@ -78,9 +85,11 @@ def train_and_save(data_df: pd.DataFrame, model_path: Path, features_path: Path)
         model.fit(X_train, y_train)
         preds = model.predict(X_test)
         rmse = float(np.sqrt(mean_squared_error(y_test, preds)))
+        mae = float(mean_absolute_error(y_test, preds))
     else:
         model.fit(X, y)
         rmse = None
+        mae = None
 
     model_path.parent.mkdir(parents=True, exist_ok=True)
     joblib.dump(model, model_path)
@@ -90,6 +99,7 @@ def train_and_save(data_df: pd.DataFrame, model_path: Path, features_path: Path)
         "rows": int(len(data_df)),
         "features": int(X.shape[1]),
         "rmse": rmse,
+        "mae": mae,
     }
 
 
@@ -168,6 +178,12 @@ def main():
 
     print(json.dumps(results, indent=2))
     print(f"Saved metadata: {metadata_path}")
+
+    # Automated Cleanup: Clear F1 data cache after training
+    cache_path = Path("cache")
+    if cache_path.exists():
+        print(f"Cleaning up cache: {cache_path}...")
+        shutil.rmtree(cache_path)
 
 
 if __name__ == "__main__":

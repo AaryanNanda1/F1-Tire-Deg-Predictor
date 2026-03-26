@@ -1,0 +1,189 @@
+import requests
+import datetime
+
+# Hardcoded coordinates for the tracks defined in mappings.py
+TRACK_COORDINATES = {
+    'Bahrain International Circuit': {'lat': 26.0325, 'lon': 50.5106},
+    'Jeddah Corniche Circuit': {'lat': 21.6319, 'lon': 39.1044},
+    'Albert Park Grand Prix Circuit': {'lat': -37.8497, 'lon': 144.968},
+    'Baku City Circuit': {'lat': 40.3725, 'lon': 49.8533},
+    'Miami International Autodrome': {'lat': 25.9581, 'lon': -80.2389},
+    'Circuit de Monaco': {'lat': 43.7347, 'lon': 7.4206},
+    'Circuit de Barcelona-Catalunya': {'lat': 41.57, 'lon': 2.2611},
+    'Circuit Gilles Villeneuve': {'lat': 45.5000, 'lon': -73.5228},
+    'Red Bull Ring': {'lat': 47.2197, 'lon': 14.7647},
+    'Silverstone Circuit': {'lat': 52.0786, 'lon': -1.0169},
+    'Hungaroring': {'lat': 47.5822, 'lon': 19.2511},
+    'Circuit de Spa-Francorchamps': {'lat': 50.4372, 'lon': 5.9714},
+    'Circuit Zandvoort': {'lat': 52.3888, 'lon': 4.5409},
+    'Autodromo Nazionale Monza': {'lat': 45.6156, 'lon': 9.2811},
+    'Marina Bay Street Circuit': {'lat': 1.2914, 'lon': 103.864},
+    'Suzuka Circuit': {'lat': 34.8431, 'lon': 136.533},
+    'Lusail International Circuit': {'lat': 25.4900, 'lon': 51.4542},
+    'Circuit of The Americas': {'lat': 30.1328, 'lon': -97.6411},
+    'Autódromo Hermanos Rodríguez': {'lat': 19.4042, 'lon': -99.0907},
+    'Autódromo José Carlos Pace': {'lat': -23.7036, 'lon': -46.6997},
+    'Las Vegas Strip Circuit': {'lat': 36.1147, 'lon': -115.173},
+    'Yas Marina Circuit': {'lat': 24.4672, 'lon': 54.6031},
+    'Autodromo Enzo e Dino Ferrari': {'lat': 44.3439, 'lon': 11.7167},
+    'Shanghai International Circuit': {'lat': 31.3389, 'lon': 121.222},
+    'Autodromo Internazionale del Mugello': {'lat': 43.9975, 'lon': 11.3719}
+}
+
+def get_track_weather(track_name: str, race_date: str, race_time: str = None) -> dict:
+    """
+    Fetches weather expected on the race_date using Open-Meteo API.
+    Provides AirTemp, TrackTemp (estimated), Humidity, Rainfall, and a quick synopsis.
+    """
+    if track_name not in TRACK_COORDINATES:
+        print(f"Coordinates for {track_name} not found. Using defaults.")
+        return {
+            "air_temp": 25.0,
+            "track_temp": 35.0,
+            "humidity": 50.0,
+            "rainfall": False,
+            "wind_speed": 2.0,
+            "synopsis": "Unknown track coordinates; assuming dry, moderate conditions.",
+            "hourly_forecasts": []
+        }
+
+    coords = TRACK_COORDINATES[track_name]
+    
+    # Determine which endpoint to use (archive vs forecast)
+    input_date = datetime.date.fromisoformat(race_date)
+    today = datetime.date.today()
+    
+    if input_date < today - datetime.timedelta(days=5):
+        # Historical Data
+        url = "https://archive-api.open-meteo.com/v1/archive"
+        params = {
+            "latitude": coords['lat'],
+            "longitude": coords['lon'],
+            "start_date": race_date,
+            "end_date": race_date,
+            "hourly": "temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m",
+            "timezone": "auto"
+        }
+    else:
+        # Forecast / Current Data
+        url = "https://api.open-meteo.com/v1/forecast"
+        params = {
+            "latitude": coords['lat'],
+            "longitude": coords['lon'],
+            "start_date": race_date,
+            "end_date": race_date,
+            "hourly": "temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m",
+            "timezone": "auto"
+        }
+
+    try:
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        data = response.json()
+        
+        # Take the daytime average (assume 14:00/2PM local API time index for the race)
+        # We'll just take the max temp for the day as representative of the race.
+        hourly = data.get("hourly", {})
+        
+        if "temperature_2m" not in hourly:
+            raise ValueError("No hourly temperature data found")
+            
+        temps = hourly["temperature_2m"]
+        humidities = hourly["relative_humidity_2m"]
+        precips = hourly["precipitation"]
+        wind_speeds = hourly["wind_speed_10m"]
+        
+        # Calculate daily aggregates for fallback/safety
+        max_temp = max(t for t in temps if t is not None)
+        total_precip = sum(p for p in precips if p is not None)
+        is_raining = total_precip > 1.0 # 1mm threshold
+        
+        # Night races have different temperature profiles
+        NIGHT_RACES = {
+            'Bahrain International Circuit',
+            'Jeddah Corniche Circuit',
+            'Marina Bay Street Circuit',
+            'Las Vegas Strip Circuit',
+            'Lusail International Circuit',
+            'Yas Marina Circuit'
+        }
+        
+        is_night_race = track_name in NIGHT_RACES
+        hourly_forecasts = []
+        
+        # Extract temperatures based on explicitly provided time or fallbacks
+        if race_time:
+            try:
+                start_hour = int(race_time.split(":")[0])
+                # Grab a 3-hour window
+                end_hour = min(23, start_hour + 2)
+                
+                race_temps = [t for t in temps[start_hour:end_hour+1] if t is not None]
+                race_humid = [h for h in humidities[start_hour:end_hour+1] if h is not None]
+                race_wind  = [w for w in wind_speeds[start_hour:end_hour+1] if w is not None]
+                race_precip = sum(p for p in precips[start_hour:end_hour+1] if p is not None)
+
+                base_temp = sum(race_temps) / len(race_temps) if race_temps else max_temp
+                avg_humidity = sum(race_humid) / len(race_humid) if race_humid else 50.0
+                avg_wind = sum(race_wind) / len(race_wind) if race_wind else 2.0
+                is_raining = race_precip > 1.0
+                
+                is_night_race = start_hour >= 18 # Override default
+                
+                # Extract hourly data for the SIM engine
+                for hr in range(start_hour, end_hour + 1):
+                    hourly_forecasts.append({
+                        "hour": hr,
+                        "air_temp": round(temps[hr] if temps[hr] is not None else base_temp, 1),
+                        "rainfall_mm": round(precips[hr] if precips[hr] is not None else 0.0, 2)
+                    })
+                    
+            except (ValueError, IndexError):
+                race_time = None
+                
+        if not race_time:
+            # Fallback logic
+            if is_night_race:
+                race_temps = [t for t in temps[19:23] if t is not None]
+            else:
+                race_temps = [t for t in temps[14:18] if t is not None]
+            base_temp = sum(race_temps) / len(race_temps) if race_temps else max_temp
+            
+            avg_humidity = sum(h for h in humidities if h is not None) / len([h for h in humidities if h is not None])
+            avg_wind = sum(w for w in wind_speeds if w is not None) / len([w for w in wind_speeds if w is not None])
+
+        # Track temp estimate
+        if is_night_race:
+            track_temp_est = base_temp + (1.0 if is_raining else 3.0)
+        else:
+            track_temp_est = base_temp + (5.0 if is_raining else 12.0)
+        
+        synopsis = "Expect heavy rain." if ((race_time and race_precip > 5.0) or (not race_time and total_precip > 5.0)) else \
+                   "Chance of rain." if is_raining else \
+                   "Night race, cool track." if is_night_race and base_temp < 25 else \
+                   "Night race, warm track." if is_night_race else \
+                   "Hot and clear." if base_temp > 30 else \
+                   "Cool and clear." if base_temp < 20 else \
+                   "Moderate, dry conditions."
+                   
+        return {
+            "air_temp": round(base_temp, 1),
+            "track_temp": round(track_temp_est, 1),
+            "humidity": round(avg_humidity, 1),
+            "rainfall": is_raining,
+            "wind_speed": round(avg_wind, 1),
+            "synopsis": synopsis,
+            "hourly_forecasts": hourly_forecasts
+        }
+
+    except Exception as e:
+        print(f"Error fetching weather data for {track_name}: {e}")
+        return {
+            "air_temp": 25.0,
+            "track_temp": 35.0,
+            "humidity": 50.0,
+            "rainfall": False,
+            "wind_speed": 2.0,
+            "synopsis": "API fallback; default conditions assumed.",
+            "hourly_forecasts": []
+        }
