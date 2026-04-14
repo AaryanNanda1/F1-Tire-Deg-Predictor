@@ -1,0 +1,40 @@
+:root {
+  --bg-color: #0A0A0A;
+  --panel-bg: #1A1A1C;
+  --text-main: #FFFFFF;
+  --text-muted: #8E8E93;
+  --accent: #E10600; /* F1 Red */
+  
+  --c-soft: #ff2a2a;
+  --c-medium: #ffe000;
+  --c-hard: #ffffff;
+  --c-inter: #00d200;
+  --c-wet: #0084ff;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.dashboard-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.header {
+  border-bottom: 1px solid #333;
+  padding-bottom: 12px;
+  margin-bottom: 24px;
+}
+
+.header h1 {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin: 0;
+}

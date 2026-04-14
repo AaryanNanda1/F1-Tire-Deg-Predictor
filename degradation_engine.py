@@ -6,23 +6,77 @@ from mappings import normalize_team_name, get_track_info
 from weather_api import get_track_weather
 
 class TireDegradationSimulator:
-    def __init__(self, year: int, models_dir: str = "models"):
+    def __init__(self, year: int, models_dir: str = "models", force_jit_check: bool = True):
         self.year = year
         self.models_dir = models_dir
         
         # Determine correct era model
         if 2022 <= year <= 2025:
             prefix = "ground_effect_2022_2025"
+            start_y, end_y = 2022, 2025
         elif 2026 <= year <= 2030:
             prefix = "active_aero_2026_2030"
+            start_y, end_y = 2026, 2030
         else:
             raise ValueError(f"Year {year} falls outside supported era models (2022-2030)")
             
         model_path = os.path.join(models_dir, f"{prefix}_model.joblib")
         features_path = os.path.join(models_dir, f"{prefix}_features.joblib")
+        metadata_path = os.path.join(models_dir, "era_training_metadata.json")
         
-        if not os.path.exists(model_path) or not os.path.exists(features_path):
-            raise FileNotFoundError(f"Missing model files for {prefix}. Run train_era_models.py.")
+        # JIT Training check: if models missing or older than 5 days, retrain
+        needs_retrain = False
+        import json, datetime
+        if not os.path.exists(model_path) or not os.path.exists(features_path) or not os.path.exists(metadata_path):
+            needs_retrain = True
+        else:
+            with open(metadata_path, "r") as f:
+                try:
+                    meta = json.load(f)
+                    as_of_str = meta.get(prefix, {}).get("as_of")
+                    if not as_of_str:
+                        needs_retrain = True
+                    else:
+                        last_train_date = datetime.date.fromisoformat(as_of_str)
+                        if (datetime.date.today() - last_train_date).days > 5:
+                            needs_retrain = True
+                except json.JSONDecodeError:
+                    needs_retrain = True
+                    
+        # Skip JIT training if explicitly told to (useful for fast local testing)
+        if not force_jit_check:
+            needs_retrain = False
+            
+        if needs_retrain:
+            print(f"JIT Update Triggered: Pulling the latest API data and training the {prefix} model...")
+            from train_era_models import train_era
+            import shutil
+            from pathlib import Path
+            
+            out_dir = Path(models_dir)
+            out_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Perform JIT training
+            result = train_era(start_y, end_y, prefix, datetime.date.today(), out_dir)
+            
+            # Update metadata explicitly
+            existing_meta = {}
+            if os.path.exists(metadata_path):
+                with open(metadata_path, "r") as f:
+                    try:
+                        existing_meta = json.load(f)
+                    except json.JSONDecodeError:
+                        pass
+            
+            existing_meta[prefix] = result
+            with open(metadata_path, "w") as f:
+                json.dump(existing_meta, f, indent=2)
+                
+            # Clear raw fastf1 cache
+            cache_path = Path("cache")
+            if cache_path.exists():
+                shutil.rmtree(cache_path)
+            print("JIT Training Complete!")
             
         self.model = joblib.load(model_path)
         self.feature_names = joblib.load(features_path)

@@ -53,7 +53,29 @@ def get_track_weather(track_name: str, race_date: str, race_time: str = None) ->
     input_date = datetime.date.fromisoformat(race_date)
     today = datetime.date.today()
     
-    if input_date < today - datetime.timedelta(days=5):
+    days_diff = (input_date - today).days
+    
+    if days_diff > 14:
+        # Too far in the future for a forecast. Use historical data from exactly 1 year prior as an estimate.
+        target_date = input_date
+        while target_date > today - datetime.timedelta(days=5):
+            try:
+                target_date = target_date.replace(year=target_date.year - 1)
+            except ValueError:
+                # Handle leap years (Feb 29 -> Feb 28)
+                target_date = target_date.replace(year=target_date.year - 1, day=28)
+                
+        race_date = target_date.isoformat()
+        url = "https://archive-api.open-meteo.com/v1/archive"
+        params = {
+            "latitude": coords['lat'],
+            "longitude": coords['lon'],
+            "start_date": race_date,
+            "end_date": race_date,
+            "hourly": "temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m",
+            "timezone": "auto"
+        }
+    elif input_date < today - datetime.timedelta(days=5):
         # Historical Data
         url = "https://archive-api.open-meteo.com/v1/archive"
         params = {

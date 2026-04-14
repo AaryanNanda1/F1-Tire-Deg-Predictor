@@ -137,3 +137,31 @@ def normalize_team_name(team_name):
     Normalizes team name to a canonical ID.
     """
     return TEAM_MAPPING.get(team_name, team_name)
+
+TRACK_PIT_LOSS = {
+    'Bahrain International Circuit': 21.0,
+    'Jeddah Corniche Circuit': 20.0,
+    'Albert Park Grand Prix Circuit': 21.0,
+    'Baku City Circuit': 21.0,
+    'Miami International Autodrome': 20.0,
+    'Circuit de Monaco': 19.0,
+    'Circuit de Barcelona-Catalunya': 22.0,
+    'Circuit Gilles Villeneuve': 20.0,
+    'Red Bull Ring': 20.0,
+    'Silverstone Circuit': 24.0,
+    'Hungaroring': 22.0,
+    'Circuit de Spa-Francorchamps': 23.0,
+    'Circuit Zandvoort': 20.0,
+    'Autodromo Nazionale Monza': 24.0,
+    'Marina Bay Street Circuit': 26.0,
+    'Suzuka Circuit': 22.0,
+    'Lusail International Circuit': 21.0,
+    'Circuit of The Americas': 22.0,
+    'Autódromo Hermanos Rodríguez': 22.0,
+    'Autódromo José Carlos Pace': 21.0,
+    'Las Vegas Strip Circuit': 20.0,
+    'Yas Marina Circuit': 22.0,
+    'Autodromo Enzo e Dino Ferrari': 25.0,
+    'Shanghai International Circuit': 23.0,
+    'Autodromo Internazionale del Mugello': 25.0
+}
