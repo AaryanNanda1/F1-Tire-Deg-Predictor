@@ -37,8 +37,26 @@ def preprocess_laps(session):
     track_length_km = track_info.get('length_km', 5.0)
     
     # 6. Distance-based Tyre Life
-    # TyreLife is in Laps. User wants TyreLife in KM.
     laps['TyreLifeKM'] = laps['TyreLife'] * track_length_km
+    
+    # 6b. Filter out very short stints (< 3 laps): removes installation laps, in/out laps, SC anomalies
+    stint_len_map = laps.groupby(['Driver', 'Stint'])['TyreLife'].transform('max')
+    laps['StintLength'] = stint_len_map.clip(lower=1)
+    laps = laps[laps['StintLength'] >= 3].copy()
+    
+    # 7a. NormalizedTyreLife: Where is this tire in its life? (0 = fresh, 1 = end of stint)
+    # Soft at TyreLife=10/StintLength=12 -> 0.83 (nearly done)
+    # Hard at TyreLife=10/StintLength=38 -> 0.26 (still early)
+    # This single feature gives the model the compound-differentiation signal without hardcoding.
+    laps['NormalizedTyreLife'] = (laps['TyreLife'] / laps['StintLength']).clip(0, 1)
+    
+    # 7b. TyreLifeSquared: Captures exponential/non-linear late-stint degradation cliffs
+    laps['TyreLifeSquared'] = laps['TyreLife'] ** 2
+    
+    # 7c. FuelLoad proxy: 1.0 = full tank (lap 1), 0.0 = empty (last lap)
+    # Standard F1 estimate: 0.07s per lap of fuel burn removes ~0.07s of lap time per lap
+    total_laps = laps['LapNumber'].max()
+    laps['FuelLoad'] = (1.0 - (laps['LapNumber'] / total_laps)).clip(0, 1)
     
     # 7. Weather Data Integration
     # Weather data is time-series. We need to merge it with laps based on 'Time'.
@@ -84,6 +102,10 @@ def preprocess_laps(session):
         'LapNumber',
         'TyreLife',
         'TyreLifeKM',
+        'StintLength',
+        'NormalizedTyreLife',
+        'TyreLifeSquared',
+        'FuelLoad',
         'Compound',
         'Stint',
         'TrackType',
@@ -92,10 +114,11 @@ def preprocess_laps(session):
         'TrackTemp',
         'Humidity',
         'Rainfall',
+        'WindSpeed',
         'TeamBaselinePace',
         'FieldBaselinePace',
         'RelativePace',
-        'LapTimeSeconds' # Target
+        'LapTimeSeconds'  # Target
     ]
     
     # Filter standard numerical/categorical columns

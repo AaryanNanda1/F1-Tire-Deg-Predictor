@@ -40,6 +40,15 @@ def collect_era_data(start_year: int, end_year: int, as_of: date) -> Tuple[pd.Da
     loaded_events: List[str] = []
     failed_events: List[str] = []
 
+    # Session weights: Race=1.0 (primary), FP2=0.5, Sprint=0.75, Qualifying=EXCLUDED
+    SESSION_CONFIG = [
+        ("R",   1.00),   # Race: primary training source
+        ("FP2", 0.50),   # Practice Day 2: long-run simulations, most race-representative practice
+        ("S",   0.75),   # Sprint: race conditions, lower fuel than GP but more representative than FP
+        # FP1/FP3 excluded: typically short runs, setup testing, less useful for tire deg
+        # Q excluded: low fuel, push laps, completely different to race tire management
+    ]
+
     for year in range(start_year, end_year + 1):
         try:
             events = _list_completed_events(year, as_of)
@@ -48,19 +57,24 @@ def collect_era_data(start_year: int, end_year: int, as_of: date) -> Tuple[pd.Da
             continue
 
         for event_name in events:
-            key = f"{year}:{event_name}"
-            try:
-                session = load_race_data(year, event_name, "R")
-                df = preprocess_laps(session)
-                if df.empty:
-                    failed_events.append(f"{key}:empty")
-                    continue
-                frames.append(df)
-                loaded_events.append(key)
-                print(f"Loaded {key} -> {len(df)} processed laps")
-            except Exception as exc:
-                failed_events.append(f"{key}:{exc}")
-                print(f"Failed {key}: {exc}")
+            for session_code, weight in SESSION_CONFIG:
+                key = f"{year}:{event_name}:{session_code}"
+                try:
+                    session = load_race_data(year, event_name, session_code)
+                    df = preprocess_laps(session)
+                    if df.empty:
+                        failed_events.append(f"{key}:empty")
+                        continue
+                    df['SampleWeight'] = weight
+                    frames.append(df)
+                    loaded_events.append(key)
+                    print(f"Loaded {key} (weight={weight}) -> {len(df)} processed laps")
+                except Exception as exc:
+                    # Non-race sessions are optional; silently skip if unavailable
+                    if session_code == "R":
+                        failed_events.append(f"{key}:{exc}")
+                        print(f"Failed {key}: {exc}")
+                    # else: FP2/Sprint missing is expected for some events, no need to log
 
     if not frames:
         return pd.DataFrame(), {"loaded_events": loaded_events, "failed_events": failed_events}
@@ -68,8 +82,11 @@ def collect_era_data(start_year: int, end_year: int, as_of: date) -> Tuple[pd.Da
 
 
 def train_and_save(data_df: pd.DataFrame, model_path: Path, features_path: Path) -> Dict:
-    X = data_df.drop("LapTimeSeconds", axis=1)
-    y = data_df["LapTimeSeconds"]
+    # Extract sample weights (default 1.0 for all rows if column missing)
+    sample_weights = data_df.get('SampleWeight', pd.Series(1.0, index=data_df.index))
+    
+    X = data_df.drop(columns=['LapTimeSeconds', 'SampleWeight'], errors='ignore')
+    y = data_df['LapTimeSeconds']
 
     model = HistGradientBoostingRegressor(
         loss="absolute_error",
@@ -79,15 +96,15 @@ def train_and_save(data_df: pd.DataFrame, model_path: Path, features_path: Path)
         random_state=42
     )
     if len(data_df) >= 50:
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.2, random_state=42
+        X_train, X_test, y_train, y_test, w_train, _ = train_test_split(
+            X, y, sample_weights, test_size=0.2, random_state=42
         )
-        model.fit(X_train, y_train)
+        model.fit(X_train, y_train, sample_weight=w_train)
         preds = model.predict(X_test)
         rmse = float(np.sqrt(mean_squared_error(y_test, preds)))
         mae = float(mean_absolute_error(y_test, preds))
     else:
-        model.fit(X, y)
+        model.fit(X, y, sample_weight=sample_weights)
         rmse = None
         mae = None
 

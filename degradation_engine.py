@@ -81,6 +81,17 @@ class TireDegradationSimulator:
         self.model = joblib.load(model_path)
         self.feature_names = joblib.load(features_path)
         self.valid_compounds = ["SOFT", "MEDIUM", "HARD", "INTERMEDIATE", "WET"]
+        
+        # Realistic typical stint lengths per compound used as simulation inputs only.
+        # These set the NormalizedTyreLife context so the model knows how far into its
+        # life the tire is.  The model learned actual physics; these are what-if parameters.
+        self.compound_sim_stints = {
+            "SOFT":         15,
+            "MEDIUM":       28,
+            "HARD":         42,
+            "INTERMEDIATE": 20,
+            "WET":          25,
+        }
 
     def _simulate_compound(self, driver, norm_team, track_type, track_length_km, compound, weather_data, max_laps=50):
         """Simulates lap times for a single compound from lap 1 to max_laps.
@@ -91,14 +102,23 @@ class TireDegradationSimulator:
         """
         is_wet = 1 if compound in ["INTERMEDIATE", "WET"] or weather_data["rainfall"] else 0
         
+        # Compound-specific simulation context
+        sim_stint_length = self.compound_sim_stints.get(compound, max_laps)
+        fuel_load = max(0.0, 1.0 - (15 / max_laps))  # LapNumber=15 held constant
+
         rows = []
         for age in range(1, max_laps + 1):
+            normalized_life = min(1.0, age / sim_stint_length)
             rows.append({
                 'Driver': driver,
                 'Team': norm_team,
                 'LapNumber': 15,  # Held constant to isolate pure tire degradation from fuel burn
                 'TyreLife': age,
                 'TyreLifeKM': age * track_length_km,
+                'StintLength': sim_stint_length,
+                'NormalizedTyreLife': normalized_life,
+                'TyreLifeSquared': age ** 2,
+                'FuelLoad': fuel_load,
                 'Compound': compound,
                 'Stint': 1,
                 'TrackType': track_type,
@@ -107,6 +127,7 @@ class TireDegradationSimulator:
                 'TrackTemp': weather_data['track_temp'],
                 'Humidity': weather_data['humidity'],
                 'Rainfall': int(weather_data['rainfall']),
+                'WindSpeed': weather_data.get('wind_speed', 10.0),
                 'TeamBaselinePace': 100.0,
                 'FieldBaselinePace': 100.0,
                 'RelativePace': 0.0
