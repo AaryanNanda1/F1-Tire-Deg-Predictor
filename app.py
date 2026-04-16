@@ -1,9 +1,6 @@
 from flask import Flask, request, jsonify
 import sys
 import traceback
-from flask import Flask, request, jsonify
-import sys
-import traceback
 from mappings import TRACK_PIT_LOSS, TEAM_MAPPING
 from degradation_engine import TireDegradationSimulator
 from sim_engine import StrategySimulator
@@ -82,5 +79,5 @@ def simulate_strategy():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == '__main__':
-    # Flask runs natively on 5000, Vite proxies to it!
-    app.run(port=5000, debug=True)
+    # Flask runs on 5001 to avoid macOS AirPlay conflict on 5000
+    app.run(port=5001, debug=True)

@@ -58,27 +58,46 @@ function App() {
   };
 
   // Restructure the degradation dictionary into Recharts array format
+  // graph_data keys are JSON strings ("1", "2", ...) so we must access with String(i)
   const generateChartData = () => {
     if (!results) return [];
     
     const graphs = results.degradation_graphs;
-    // Find the max lap by checking the SOFT curve (or any curve)
-    // The keys are currently string iterations
+    
+    // Find global max lap across all compounds
     let maxLap = 0;
     Object.values(graphs).forEach(c => {
-        Object.keys(c.graph_data).forEach(lap => {
-            if (parseInt(lap) > maxLap) maxLap = parseInt(lap);
-        });
+        const keys = Object.keys(c.graph_data).map(Number);
+        const localMax = Math.max(...keys);
+        if (localMax > maxLap) maxLap = localMax;
+    });
+
+    const COMPOUNDS = ["SOFT", "MEDIUM", "HARD", "INTERMEDIATE", "WET"];
+    
+    // Pre-compute last known value per compound for carry-forward
+    const lastKnown = {};
+    COMPOUNDS.forEach(comp => {
+        if (graphs[comp]) {
+            const keys = Object.keys(graphs[comp].graph_data).map(Number).sort((a, b) => a - b);
+            const lastKey = keys[keys.length - 1];
+            lastKnown[comp] = graphs[comp].graph_data[String(lastKey)];
+        }
     });
 
     const formatData = [];
-    for(let i = 1; i <= maxLap; i++) {
+    for (let i = 1; i <= maxLap; i++) {
         let row = { lap: i };
-        if (graphs["SOFT"]?.graph_data[i]) row.SOFT = graphs["SOFT"].graph_data[i];
-        if (graphs["MEDIUM"]?.graph_data[i]) row.MEDIUM = graphs["MEDIUM"].graph_data[i];
-        if (graphs["HARD"]?.graph_data[i]) row.HARD = graphs["HARD"].graph_data[i];
-        if (graphs["INTERMEDIATE"]?.graph_data[i]) row.INTERMEDIATE = graphs["INTERMEDIATE"].graph_data[i];
-        if (graphs["WET"]?.graph_data[i]) row.WET = graphs["WET"].graph_data[i];
+        COMPOUNDS.forEach(comp => {
+            if (!graphs[comp]) return;
+            const val = graphs[comp].graph_data[String(i)];
+            if (val !== undefined) {
+                row[comp] = val;
+                lastKnown[comp] = val;
+            } else {
+                // Carry-forward: keep last known lap time so lines extend horizontally
+                row[comp] = lastKnown[comp];
+            }
+        });
         formatData.push(row);
     }
     return formatData;
@@ -163,8 +182,8 @@ function App() {
                     <ResponsiveContainer>
                         <LineChart data={generateChartData()} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                            <XAxis dataKey="lap" stroke="#8E8E93" label={{ value: 'Laps', position: 'insideBottomRight', offset: -5, fill: '#8E8E93'}} />
-                            <YAxis reversed={true} stroke="#8E8E93" label={{ value: 'Time Drop-off (seconds)', angle: -90, position: 'insideLeft', fill: '#8E8E93' }}/>
+                            <XAxis dataKey="lap" type="number" domain={[1, 'dataMax']} stroke="#8E8E93" label={{ value: 'Tire Age (Laps)', position: 'insideBottomRight', offset: -5, fill: '#8E8E93'}} />
+                            <YAxis stroke="#8E8E93" domain={['auto', 'auto']} tickFormatter={(v) => `${v.toFixed(1)}s`} label={{ value: 'Lap Time (seconds)', angle: -90, position: 'insideLeft', fill: '#8E8E93' }}/>
                             <Tooltip contentStyle={{backgroundColor: '#1A1A1C', borderColor: '#333'}} />
                             <Legend />
                             {results.degradation_graphs.SOFT && <Line type="monotone" dataKey="SOFT" stroke="var(--c-soft)" strokeWidth={3} dot={false} />}
@@ -188,8 +207,8 @@ function App() {
                         return (
                             <div className="card" key={comp}>
                                 <h4 style={{color: `var(--c-${comp.toLowerCase()})`}}>{comp}</h4>
-                                <p><strong>Cliff Point:</strong> Lap {data.cliff_point_lap}</p>
-                                <p><strong>Avg Drop-off:</strong> +{data.drop_off_per_lap_sec.toFixed(3)}s / lap</p>
+                                <p><strong>Cliff Point:</strong> Lap {data.cliff_point_lap} (Gradient: {data.cliff_gradient_lap}, Kneedle: {data.cliff_kneedle_lap})</p>
+                                <p><strong>Baseline Degradation:</strong> +{data.drop_off_per_lap_sec.toFixed(3)}s / lap</p>
                             </div>
                         )
                     })}

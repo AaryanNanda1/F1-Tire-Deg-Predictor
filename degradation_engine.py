@@ -83,7 +83,12 @@ class TireDegradationSimulator:
         self.valid_compounds = ["SOFT", "MEDIUM", "HARD", "INTERMEDIATE", "WET"]
 
     def _simulate_compound(self, driver, norm_team, track_type, track_length_km, compound, weather_data, max_laps=50):
-        """Simulates lap times for a single compound from lap 1 to max_laps."""
+        """Simulates lap times for a single compound from lap 1 to max_laps.
+        
+        Returns:
+            drop_off_curve: list of floats representing time lost vs. fresh tire (for cliff analysis)
+            predictions: list of absolute predicted lap times in seconds (for UI graph)
+        """
         is_wet = 1 if compound in ["INTERMEDIATE", "WET"] or weather_data["rainfall"] else 0
         
         rows = []
@@ -113,67 +118,85 @@ class TireDegradationSimulator:
         df_dummies = pd.get_dummies(df, columns=categorical_cols, drop_first=False)
         final_input = df_dummies.reindex(columns=self.feature_names, fill_value=0)
         
-        predictions = self.model.predict(final_input)
+        raw_predictions = self.model.predict(final_input)
+        absolute_lap_times = [round(float(p), 3) for p in raw_predictions]
         
         # Calculate drop-off curve relative to the first lap on this tire
-        base_lap = predictions[0]
-        drop_off_curve = [float(p - base_lap) for p in predictions]
+        base_lap = raw_predictions[0]
+        drop_off_curve = [float(p - base_lap) for p in raw_predictions]
         
-        # Prevent negative dropoffs (model noise) by making it monotonically increasing (or at least non-negative)
+        # Enforce monotonic increase on drop-off (suppress model noise)
         for i in range(1, len(drop_off_curve)):
             drop_off_curve[i] = max(drop_off_curve[i-1], drop_off_curve[i])
             
-        return drop_off_curve
+        return drop_off_curve, absolute_lap_times
 
-    def _analyze_curve(self, drop_off_curve):
-        """Extracts slope, cliff point, and lifespan from a degradation curve using the Kneedle algorithm."""
+    def _analyze_curve(self, drop_off_curve, absolute_lap_times):
+        """
+        Extracts slope, cliff point, and lifespan from a degradation curve.
+
+        Cliff Detection uses a HYBRID approach:
+          1. Gradient Acceleration: first lap where degradation rate exceeds 2.5x early baseline.
+          2. Kneedle (Geometric): point of maximum perpendicular distance from the start-to-end line.
+        
+        The final cliff is the EARLIER of the two candidates — conservative and race-safe.
+        graph_data stores absolute lap times (seconds) for meaningful Y-axis display in the UI.
+        """
         n = len(drop_off_curve)
-        
-        # Expected lap time drop-off per lap (slope of linear part, approx laps 3 to 15 or end)
-        eval_end = min(15, n - 1)
-        if eval_end > 3:
-            slope = (drop_off_curve[eval_end] - drop_off_curve[3]) / (eval_end - 3)
+        curve = np.array(drop_off_curve)
+
+        # --- 1. Baseline slope (early stint, laps 3-12) ---
+        eval_start = min(3, n - 1)
+        eval_end = min(12, n - 1)
+        if eval_end > eval_start:
+            baseline_slope = (curve[eval_end] - curve[eval_start]) / (eval_end - eval_start)
         else:
-            slope = drop_off_curve[-1] / n
-            
-        slope = max(0.01, slope) # Prevent zero/negative slope
-        
-        # Cliff Point: point of maximum distance from a line connecting start and end
-        # (Simplified Kneedle algorithm)
-        x1, y1 = 1.0, float(drop_off_curve[0])
-        x2, y2 = float(n), float(drop_off_curve[-1])
+            baseline_slope = curve[-1] / n
+        baseline_slope = max(0.005, float(baseline_slope))
+
+        # --- METHOD A: Gradient Acceleration ---
+        gradient = np.diff(curve)
+        ACCELERATION_THRESHOLD = 2.5
+        cliff_gradient = n  # default: no cliff
+        for i in range(5, len(gradient)):
+            if gradient[i] > baseline_slope * ACCELERATION_THRESHOLD:
+                cliff_gradient = i + 1
+                break
+        if cliff_gradient >= n - 1:
+            cliff_gradient = int(n * 0.80)
+
+        # --- METHOD B: Kneedle (Geometric max perpendicular distance) ---
+        x1, y1 = 1.0, curve[0]
+        x2, y2 = float(n), curve[-1]
         denom = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
-        
         max_dist = -1
-        cliff_point = n
-        
-        for i in range(2, n - 2): # Exclude very early or very late cliffs
-            x0, y0 = float(i + 1), float(drop_off_curve[i])
-            # Perpendicular distance from (x0, y0) to line (x1, y1)-(x2, y2)
+        cliff_kneedle = n
+        for i in range(2, n - 2):
+            x0, y0 = float(i + 1), curve[i]
             if denom > 0:
                 dist = np.abs((x2 - x1)*(y1 - y0) - (x1 - x0)*(y2 - y1)) / denom
             else:
                 dist = 0.0
-
-            
-            # We want the point where the curve sags the most *below* the line (meaning rapid rise after)
-            # For degradation, the curve usually bows downwards then shoots up.
             if dist > max_dist:
                 max_dist = dist
-                cliff_point = i + 1
-                
-        # Fallbacks if cliff is unrealistic
-        if cliff_point >= n - 1:
-            cliff_point = int(n * 0.8)
-            
-        # Suggested lifespan (safely pit before cliff, delta up to 5 laps)
+                cliff_kneedle = i + 1
+        if cliff_kneedle >= n - 1:
+            cliff_kneedle = int(n * 0.80)
+
+        # --- HYBRID: take the earlier (more conservative) of the two ---
+        cliff_point = min(cliff_gradient, cliff_kneedle)
+        cliff_point = max(5, min(cliff_point, n - 3))  # hard bounds
+
         suggested_lifespan = max(1, cliff_point - 3)
-        
+
         return {
-            "drop_off_per_lap_sec": round(float(slope), 3),
+            "drop_off_per_lap_sec": round(float(baseline_slope), 3),
             "cliff_point_lap": cliff_point,
+            "cliff_gradient_lap": cliff_gradient,     # expose both signals for debugging
+            "cliff_kneedle_lap": cliff_kneedle,
             "suggested_lifespan": f"{suggested_lifespan}-{suggested_lifespan + 4} laps",
-            "graph_data": {lap: round(val, 3) for lap, val in enumerate(drop_off_curve, start=1)}
+            # graph_data now stores ABSOLUTE lap times (seconds), not drop-off delta
+            "graph_data": {lap: val for lap, val in enumerate(absolute_lap_times, start=1)}
         }
 
     def simulate(self, driver: str, team: str, track_name: str, race_date: str, race_time: str = None):
@@ -205,13 +228,13 @@ class TireDegradationSimulator:
         for compound in self.valid_compounds:
             # Wets don't make sense if dry, and slicks don't make sense if heavy rain,
             # but we'll generate all to provide the full "what-if" mapping.
-            max_laps = int(305 / track_length_km) + 2 # Full race distance + 2
+            max_laps = int(305 / track_length_km) + 2  # Full race distance + 2
             
-            curve = self._simulate_compound(
+            drop_off_curve, absolute_lap_times = self._simulate_compound(
                 driver, norm_team, track_type, track_length_km, compound, weather_data, max_laps
             )
             
-            analysis = self._analyze_curve(curve)
+            analysis = self._analyze_curve(drop_off_curve, absolute_lap_times)
             results["compounds"][compound] = analysis
             
         return results
