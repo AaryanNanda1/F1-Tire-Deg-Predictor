@@ -30,6 +30,19 @@ def preprocess_laps(session):
     # 4. Team Name Normalization
     laps['Team'] = laps['Team'].apply(normalize_team_name)
     
+    # 4b. Sector Data Extraction & Normalization
+    # We use percentages to make the data track-agnostic but signature-specific.
+    # Total lap time must be > 0 to avoid div by zero.
+    laps['S1_Sec'] = laps['Sector1Time'].dt.total_seconds()
+    laps['S2_Sec'] = laps['Sector2Time'].dt.total_seconds()
+    laps['S3_Sec'] = laps['Sector3Time'].dt.total_seconds()
+    
+    # Calculate % of lap spent in each sector
+    # If a sector is missing, we fill with the average (0.33)
+    laps['S1_Prc'] = (laps['S1_Sec'] / laps['LapTimeSeconds']).fillna(0.333)
+    laps['S2_Prc'] = (laps['S2_Sec'] / laps['LapTimeSeconds']).fillna(0.333)
+    laps['S3_Prc'] = (laps['S3_Sec'] / laps['LapTimeSeconds']).fillna(0.334)
+    
     # 5. Track Information
     circuit_name = session.event['EventName']
     track_info = get_track_info(circuit_name)
@@ -115,6 +128,9 @@ def preprocess_laps(session):
         'Humidity',
         'Rainfall',
         'WindSpeed',
+        'S1_Prc',
+        'S2_Prc',
+        'S3_Prc',
         'TeamBaselinePace',
         'FieldBaselinePace',
         'RelativePace',
