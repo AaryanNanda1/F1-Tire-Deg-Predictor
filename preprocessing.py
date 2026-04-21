@@ -125,7 +125,14 @@ def preprocess_laps(session):
     # We might have missing values from the merge or calculations
     df = laps[features].copy()
     
-    # Handle categoricals: One-Hot Encoding
+    # Handle categoricals: Enforce fixed categories to ensure feature alignment across models
+    # This prevents 'Medium' only models from failing on 'Low' speed track simulations.
+    ALL_COMPOUNDS = ['SOFT', 'MEDIUM', 'HARD', 'INTERMEDIATE', 'WET']
+    ALL_TRACK_TYPES = ['Low', 'Medium', 'High']
+    
+    df['Compound'] = pd.Categorical(df['Compound'], categories=ALL_COMPOUNDS)
+    df['TrackType'] = pd.Categorical(df['TrackType'], categories=ALL_TRACK_TYPES)
+    
     categorical_cols = ['Driver', 'Team', 'Compound', 'TrackType']
     df = pd.get_dummies(df, columns=categorical_cols, drop_first=False)
     

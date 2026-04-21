@@ -134,6 +134,14 @@ class TireDegradationSimulator:
             })
             
         df = pd.DataFrame(rows)
+        
+        # Handle categoricals: Enforce fixed categories to ensure feature alignment with models
+        ALL_COMPOUNDS = ['SOFT', 'MEDIUM', 'HARD', 'INTERMEDIATE', 'WET']
+        ALL_TRACK_TYPES = ['Low', 'Medium', 'High']
+        
+        df['Compound'] = pd.Categorical(df['Compound'], categories=ALL_COMPOUNDS)
+        df['TrackType'] = pd.Categorical(df['TrackType'], categories=ALL_TRACK_TYPES)
+        
         # Dummy variables matching training
         categorical_cols = ['Driver', 'Team', 'Compound', 'TrackType']
         df_dummies = pd.get_dummies(df, columns=categorical_cols, drop_first=False)

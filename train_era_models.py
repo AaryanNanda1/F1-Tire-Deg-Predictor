@@ -25,14 +25,23 @@ def _to_event_date(value) -> date:
 
 
 def _list_completed_events(year: int, as_of: date) -> List[str]:
-    schedule = fastf1.get_event_schedule(year, include_testing=False)
-    if "RoundNumber" not in schedule.columns:
+    try:
+        schedule = fastf1.get_event_schedule(year, include_testing=False)
+    except Exception:
         return []
+        
+    if schedule is None or schedule.empty or "RoundNumber" not in schedule.columns:
+        return []
+        
     races = schedule[schedule["RoundNumber"].notna()].copy()
     if "EventDate" in races.columns:
-        # Normalize to date (strips time/timezone) before comparing with as_of (a date object)
+        # Filter for completed events specifically
+        # Ensure we drop rows with invalid dates before comparison
+        races = races[races["EventDate"].notna()]
         races = races[races["EventDate"].dt.normalize().dt.date <= as_of]
+        
     races = races.sort_values("RoundNumber")
+    # We only care about Grand Prix events (ignore testing/optional sessions if they slipped through)
     return [str(v) for v in races["EventName"].dropna().tolist()]
 
 
@@ -234,12 +243,48 @@ def main():
             2022, 2025, "ground_effect_2022_2025", as_of, out_dir
         )
     if args.mode in {"both", "active_aero"}:
-        # Pass Ground Effect model as prior for cold-start blending when 2026 data is sparse
-        prior_path = out_dir / "ground_effect_2022_2025_model.joblib"
-        results["active_aero_2026_2030"] = train_era(
-            2026, 2030, "active_aero_2026_2030", as_of, out_dir,
-            prior_model_path=prior_path
-        )
+        # PASSING 2024-2025 AS PRIOR FOR 2026+ (Hybrid Cold Start)
+        print("\n--- Phase 2: Training Active Aero (2026-2030) with Heavy Physics Prior ---")
+        
+        # 1. Collect standard 2026 data
+        data_2026, details_2026 = collect_era_data(2026, 2030, as_of)
+        
+        # 2. Collect 'Physics Prior' from 2024-2025 (50% sample)
+        print("  Collecting Heavy Physics Prior from 2024-2025...")
+        data_prior, _ = collect_era_data(2024, 2025, as_of)
+        if not data_prior.empty:
+            # Increase sample to 50% for stronger hierarchy enforcement
+            data_prior = data_prior.sample(frac=0.50, random_state=42)
+            data_prior['SampleWeight'] = 1.0  # Equal weight to ensure hierarchy is respected
+            
+            # Combine
+            data_df = pd.concat([data_2026, data_prior], ignore_index=True)
+            
+            # 3. Explicit Upsampling of Wet/Intermediate conditions
+            # If we don't have enough wet laps, the model ignores the IsWet flag.
+            wet_laps = data_df[data_df['IsWet'] == 1]
+            if not wet_laps.empty and len(wet_laps) < 500:
+                print(f"  Upsampling wet/inter conditions (found {len(wet_laps)} laps)...")
+                data_df = pd.concat([data_df, wet_laps, wet_laps], ignore_index=True)
+            
+            print(f"  Blended {len(data_prior)} prior laps into {len(data_2026)} real 2026 laps.")
+        else:
+            data_df = data_2026
+            
+        if data_df.empty:
+            results["active_aero_2026_2030"] = {"status": "no_data", **details_2026}
+        else:
+            model_path = out_dir / "active_aero_2026_2030_model.joblib"
+            features_path = out_dir / "active_aero_2026_2030_features.joblib"
+            metrics = train_and_save(data_df, model_path, features_path)
+            results["active_aero_2026_2030"] = {
+                "status": "trained_hybrid",
+                "start_year": 2026,
+                "end_year": 2030,
+                "as_of": as_of.isoformat(),
+                **metrics,
+                **details_2026
+            }
 
     metadata_path = out_dir / "era_training_metadata.json"
     with open(metadata_path, "w", encoding="utf-8") as f:
