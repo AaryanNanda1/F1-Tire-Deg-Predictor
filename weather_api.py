@@ -30,11 +30,18 @@ TRACK_COORDINATES = {
     'Autodromo Internazionale del Mugello': {'lat': 43.9975, 'lon': 11.3719}
 }
 
+# Cache for weather results to avoid redundant API calls during a single session
+_WEATHER_CACHE = {}
+
 def get_track_weather(track_name: str, race_date: str, race_time: str = None) -> dict:
     """
     Fetches weather expected on the race_date using Open-Meteo API.
-    Provides AirTemp, TrackTemp (estimated), Humidity, Rainfall, and a quick synopsis.
+    Uses in-memory cache to ensure repeated simulations for the same race are instant.
     """
+    cache_key = (track_name, race_date, race_time)
+    if cache_key in _WEATHER_CACHE:
+        return _WEATHER_CACHE[cache_key]
+        
     if track_name not in TRACK_COORDINATES:
         print(f"Coordinates for {track_name} not found. Using defaults.")
         return {
@@ -188,7 +195,7 @@ def get_track_weather(track_name: str, race_date: str, race_time: str = None) ->
                    "Cool and clear." if base_temp < 20 else \
                    "Moderate, dry conditions."
                    
-        return {
+        result = {
             "air_temp": round(base_temp, 1),
             "track_temp": round(track_temp_est, 1),
             "humidity": round(avg_humidity, 1),
@@ -197,6 +204,8 @@ def get_track_weather(track_name: str, race_date: str, race_time: str = None) ->
             "synopsis": synopsis,
             "hourly_forecasts": hourly_forecasts
         }
+        _WEATHER_CACHE[cache_key] = result
+        return result
 
     except Exception as e:
         print(f"Error fetching weather data for {track_name}: {e}")

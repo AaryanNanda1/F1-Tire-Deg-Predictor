@@ -128,9 +128,6 @@ class TireDegradationSimulator:
                 'Humidity': weather_data['humidity'],
                 'Rainfall': int(weather_data['rainfall']),
                 'WindSpeed': weather_data.get('wind_speed', 10.0),
-                'S1_Prc': 0.333,
-                'S2_Prc': 0.333,
-                'S3_Prc': 0.334,
                 'TeamBaselinePace': 100.0,
                 'FieldBaselinePace': 100.0,
                 'RelativePace': 0.0

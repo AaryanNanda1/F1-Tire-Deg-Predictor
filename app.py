@@ -19,6 +19,16 @@ def get_options():
         "years": [2022, 2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030]
     })
 
+# Singleton engines to avoid reloading models on every request
+_ENGINE_CACHE = {}
+
+def get_engine(year):
+    # Determine which era model to use
+    era = "active_aero" if year >= 2026 else "ground_effect"
+    if era not in _ENGINE_CACHE:
+        _ENGINE_CACHE[era] = TireDegradationSimulator(year=year, force_jit_check=False)
+    return _ENGINE_CACHE[era]
+
 @app.route('/api/simulate', methods=['POST'])
 def simulate_strategy():
     data = request.json
@@ -46,8 +56,8 @@ def simulate_strategy():
         race_date = f"{year}-08-30" 
         race_time = "15:00"
 
-        # 1. Boot ML Engine (force_jit_check=False for snappy UI responses)
-        deg_sim = TireDegradationSimulator(year=year, force_jit_check=False)
+        # 1. Get Cached ML Engine
+        deg_sim = get_engine(year)
         out_degradation = deg_sim.simulate(
             driver=driver, 
             team=team, 

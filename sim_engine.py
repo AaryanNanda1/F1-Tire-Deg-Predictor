@@ -95,20 +95,22 @@ class StrategySimulator:
         all_evaluations = []
         
         # Helper to generate stint length combinations that sum to laps_to_complete
-        def get_stint_combos(num_stints, total_laps, min_laps=8):
+        def get_stint_combos(num_stints, total_laps, min_laps=8, step=2):
             if num_stints == 1:
                 yield [total_laps]
             elif num_stints == 2:
-                for i in range(min_laps, total_laps - min_laps + 1):
+                for i in range(min_laps, total_laps - min_laps + 1, step):
                     yield [i, total_laps - i]
             elif num_stints == 3:
-                for i in range(min_laps, total_laps - (min_laps*2) + 1):
-                    for j in range(min_laps, total_laps - i - min_laps + 1):
+                for i in range(min_laps, total_laps - (min_laps*2) + 1, step):
+                    for j in range(min_laps, total_laps - i - min_laps + 1, step):
                         yield [i, j, total_laps - i - j]
             elif num_stints == 4: # 3 stops
-                for i in range(min_laps, total_laps - (min_laps*3) + 1):
-                    for j in range(min_laps, total_laps - i - (min_laps*2) + 1):
-                        for k in range(min_laps, total_laps - i - j - min_laps + 1):
+                # For 4 stints, even larger steps can be used to keep UI snappy
+                s = step if total_laps < 50 else step * 2 
+                for i in range(min_laps, total_laps - (min_laps*3) + 1, s):
+                    for j in range(min_laps, total_laps - i - (min_laps*2) + 1, s):
+                        for k in range(min_laps, total_laps - i - j - min_laps + 1, s):
                             yield [i, j, k, total_laps - i - j - k]
                             
         # Test 1, 2, and 3 stop setups
@@ -154,16 +156,24 @@ class StrategySimulator:
         if not strat:
             return None
             
-        sequence = []
+        sequence_labels = []
+        stints_data = []
         current_lap = 1
         for comp, length in zip(strat["compounds"], strat["stints"]):
             end_lap = current_lap + length - 1
-            sequence.append(f"{comp} [L{current_lap} - L{end_lap}]")
+            sequence_labels.append(f"{comp} [L{current_lap} - L{end_lap}]")
+            stints_data.append({
+                "compound": comp,
+                "laps": length,
+                "start": current_lap,
+                "end": end_lap
+            })
             current_lap = end_lap + 1
             
         return {
             "stops": strat["stops"],
-            "sequence": " -> ".join(sequence),
+            "sequence": " -> ".join(sequence_labels),
+            "stints_data": stints_data,
             "total_optimal_delta": round(strat["total_delta"], 2),
             "risk_cliff_overshoot": round(strat["max_cliff_overshoot"], 1)
         }
