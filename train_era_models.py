@@ -88,7 +88,25 @@ def collect_era_data(start_year: int, end_year: int, as_of: date) -> Tuple[pd.Da
 
     if not frames:
         return pd.DataFrame(), {"loaded_events": loaded_events, "failed_events": failed_events}
-    return pd.concat(frames, ignore_index=True), {"loaded_events": loaded_events, "failed_events": failed_events}
+    
+    # Combine frames
+    final_df = pd.concat(frames, ignore_index=True)
+    
+    # --- Soft-Tire Specific Age Weighting ---
+    # Exponentially increase the weight of soft tires as they age to force the model
+    # to pay attention to the degradation "cliff" (Recommendation 2)
+    final_df['CompoundWeight'] = 1.0
+    # preprocessing.py uses pd.get_dummies, so 'Compound' is removed and 'Compound_SOFT' is created
+    if 'Compound_SOFT' in final_df.columns:
+        soft_mask = (final_df['Compound_SOFT'] == 1)
+        # Formula: 1.0 base + 0.1 per lap of age. A 20-lap old soft gets 3.0x weight.
+        final_df.loc[soft_mask, 'CompoundWeight'] = 1.0 + (final_df.loc[soft_mask, 'TyreLife'] / 10.0)
+        
+    final_df['SampleWeight'] = final_df['SampleWeight'] * final_df['CompoundWeight']
+    # Clean up the temporary column
+    final_df.drop(columns=['CompoundWeight'], inplace=True)
+    
+    return final_df, {"loaded_events": loaded_events, "failed_events": failed_events}
 
 
 def train_and_save(
