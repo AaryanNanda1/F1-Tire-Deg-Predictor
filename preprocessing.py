@@ -30,6 +30,10 @@ def preprocess_laps(session):
     # 4. Team Name Normalization
     laps['Team'] = laps['Team'].apply(normalize_team_name)
     
+    # 4b. Metadata for chronological splitting
+    laps['EventDate'] = pd.to_datetime(session.event['EventDate']).date()
+    laps['EventName'] = session.event['EventName']
+    
     # 5. Track Information
     circuit_name = session.event['EventName']
     track_info = get_track_info(circuit_name)
@@ -118,6 +122,8 @@ def preprocess_laps(session):
         'TeamBaselinePace',
         'FieldBaselinePace',
         'RelativePace',
+        'EventDate',       # Meta
+        'EventName',       # Meta
         'LapTimeSeconds'  # Target
     ]
     

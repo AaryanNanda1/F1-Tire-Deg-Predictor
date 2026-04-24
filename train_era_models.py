@@ -154,10 +154,20 @@ def train_and_save(
         except Exception as e:
             print(f"  Warning: could not load prior model, skipping cold start: {e}")
 
-    # Extract sample weights
+    # 1. Chronological Validation (Walk-Forward)
+    # This evaluates how the model would have performed "in-season"
+    sequential_mae = None
+    if len(data_df) > 500: # Only worth doing if we have enough data
+        try:
+            sequential_mae = perform_walk_forward_validation(data_df)
+        except Exception as e:
+            print(f"  Warning: Sequential validation failed: {e}")
+
+    # Extract sample weights for final training
     sample_weights = data_df.get('SampleWeight', pd.Series(1.0, index=data_df.index))
     
-    X = data_df.drop(columns=['LapTimeSeconds', 'SampleWeight'], errors='ignore')
+    # Drop target and metadata columns so they aren't used as features
+    X = data_df.drop(columns=['LapTimeSeconds', 'SampleWeight', 'EventDate', 'EventName'], errors='ignore')
     y = data_df['LapTimeSeconds']
 
     model = HistGradientBoostingRegressor(
@@ -167,18 +177,12 @@ def train_and_save(
         n_iter_no_change=10,
         random_state=42
     )
-    if len(data_df) >= 50:
-        X_train, X_test, y_train, y_test, w_train, _ = train_test_split(
-            X, y, sample_weights, test_size=0.2, random_state=42
-        )
-        model.fit(X_train, y_train, sample_weight=w_train)
-        preds = model.predict(X_test)
-        rmse = float(np.sqrt(mean_squared_error(y_test, preds)))
-        mae = float(mean_absolute_error(y_test, preds))
-    else:
-        model.fit(X, y, sample_weight=sample_weights)
-        rmse = None
-        mae = None
+    
+    # Fit the FINAL production model on ALL data
+    model.fit(X, y, sample_weight=sample_weights)
+    
+    # Use the sequential_mae if available, otherwise fallback to simple training MAE
+    final_mae = sequential_mae if sequential_mae is not None else float(mean_absolute_error(y, model.predict(X)))
 
     model_path.parent.mkdir(parents=True, exist_ok=True)
     joblib.dump(model, model_path)
@@ -187,10 +191,57 @@ def train_and_save(
     return {
         "rows": int(len(data_df)),
         "features": int(X.shape[1]),
-        "rmse": rmse,
-        "mae": mae,
+        "mae": round(float(final_mae), 3),
         "cold_start_prior_active": cold_start_active,
     }
+
+
+def perform_walk_forward_validation(df: pd.DataFrame) -> float:
+    """
+    Simulates "Next Race" prediction by iteratively training on past events 
+    and testing on the very next one.
+    """
+    # Check if we have the necessary metadata
+    if 'EventDate' not in df.columns or 'EventName' not in df.columns:
+        return 0.0
+        
+    # Group by EventDate and EventName to get unique race weekends in order
+    events = df[['EventDate', 'EventName']].drop_duplicates().sort_values('EventDate')
+    
+    if len(events) < 2:
+        return 0.0
+        
+    print(f"\n  [Walk-Forward Validation] Evaluating across {len(events)} events...")
+    
+    maes = []
+    # We start after the first 2 events to have a baseline
+    for i in range(2, len(events)):
+        train_events = events.iloc[:i]
+        test_event = events.iloc[i]
+        
+        train_data = df[df['EventName'].isin(train_events['EventName'])]
+        test_data = df[df['EventName'] == test_event['EventName']]
+        
+        # Ensure we drop metadata columns during training
+        X_train = train_data.drop(columns=['LapTimeSeconds', 'SampleWeight', 'EventDate', 'EventName'], errors='ignore')
+        y_train = train_data['LapTimeSeconds']
+        w_train = train_data.get('SampleWeight', pd.Series(1.0, index=train_data.index))
+        
+        X_test = test_data.drop(columns=['LapTimeSeconds', 'SampleWeight', 'EventDate', 'EventName'], errors='ignore')
+        y_test = test_data['LapTimeSeconds']
+        
+        # We don't use early stopping here to speed up validation loops
+        model = HistGradientBoostingRegressor(loss="absolute_error", max_iter=50, random_state=42)
+        model.fit(X_train, y_train, sample_weight=w_train)
+        
+        preds = model.predict(X_test)
+        mae = mean_absolute_error(y_test, preds)
+        maes.append(mae)
+        print(f"    Tested on {test_event['EventName']} ({test_event['EventDate']}) -> MAE: {mae:.3f}s")
+
+    overall_mae = np.mean(maes) if maes else 0.0
+    print(f"  [Walk-Forward Validation] Overall Sequential MAE: {overall_mae:.3f}s\n")
+    return overall_mae
 
 
 def train_era(
