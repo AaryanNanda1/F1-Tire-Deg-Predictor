@@ -2,8 +2,9 @@ import os
 import joblib
 import numpy as np
 import pandas as pd
-from mappings import normalize_team_name, get_track_info
+from mappings import normalize_team_name, get_track_info, TRACK_PIT_LOSS
 from weather_api import get_track_weather
+from tire_life_analysis import recommend_tire_life
 
 class TireDegradationSimulator:
     def __init__(self, year: int, models_dir: str = "models", force_jit_check: bool = True):
@@ -160,72 +161,51 @@ class TireDegradationSimulator:
             
         return drop_off_curve, absolute_lap_times
 
-    def _analyze_curve(self, drop_off_curve, absolute_lap_times):
+    def _analyze_curve(self, drop_off_curve, absolute_lap_times, track_name=None):
         """
-        Extracts slope, cliff point, and lifespan from a degradation curve.
+        Analyzes a degradation curve using the robust tire_life_analysis engine.
 
-        Cliff Detection uses a HYBRID approach:
-          1. Gradient Acceleration: first lap where degradation rate exceeds 2.5x early baseline.
-          2. Kneedle (Geometric): point of maximum perpendicular distance from the start-to-end line.
-        
-        The final cliff is the EARLIER of the two candidates — conservative and race-safe.
-        graph_data stores absolute lap times (seconds) for meaningful Y-axis display in the UI.
+        Combines:
+          1. Savitzky-Golay smoothing to remove lap-to-lap noise
+          2. ruptures PELT change-point detection for regime shifts
+          3. Cumulative degradation cost vs pit-loss optimization
+
+        The recommended tire life is the EARLIEST lap where staying out costs
+        more than pitting, OR where a statistical change point is detected.
+
+        All existing API fields are preserved for frontend compatibility.
+        New diagnostic fields are added alongside them.
         """
-        n = len(drop_off_curve)
-        curve = np.array(drop_off_curve)
+        # Look up track-specific pit loss; fall back to 22s default
+        pit_loss = TRACK_PIT_LOSS.get(track_name, 22.0) if track_name else 22.0
 
-        # --- 1. Baseline slope (early stint, laps 3-12) ---
-        eval_start = min(3, n - 1)
-        eval_end = min(12, n - 1)
-        if eval_end > eval_start:
-            baseline_slope = (curve[eval_end] - curve[eval_start]) / (eval_end - eval_start)
-        else:
-            baseline_slope = curve[-1] / n
-        baseline_slope = max(0.005, float(baseline_slope))
+        # Run the full analysis pipeline
+        result = recommend_tire_life(
+            raw_times=absolute_lap_times,
+            pit_loss=pit_loss,
+        )
 
-        # --- METHOD A: Gradient Acceleration ---
-        gradient = np.diff(curve)
-        ACCELERATION_THRESHOLD = 2.5
-        cliff_gradient = n  # default: no cliff
-        for i in range(5, len(gradient)):
-            if gradient[i] > baseline_slope * ACCELERATION_THRESHOLD:
-                cliff_gradient = i + 1
-                break
-        if cliff_gradient >= n - 1:
-            cliff_gradient = int(n * 0.80)
-
-        # --- METHOD B: Kneedle (Geometric max perpendicular distance) ---
-        x1, y1 = 1.0, curve[0]
-        x2, y2 = float(n), curve[-1]
-        denom = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
-        max_dist = -1
-        cliff_kneedle = n
-        for i in range(2, n - 2):
-            x0, y0 = float(i + 1), curve[i]
-            if denom > 0:
-                dist = np.abs((x2 - x1)*(y1 - y0) - (x1 - x0)*(y2 - y1)) / denom
-            else:
-                dist = 0.0
-            if dist > max_dist:
-                max_dist = dist
-                cliff_kneedle = i + 1
-        if cliff_kneedle >= n - 1:
-            cliff_kneedle = int(n * 0.80)
-
-        # --- HYBRID: take the earlier (more conservative) of the two ---
-        cliff_point = min(cliff_gradient, cliff_kneedle)
-        cliff_point = max(5, min(cliff_point, n - 3))  # hard bounds
-
-        suggested_lifespan = max(1, cliff_point - 3)
+        recommended = result["recommended_max_life"]
+        suggested_lifespan_lo = max(1, recommended - 2)
+        suggested_lifespan_hi = recommended + 2
 
         return {
-            "drop_off_per_lap_sec": round(float(baseline_slope), 3),
-            "cliff_point_lap": cliff_point,
-            "cliff_gradient_lap": cliff_gradient,     # expose both signals for debugging
-            "cliff_kneedle_lap": cliff_kneedle,
-            "suggested_lifespan": f"{suggested_lifespan}-{suggested_lifespan + 4} laps",
-            # graph_data now stores ABSOLUTE lap times (seconds), not drop-off delta
-            "graph_data": {lap: val for lap, val in enumerate(absolute_lap_times, start=1)}
+            # --- Existing fields (frontend compatibility) ---
+            "drop_off_per_lap_sec": result["drop_off_per_lap_sec"],
+            "cliff_point_lap": recommended,  # Now powered by the smarter engine
+            "suggested_lifespan": f"{suggested_lifespan_lo}-{suggested_lifespan_hi} laps",
+            "graph_data": {lap: val for lap, val in enumerate(absolute_lap_times, start=1)},
+
+            # --- New diagnostic fields ---
+            "smoothed_graph_data": {
+                lap: round(val, 3)
+                for lap, val in enumerate(result["smoothed_times"], start=1)
+            },
+            "change_point_lap": result["change_point_lap"],
+            "cost_crossover_lap": result["cost_crossover_lap"],
+            "recommended_max_life": recommended,
+            "recommendation_reason": result["recommendation_reason"],
+            "confidence": result["confidence"],
         }
 
     def simulate(self, driver: str, team: str, track_name: str, race_date: str, race_time: str = None):
@@ -263,7 +243,7 @@ class TireDegradationSimulator:
                 driver, norm_team, track_type, track_length_km, compound, weather_data, max_laps
             )
             
-            analysis = self._analyze_curve(drop_off_curve, absolute_lap_times)
+            analysis = self._analyze_curve(drop_off_curve, absolute_lap_times, track_name=track_name)
             results["compounds"][compound] = analysis
             
         return results
