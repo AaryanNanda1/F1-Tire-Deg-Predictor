@@ -1,14 +1,22 @@
 """
-tire_life_analysis.py — Robust Tire Life Engine
-================================================
-Replaces simple gradient/kneedle cliff detection with:
-  1. Lap-time smoothing (Savitzky-Golay or LOWESS)
-  2. Statistical change-point detection (ruptures PELT)
-  3. Marginal cost vs pit-stop cost optimization
+tire_life_analysis.py — Dual-Output Tire Life Engine
+=====================================================
+Produces TWO independent outputs for each tire stint:
 
-The optimal tire life is NOT just the first detected "cliff."
-It is the lap where the cost of staying out on old tires
-exceeds the expected cost of pitting.
+  1. performance_cliff_lap
+     "Where does the lap-time curve begin to noticeably worsen?"
+     Based purely on the tire's smoothed lap-time trend.
+     Uses a SUSTAINED ACCELERATION RULE: slope > threshold,
+     curvature > 0, and the pattern persists for N consecutive laps.
+
+  2. strategy_useful_life_lap
+     "When does staying out become worse than pitting?"
+     Based on cumulative degradation cost vs pit-stop loss.
+     A tire may be past its performance cliff but still worth
+     using if the pit loss is large.
+
+These are NOT the same thing. A tire may begin degrading on lap 18
+but still be strategically worth using until lap 24.
 """
 
 import numpy as np
@@ -18,21 +26,30 @@ from scipy.signal import savgol_filter
 #  Default configuration — all values are overridable per-call                 #
 # --------------------------------------------------------------------------- #
 DEFAULT_CONFIG = {
-    "pit_loss_sec": 22.0,           # Fallback pit loss if track-specific data unavailable
-    "fuel_burn_sec_per_lap": 0.07,  # Fuel mass effect on lap time
-    "sc_aging_reduction": 0.70,     # Safety-car laps count as 70% of normal wear
-    "min_stint_laps": 8,            # Minimum viable stint length
-    "max_stint_laps": 50,           # Hard ceiling for any stint
-    "smoothing_method": "savgol",   # "savgol" or "lowess"
-    "smoothing_window": 7,          # Window size for Savitzky-Golay (must be odd)
-    "smoothing_polyorder": 2,       # Polynomial order for Savitzky-Golay
-    "changepoint_penalty": 3,       # PELT penalty — higher = fewer change points
-    "changepoint_min_size": 5,      # Minimum segment size for change-point detection
+    # --- Smoothing ---
+    "smoothing_method": "savgol",     # "savgol" or "lowess"
+    "smoothing_window": 7,            # Window size for Savitzky-Golay (must be odd)
+    "smoothing_polyorder": 2,         # Polynomial order for Savitzky-Golay
+
+    # --- Performance Cliff Detection ---
+    "cliff_slope_threshold": 0.08,    # Min slope (s/lap) to consider as degradation
+    "cliff_curvature_threshold": 0.02,# Min 2nd derivative to confirm acceleration
+    "cliff_baseline_window": 3,       # Number of early laps to establish baseline
+    "cliff_baseline_delta": 0.5,      # Lap time must be this much worse than baseline (s)
+    "cliff_persistence_laps": 3,      # Consecutive laps the rule must hold
+    "cliff_min_lap": 5,               # Earliest lap a cliff can be reported
+
+    # --- Strategy Useful Life ---
+    "pit_loss_sec": 22.0,             # Fallback pit loss if track-specific unavailable
+    "fuel_burn_sec_per_lap": 0.07,    # Fuel mass effect on lap time
+    "sc_aging_reduction": 0.70,       # Safety-car laps count as 70% of normal wear
+    "min_stint_laps": 8,              # Minimum viable stint length
+    "max_stint_laps": 50,             # Hard ceiling for any stint
 }
 
 
 # --------------------------------------------------------------------------- #
-#  1. Smoothing                                                                #
+#  1. Smoothing (shared by both detectors)                                     #
 # --------------------------------------------------------------------------- #
 def smooth_lap_times(raw_times: list | np.ndarray, config: dict = None) -> np.ndarray:
     """
@@ -55,7 +72,6 @@ def smooth_lap_times(raw_times: list | np.ndarray, config: dict = None) -> np.nd
     arr = np.asarray(raw_times, dtype=float)
 
     if len(arr) < 5:
-        # Too few points to smooth meaningfully
         return arr.copy()
 
     method = cfg["smoothing_method"]
@@ -63,17 +79,14 @@ def smooth_lap_times(raw_times: list | np.ndarray, config: dict = None) -> np.nd
     if method == "lowess":
         try:
             from statsmodels.nonparametric.smoothers_lowess import lowess
-            # lowess returns (x, y) sorted by x
             frac = min(0.3, max(0.1, cfg["smoothing_window"] / len(arr)))
             result = lowess(arr, np.arange(len(arr)), frac=frac, return_sorted=True)
             return result[:, 1]
         except ImportError:
-            # Fall back to savgol if statsmodels unavailable
             method = "savgol"
 
     # Default: Savitzky-Golay
     window = cfg["smoothing_window"]
-    # Window must be odd and <= data length
     if window % 2 == 0:
         window += 1
     window = min(window, len(arr))
@@ -88,88 +101,121 @@ def smooth_lap_times(raw_times: list | np.ndarray, config: dict = None) -> np.nd
 
 
 # --------------------------------------------------------------------------- #
-#  2. Change-Point Detection                                                   #
+#  2. PERFORMANCE CLIFF DETECTION                                              #
+#     "Where does the lap-time curve begin to noticeably worsen?"              #
+#                                                                              #
+#     This is purely about the TIRE'S PHYSICS, not pit strategy.               #
+#     It uses a SUSTAINED ACCELERATION RULE:                                   #
+#       - Slope (1st derivative) exceeds a configurable threshold              #
+#       - Curvature (2nd derivative) is positive (degradation accelerating)    #
+#       - The pattern persists for N consecutive laps                           #
+#       - Lap time is meaningfully worse than the early-stint baseline          #
 # --------------------------------------------------------------------------- #
-def detect_change_point(smoothed_times: np.ndarray, config: dict = None) -> int | None:
+def detect_performance_cliff(
+    smoothed_times: np.ndarray,
+    config: dict = None,
+) -> dict:
     """
-    Uses ruptures PELT to detect where degradation shifts from a stable
-    regime to an accelerated one.
+    Detects the first tire-age lap where performance begins to noticeably
+    and significantly worsen, based on the smoothed lap-time trend.
+
+    This does NOT consider pit strategy — only the tire's physics.
 
     Parameters
     ----------
     smoothed_times : np.ndarray
-        Smoothed lap times.
+        Smoothed absolute lap times.
     config : dict, optional
-        Override defaults for changepoint_penalty, changepoint_min_size.
+        Override cliff_slope_threshold, cliff_curvature_threshold, etc.
 
     Returns
     -------
-    int or None
-        The lap number (1-indexed) where the regime change occurs,
-        or None if no significant change point is detected.
+    dict with keys:
+        performance_cliff_lap:  int or None (1-indexed)
+        cliff_confidence:       "high" | "medium" | "low" | None
+        cliff_reason:           str
     """
     cfg = {**DEFAULT_CONFIG, **(config or {})}
     arr = np.asarray(smoothed_times, dtype=float)
+    n = len(arr)
 
-    if len(arr) < 10:
-        return None
+    if n < 10:
+        return {
+            "performance_cliff_lap": None,
+            "cliff_confidence": None,
+            "cliff_reason": "insufficient data (fewer than 10 laps)",
+        }
 
-    try:
-        import ruptures as rpt
-    except ImportError:
-        # If ruptures is not installed, skip change-point detection
-        return None
+    # --- Compute derivatives ---
+    # 1st derivative (slope): how fast is the lap time increasing?
+    slope = np.gradient(arr)
+    # 2nd derivative (curvature): is the degradation accelerating?
+    curvature = np.gradient(slope)
 
-    # We detect change points on the *first derivative* (lap-to-lap delta)
-    # because a "cliff" manifests as a slope change, not a level shift.
-    deltas = np.diff(arr)
+    # --- Establish early-stint baseline ---
+    bw = cfg["cliff_baseline_window"]
+    baseline = np.mean(arr[:min(bw, n)])
 
-    # PELT algorithm with RBF kernel cost for robustness
-    algo = rpt.Pelt(model="rbf", min_size=cfg["changepoint_min_size"])
-    algo.fit(deltas.reshape(-1, 1))
+    # --- Thresholds ---
+    slope_thresh = cfg["cliff_slope_threshold"]
+    curve_thresh = cfg["cliff_curvature_threshold"]
+    delta_thresh = cfg["cliff_baseline_delta"]
+    persist = cfg["cliff_persistence_laps"]
+    min_lap = cfg["cliff_min_lap"]
 
-    try:
-        breakpoints = algo.predict(pen=cfg["changepoint_penalty"])
-    except Exception:
-        return None
+    # --- Sustained acceleration scan ---
+    # We look for the first lap where ALL of the following hold
+    # for `persist` consecutive laps:
+    #   1. slope[i] > slope_threshold  (lap time is rising fast enough)
+    #   2. curvature[i] > curvature_threshold  (degradation is accelerating)
+    #   3. arr[i] - baseline > baseline_delta  (meaningfully worse than fresh)
+    consecutive = 0
+    cliff_start = None
 
-    # breakpoints includes len(deltas) as the final "end" marker — remove it
-    breakpoints = [bp for bp in breakpoints if bp < len(deltas)]
+    for i in range(min_lap - 1, n):  # min_lap is 1-indexed; i is 0-indexed
+        cond_slope = slope[i] > slope_thresh
+        cond_curve = curvature[i] > curve_thresh
+        cond_delta = (arr[i] - baseline) > delta_thresh
 
-    if not breakpoints:
-        return None
+        if cond_slope and cond_curve and cond_delta:
+            consecutive += 1
+            if cliff_start is None:
+                cliff_start = i
+            if consecutive >= persist:
+                # Found a sustained acceleration — report the START of the pattern
+                cliff_lap = cliff_start + 1  # 1-indexed
+                return {
+                    "performance_cliff_lap": int(cliff_lap),
+                    "cliff_confidence": "high" if consecutive >= persist + 1 else "medium",
+                    "cliff_reason": (
+                        f"sustained acceleration detected: slope>{slope_thresh:.2f}s/lap, "
+                        f"curvature>{curve_thresh:.2f}, for {consecutive} consecutive laps"
+                    ),
+                }
+        else:
+            consecutive = 0
+            cliff_start = None
 
-    # Return the FIRST change point as a 1-indexed lap number
-    # (bp is an index into deltas, which starts at lap 2's delta)
-    first_bp = breakpoints[0]
-    # +2 because: deltas[0] = lap2 - lap1, so index 0 corresponds to lap 2
-    change_lap = first_bp + 2
-
-    # Validate: the change point should be in a reasonable range
-    if change_lap < cfg["min_stint_laps"] or change_lap > len(arr) - 2:
-        return None
-
-    # Significance filter: verify the slope AFTER the change point is
-    # meaningfully steeper than BEFORE it. On very flat curves (e.g. Hard
-    # tires), PELT can detect tiny noise artifacts; this prevents false cliffs.
-    pre_slope = np.mean(deltas[:first_bp]) if first_bp > 0 else 0.0
-    post_slope = np.mean(deltas[first_bp:]) if first_bp < len(deltas) else 0.0
-
-    # The post-change slope must be at least 1.5x the pre-change slope
-    # AND the absolute post-slope must be non-trivial (> 0.02s per lap)
-    if post_slope < pre_slope * 1.5 or post_slope < 0.02:
-        return None
-
-    return int(change_lap)
+    # No sustained acceleration found — this is a valid outcome
+    return {
+        "performance_cliff_lap": None,
+        "cliff_confidence": None,
+        "cliff_reason": "no clear performance cliff detected",
+    }
 
 
 # --------------------------------------------------------------------------- #
-#  3. Cumulative Degradation Cost                                              #
+#  3. STRATEGY USEFUL LIFE                                                     #
+#     "When does staying out become worse than pitting?"                        #
+#                                                                              #
+#     This is about RACE STRATEGY, not tire physics.                           #
+#     A tire past its performance cliff may still be worth using               #
+#     if the pit loss is large (e.g., Monaco ~19s pit loss).                   #
 # --------------------------------------------------------------------------- #
 def estimate_degradation_cost(
     smoothed_times: np.ndarray,
     fuel_correction: bool = True,
-    config: dict = None
+    config: dict = None,
 ) -> np.ndarray:
     """
     Computes the cumulative time lost from degradation compared to
@@ -180,7 +226,8 @@ def estimate_degradation_cost(
     smoothed_times : np.ndarray
         Smoothed absolute lap times.
     fuel_correction : bool
-        If True, subtract the expected fuel-burn improvement per lap.
+        If True, add fuel-burn correction (the raw times already include
+        the fuel-weight benefit, so we add it back to isolate tire deg).
     config : dict, optional
         Override fuel_burn_sec_per_lap.
 
@@ -188,96 +235,129 @@ def estimate_degradation_cost(
     -------
     np.ndarray
         Cumulative degradation cost at each lap (seconds).
-        cumulative_cost[i] = sum of (lap_time[j] - baseline) for j in 0..i
     """
     cfg = {**DEFAULT_CONFIG, **(config or {})}
     arr = np.asarray(smoothed_times, dtype=float)
 
-    # Baseline: the minimum of the first 3 laps (tire warm-up zone)
     baseline = np.min(arr[:min(3, len(arr))])
-
-    # Per-lap degradation delta relative to baseline
     per_lap_delta = arr - baseline
 
     if fuel_correction:
-        # Fuel burn makes the car lighter (faster) over time.
-        # We ADD this back because the raw lap time already includes fuel benefit,
-        # so the "true" tire degradation is slightly worse than it appears.
         fuel_correction_arr = np.arange(len(arr)) * cfg["fuel_burn_sec_per_lap"]
         per_lap_delta = per_lap_delta + fuel_correction_arr
 
-    # Ensure non-negative (early laps might dip below baseline due to warm-up)
     per_lap_delta = np.maximum(0.0, per_lap_delta)
-
-    # Cumulative sum
     cumulative = np.cumsum(per_lap_delta)
 
     return cumulative
 
 
+def recommend_strategy_useful_life(
+    smoothed_times: np.ndarray,
+    pit_loss: float = None,
+    config: dict = None,
+) -> dict:
+    """
+    Determines the last lap where staying out is still a better strategic
+    decision than pitting, based on cumulative degradation cost vs pit loss.
+
+    Parameters
+    ----------
+    smoothed_times : np.ndarray
+        Smoothed absolute lap times.
+    pit_loss : float, optional
+        Track-specific pit-stop time loss. Falls back to config default.
+    config : dict, optional
+        Override pit_loss_sec, fuel_burn_sec_per_lap, etc.
+
+    Returns
+    -------
+    dict with keys:
+        strategy_useful_life_lap:   int (1-indexed)
+        strategy_confidence:        "high" | "medium" | "low"
+        strategy_reason:            str
+        cumulative_deg_cost:        list of floats
+    """
+    cfg = {**DEFAULT_CONFIG, **(config or {})}
+    effective_pit_loss = pit_loss if pit_loss is not None else cfg["pit_loss_sec"]
+    arr = np.asarray(smoothed_times, dtype=float)
+    n = len(arr)
+
+    # --- Cumulative degradation cost ---
+    cum_cost = estimate_degradation_cost(arr, fuel_correction=True, config=cfg)
+
+    # --- Find the lap where cumulative cost exceeds pit loss ---
+    crossover_lap = None
+    for i in range(len(cum_cost)):
+        if cum_cost[i] >= effective_pit_loss:
+            crossover_lap = i + 1  # 1-indexed
+            break
+
+    # --- Decision logic ---
+    if crossover_lap is not None:
+        useful_life = crossover_lap
+        reason = f"cumulative degradation ({cum_cost[crossover_lap - 1]:.1f}s) exceeds pit loss ({effective_pit_loss:.1f}s)"
+        confidence = "high" if crossover_lap > cfg["min_stint_laps"] else "medium"
+    else:
+        # Cost never exceeds pit loss — the tire is viable for the full stint
+        useful_life = min(n, cfg["max_stint_laps"])
+        reason = f"cumulative degradation never exceeds pit loss ({effective_pit_loss:.1f}s)"
+        confidence = "low"
+
+    # Apply hard bounds
+    useful_life = max(cfg["min_stint_laps"], min(useful_life, cfg["max_stint_laps"], n - 1))
+
+    return {
+        "strategy_useful_life_lap": int(useful_life),
+        "strategy_confidence": confidence,
+        "strategy_reason": reason,
+        "cumulative_deg_cost": cum_cost.tolist(),
+    }
+
+
 # --------------------------------------------------------------------------- #
-#  4. Tire Life Recommendation                                                 #
+#  4. MASTER FUNCTION — combines both detectors                                #
 # --------------------------------------------------------------------------- #
-def recommend_tire_life(
+def analyze_tire_life(
     raw_times: list | np.ndarray,
     pit_loss: float = None,
     config: dict = None,
 ) -> dict:
     """
-    Master function: combines smoothing, change-point detection, and
-    marginal cost analysis to recommend an optimal tire life.
-
-    The recommended life is the EARLIEST of:
-      - The lap where cumulative degradation exceeds pit loss
-      - The statistical change point (if detected)
-
-    If neither signal fires, the system falls back to a cost-based estimate
-    with a lower confidence flag.
+    Master function: runs smoothing, performance cliff detection, and
+    strategy useful life analysis independently, returning both outputs.
 
     Parameters
     ----------
     raw_times : array-like
         Absolute predicted lap times (seconds), one per lap.
     pit_loss : float, optional
-        Track-specific pit-stop time loss. Falls back to config default.
+        Track-specific pit-stop time loss.
     config : dict, optional
         Override any DEFAULT_CONFIG value.
 
     Returns
     -------
-    dict with keys:
-        smoothed_times:         list of smoothed lap times
-        change_point_lap:       int or None
-        recommended_max_life:   int
-        recommendation_reason:  str
-        confidence:             "high" | "medium" | "low"
-        drop_off_per_lap_sec:   float (baseline degradation rate)
-        cumulative_deg_cost:    list of floats
+    dict with keys from both detectors, plus shared data:
+        smoothed_times, drop_off_per_lap_sec,
+        performance_cliff_lap, cliff_confidence, cliff_reason,
+        strategy_useful_life_lap, strategy_confidence, strategy_reason,
+        cumulative_deg_cost
     """
     cfg = {**DEFAULT_CONFIG, **(config or {})}
-    effective_pit_loss = pit_loss if pit_loss is not None else cfg["pit_loss_sec"]
-
     raw = np.asarray(raw_times, dtype=float)
     n = len(raw)
 
-    # ---- Step 1: Smooth ----
+    # ---- Step 1: Smooth (shared input for both detectors) ----
     smoothed = smooth_lap_times(raw, cfg)
 
-    # ---- Step 2: Change-point detection ----
-    cp_lap = detect_change_point(smoothed, cfg)
+    # ---- Step 2: Performance cliff (tire physics) ----
+    cliff_result = detect_performance_cliff(smoothed, cfg)
 
-    # ---- Step 3: Cumulative degradation cost ----
-    cum_cost = estimate_degradation_cost(smoothed, fuel_correction=True, config=cfg)
+    # ---- Step 3: Strategy useful life (race strategy) ----
+    strategy_result = recommend_strategy_useful_life(smoothed, pit_loss, cfg)
 
-    # ---- Step 4: Find the lap where cumulative cost exceeds pit loss ----
-    # This is the "marginal cost" crossover: staying out is now worse than pitting.
-    cost_crossover_lap = None
-    for i in range(len(cum_cost)):
-        if cum_cost[i] >= effective_pit_loss:
-            cost_crossover_lap = i + 1  # 1-indexed
-            break
-
-    # ---- Step 5: Baseline degradation rate (early stint slope) ----
+    # ---- Step 4: Baseline degradation rate ----
     eval_start = min(2, n - 1)
     eval_end = min(10, n - 1)
     if eval_end > eval_start:
@@ -286,47 +366,19 @@ def recommend_tire_life(
         baseline_slope = 0.0
     baseline_slope = max(0.001, float(baseline_slope))
 
-    # ---- Step 6: Decision logic ----
-    candidates = []
-    reasons = []
-
-    if cp_lap is not None:
-        candidates.append(cp_lap)
-        reasons.append("change point detected")
-
-    if cost_crossover_lap is not None:
-        candidates.append(cost_crossover_lap)
-        reasons.append("cumulative degradation exceeds pit loss")
-
-    if candidates:
-        # Take the EARLIEST signal — conservative and race-safe
-        best_idx = int(np.argmin(candidates))
-        recommended = candidates[best_idx]
-        reason = reasons[best_idx]
-
-        # Confidence based on signal agreement
-        if len(candidates) == 2 and abs(candidates[0] - candidates[1]) <= 3:
-            confidence = "high"   # Both methods agree within 3 laps
-        elif len(candidates) == 2:
-            confidence = "medium" # Both methods fired but disagree
-        else:
-            confidence = "medium" # Only one method fired
-    else:
-        # No clear cliff or cost crossover — fall back to 80% of race distance
-        recommended = int(n * 0.80)
-        reason = "no clear degradation cliff"
-        confidence = "low"
-
-    # Apply hard bounds
-    recommended = max(cfg["min_stint_laps"], min(recommended, cfg["max_stint_laps"], n - 2))
-
     return {
+        # Shared
         "smoothed_times": smoothed.tolist(),
-        "change_point_lap": cp_lap,
-        "cost_crossover_lap": cost_crossover_lap,
-        "recommended_max_life": int(recommended),
-        "recommendation_reason": reason,
-        "confidence": confidence,
         "drop_off_per_lap_sec": round(baseline_slope, 4),
-        "cumulative_deg_cost": cum_cost.tolist(),
+
+        # Performance cliff (tire physics)
+        "performance_cliff_lap": cliff_result["performance_cliff_lap"],
+        "cliff_confidence": cliff_result["cliff_confidence"],
+        "cliff_reason": cliff_result["cliff_reason"],
+
+        # Strategy useful life (race strategy)
+        "strategy_useful_life_lap": strategy_result["strategy_useful_life_lap"],
+        "strategy_confidence": strategy_result["strategy_confidence"],
+        "strategy_reason": strategy_result["strategy_reason"],
+        "cumulative_deg_cost": strategy_result["cumulative_deg_cost"],
     }

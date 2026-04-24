@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from mappings import normalize_team_name, get_track_info, TRACK_PIT_LOSS
 from weather_api import get_track_weather
-from tire_life_analysis import recommend_tire_life
+from tire_life_analysis import analyze_tire_life
 
 class TireDegradationSimulator:
     def __init__(self, year: int, models_dir: str = "models", force_jit_check: bool = True):
@@ -163,49 +163,58 @@ class TireDegradationSimulator:
 
     def _analyze_curve(self, drop_off_curve, absolute_lap_times, track_name=None):
         """
-        Analyzes a degradation curve using the robust tire_life_analysis engine.
+        Analyzes a degradation curve using the dual-output tire_life_analysis engine.
 
-        Combines:
-          1. Savitzky-Golay smoothing to remove lap-to-lap noise
-          2. ruptures PELT change-point detection for regime shifts
-          3. Cumulative degradation cost vs pit-loss optimization
+        Produces TWO independent outputs:
+          1. performance_cliff_lap — Where the tire's lap-time curve begins to
+             noticeably worsen. Based purely on tire physics (sustained acceleration
+             rule). May be None if no clear cliff exists.
 
-        The recommended tire life is the EARLIEST lap where staying out costs
-        more than pitting, OR where a statistical change point is detected.
+          2. strategy_useful_life_lap — The last lap where staying out is still
+             better than pitting. Based on cumulative degradation cost vs pit loss.
+             A tire past its cliff may still be strategically worth using.
 
         All existing API fields are preserved for frontend compatibility.
-        New diagnostic fields are added alongside them.
         """
         # Look up track-specific pit loss; fall back to 22s default
         pit_loss = TRACK_PIT_LOSS.get(track_name, 22.0) if track_name else 22.0
 
-        # Run the full analysis pipeline
-        result = recommend_tire_life(
+        # Run the full dual-output analysis pipeline
+        result = analyze_tire_life(
             raw_times=absolute_lap_times,
             pit_loss=pit_loss,
         )
 
-        recommended = result["recommended_max_life"]
-        suggested_lifespan_lo = max(1, recommended - 2)
-        suggested_lifespan_hi = recommended + 2
+        useful_life = result["strategy_useful_life_lap"]
+        cliff_lap = result["performance_cliff_lap"]
+        suggested_lo = max(1, useful_life - 2)
+        suggested_hi = useful_life + 2
 
         return {
-            # --- Existing fields (frontend compatibility) ---
+            # --- Existing fields (frontend backward compatibility) ---
+            # cliff_point_lap is mapped to strategy_useful_life_lap for the
+            # ReferenceLine and strategy optimizer. The frontend will also
+            # get the new separate fields below.
+            "cliff_point_lap": useful_life,
             "drop_off_per_lap_sec": result["drop_off_per_lap_sec"],
-            "cliff_point_lap": recommended,  # Now powered by the smarter engine
-            "suggested_lifespan": f"{suggested_lifespan_lo}-{suggested_lifespan_hi} laps",
+            "suggested_lifespan": f"{suggested_lo}-{suggested_hi} laps",
             "graph_data": {lap: val for lap, val in enumerate(absolute_lap_times, start=1)},
 
-            # --- New diagnostic fields ---
+            # --- Smoothed data for charting ---
             "smoothed_graph_data": {
                 lap: round(val, 3)
                 for lap, val in enumerate(result["smoothed_times"], start=1)
             },
-            "change_point_lap": result["change_point_lap"],
-            "cost_crossover_lap": result["cost_crossover_lap"],
-            "recommended_max_life": recommended,
-            "recommendation_reason": result["recommendation_reason"],
-            "confidence": result["confidence"],
+
+            # --- Performance Cliff (tire physics) ---
+            "performance_cliff_lap": cliff_lap,
+            "cliff_confidence": result["cliff_confidence"],
+            "cliff_reason": result["cliff_reason"],
+
+            # --- Strategy Useful Life (race strategy) ---
+            "strategy_useful_life_lap": useful_life,
+            "strategy_confidence": result["strategy_confidence"],
+            "strategy_reason": result["strategy_reason"],
         }
 
     def simulate(self, driver: str, team: str, track_name: str, race_date: str, race_time: str = None):

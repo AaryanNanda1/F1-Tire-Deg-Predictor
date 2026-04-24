@@ -246,9 +246,15 @@ function App() {
                             {results.degradation_graphs.INTERMEDIATE && <Line type="monotone" dataKey="INTERMEDIATE" stroke="var(--c-inter)" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />}
                             {results.degradation_graphs.WET && <Line type="monotone" dataKey="WET" stroke="var(--c-wet)" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />}
                             
-                            {results.degradation_graphs.SOFT && <ReferenceLine x={results.degradation_graphs.SOFT.cliff_point_lap} stroke="var(--c-soft)" strokeDasharray="5 5" label={{ value: 'CLIFF', fill: 'var(--c-soft)', fontSize: 10, fontWeight: 900, position: 'top'}} />}
-                            {results.degradation_graphs.MEDIUM && <ReferenceLine x={results.degradation_graphs.MEDIUM.cliff_point_lap} stroke="var(--c-medium)" strokeDasharray="5 5" />}
-                            {results.degradation_graphs.HARD && <ReferenceLine x={results.degradation_graphs.HARD.cliff_point_lap} stroke="var(--c-hard)" strokeDasharray="5 5" />}
+                            {/* Performance Cliff markers (tire physics — dashed) */}
+                            {results.degradation_graphs.SOFT?.performance_cliff_lap && <ReferenceLine x={results.degradation_graphs.SOFT.performance_cliff_lap} stroke="var(--c-soft)" strokeDasharray="3 3" strokeWidth={1.5} label={{ value: 'CLIFF', fill: 'var(--c-soft)', fontSize: 9, fontWeight: 900, position: 'top'}} />}
+                            {results.degradation_graphs.MEDIUM?.performance_cliff_lap && <ReferenceLine x={results.degradation_graphs.MEDIUM.performance_cliff_lap} stroke="var(--c-medium)" strokeDasharray="3 3" strokeWidth={1.5} />}
+                            {results.degradation_graphs.HARD?.performance_cliff_lap && <ReferenceLine x={results.degradation_graphs.HARD.performance_cliff_lap} stroke="var(--c-hard)" strokeDasharray="3 3" strokeWidth={1.5} />}
+
+                            {/* Strategy Useful Life markers (pit strategy — bold dashed) */}
+                            {results.degradation_graphs.SOFT?.strategy_useful_life_lap && <ReferenceLine x={results.degradation_graphs.SOFT.strategy_useful_life_lap} stroke="var(--c-soft)" strokeDasharray="8 4" strokeWidth={2.5} label={{ value: 'PIT', fill: 'var(--c-soft)', fontSize: 9, fontWeight: 900, position: 'insideTopRight'}} />}
+                            {results.degradation_graphs.MEDIUM?.strategy_useful_life_lap && <ReferenceLine x={results.degradation_graphs.MEDIUM.strategy_useful_life_lap} stroke="var(--c-medium)" strokeDasharray="8 4" strokeWidth={2.5} />}
+                            {results.degradation_graphs.HARD?.strategy_useful_life_lap && <ReferenceLine x={results.degradation_graphs.HARD.strategy_useful_life_lap} stroke="var(--c-hard)" strokeDasharray="8 4" strokeWidth={2.5} />}
                         </LineChart>
                     </ResponsiveContainer>
                 </div>
@@ -260,8 +266,8 @@ function App() {
                         return (
                             <div className="card" key={comp} style={{borderLeftColor: `var(--c-${comp.toLowerCase()})`}}>
                                 <h4 style={{color: `var(--c-${comp.toLowerCase()})`}}>COMPOUND: {comp}</h4>
-                                <p><strong>CLIFF POINT:</strong> LAP <span className="mono" style={{color: '#fff'}}>{data.cliff_point_lap}</span></p>
-                                <p><strong>GRADIENT:</strong> <span className="mono" style={{color: '#fff'}}>{data.cliff_gradient_lap}</span></p>
+                                <p><strong>PERF. CLIFF:</strong> <span className="mono" style={{color: '#fff'}}>{data.performance_cliff_lap ? `LAP ${data.performance_cliff_lap}` : 'NONE'}</span></p>
+                                <p><strong>USEFUL LIFE:</strong> <span className="mono" style={{color: '#fff'}}>LAP {data.strategy_useful_life_lap}</span></p>
                                 <p><strong>EST. DEGRADATION:</strong> <span className="mono" style={{color: '#fff'}}>+{data.drop_off_per_lap_sec.toFixed(3)}s</span> / lap</p>
                             </div>
                         )

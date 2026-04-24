@@ -53,10 +53,12 @@ class StrategySimulator:
         for idx, (compound, length) in enumerate(zip(compounds, stint_lengths)):
             # If this is the starting tire, carries over its previous age
             effective_age = start_age if idx == 0 else 0.0
-            # Prefer the robust recommended_max_life from tire_life_analysis;
-            # fall back to cliff_point_lap for backward compatibility.
-            cliff_point = self.profiles[compound].get("recommended_max_life",
-                          self.profiles[compound]["cliff_point_lap"])
+            # Use strategy_useful_life_lap for overshoot calculations (race strategy).
+            # This is intentionally different from performance_cliff_lap (tire physics).
+            # Fall back to cliff_point_lap for backward compatibility.
+            cliff_point = self.profiles[compound].get("strategy_useful_life_lap",
+                          self.profiles[compound].get("recommended_max_life",
+                          self.profiles[compound]["cliff_point_lap"]))
             
             for _ in range(length):
                 wear_factor = DIRTY_AIR_WEAR_MULTIPLIER if grid_pos > 1 else 1.0
