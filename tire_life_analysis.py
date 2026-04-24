@@ -32,11 +32,11 @@ DEFAULT_CONFIG = {
     "smoothing_polyorder": 2,         # Polynomial order for Savitzky-Golay
 
     # --- Performance Cliff Detection ---
-    "cliff_slope_threshold": 0.08,    # Min slope (s/lap) to consider as degradation
-    "cliff_curvature_threshold": 0.02,# Min 2nd derivative to confirm acceleration
+    "cliff_slope_threshold": 0.05,    # Min slope (s/lap) to consider as degradation (was 0.08)
+    "cliff_curvature_threshold": 0.005,# Min 2nd derivative to confirm acceleration (was 0.02)
     "cliff_baseline_window": 3,       # Number of early laps to establish baseline
-    "cliff_baseline_delta": 0.5,      # Lap time must be this much worse than baseline (s)
-    "cliff_persistence_laps": 3,      # Consecutive laps the rule must hold
+    "cliff_baseline_delta": 0.3,      # Lap time must be this much worse than baseline (s) (was 0.5)
+    "cliff_persistence_laps": 2,      # Consecutive laps the rule must hold (was 3)
     "cliff_min_lap": 5,               # Earliest lap a cliff can be reported
 
     # --- Strategy Useful Life ---

@@ -43,3 +43,12 @@ MANIFEST
 # Local model artifacts
 models/
 logs/
+backend.log
+cache/
+
+# Node / Frontend
+node_modules/
+dist/
+
+# OS
+.DS_Store
