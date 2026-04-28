@@ -41,10 +41,11 @@ MANIFEST
 *.swp
 
 # Local model artifacts
-models/
-logs/
-backend.log
+models/*
 cache/
+*.log
+*.joblib
+!models/*.joblib
 
 # Node / Frontend
 node_modules/

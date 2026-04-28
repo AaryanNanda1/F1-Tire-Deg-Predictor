@@ -1,4 +1,0 @@
-Traceback (most recent call last):
-  File "/Users/aaryannanda/F1-Tire-Deg-Predictor/train_era_models.py", line 8, in <module>
-    import fastf1
-ModuleNotFoundError: No module named 'fastf1'
