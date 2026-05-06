@@ -289,11 +289,31 @@ class StrategySimulator:
                             remainder = total_laps - i - j - k
                             if min_laps <= remainder <= maxes[3]:
                                 yield [i, j, k, remainder]
+            elif num_stints == 5:
+                # 4 stops (only for wet/chaotic races)
+                s = step * 2 if total_laps < 50 else step * 3
+                hi_0 = min(maxes[0], total_laps - min_laps * 4)
+                for i in range(min_laps, hi_0 + 1, s):
+                    hi_1 = min(maxes[1], total_laps - i - min_laps * 3)
+                    for j in range(min_laps, hi_1 + 1, s):
+                        hi_2 = min(maxes[2], total_laps - i - j - min_laps * 2)
+                        for k in range(min_laps, hi_2 + 1, s):
+                            hi_3 = min(maxes[3], total_laps - i - j - k - min_laps)
+                            for l in range(min_laps, hi_3 + 1, s):
+                                remainder = total_laps - i - j - k - l
+                                if min_laps <= remainder <= maxes[4]:
+                                    yield [i, j, k, l, remainder]
         
         # Determine stop range
         # If hasn't pitted yet, must pit at least once (F1 rule)
         min_stops = 0 if has_pitted else 1
-        max_stops = 3
+        
+        # F1 rarely sees 4 stops unless conditions are chaotic (wet, SCs, mid-race pivots).
+        # We cap pre-race dry strategies at 3 stops maximum to avoid computing impossible edge cases.
+        if current_lap == 0 and weather_condition == "dry":
+            max_stops = 3
+        else:
+            max_stops = 4
         
         for stops in range(min_stops, max_stops + 1):
             if stops == 0:
