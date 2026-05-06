@@ -122,10 +122,27 @@ h1, h2, h3, h4 {
 }
 
 /* Form Styles */
+.form-section-label {
+  font-size: 0.65rem;
+  font-weight: 900;
+  color: var(--f1-red);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin-top: 28px;
+  margin-bottom: 4px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--surface-border);
+}
+
+.form-section-label:first-of-type {
+  margin-top: 0;
+}
+
 .form-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 24px;
+  margin-top: 16px;
 }
 
 .form-group {
@@ -337,8 +354,16 @@ select:focus, input:focus {
 .stint-segment[data-compound="WET"] { background: var(--c-wet); }
 
 .strat-row.best { border-color: #00d200; }
-.strat-row.safe { border-color: #fff; }
-.strat-row.aggressive { border-color: #ff9000; }
+.strat-row.safe { border-color: #3b82f6; }
+.strat-row.risky { border-color: #ff9000; }
+
+.strat-philosophy {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-tertiary);
+  line-height: 1.5;
+  margin-top: -4px;
+}
 
 .strat-title {
   display: flex;

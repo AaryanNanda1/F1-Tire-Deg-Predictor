@@ -39,7 +39,7 @@ const StrategyBar = ({ strategy, totalLaps }) => {
 };
 
 function App() {
-  const [options, setOptions] = useState({ tracks: [], teams: [], drivers: [], years: [] });
+  const [options, setOptions] = useState({ tracks: [], teams: [], drivers: [], years: [], compounds: [] });
   const [form, setForm] = useState({
     year: 2026,
     track_name: 'Circuit Zandvoort',
@@ -48,9 +48,16 @@ function App() {
     grid_pos: 1,
     current_lap: 0,
     laps_to_complete: 72,
-    sc_active: false,
-    sc_lap: 10,
-    sc_duration: 3
+    // New: Current tire state
+    current_compound: '',
+    laps_on_current_tire: 0,
+    // New: Safety car context
+    sc_happened_on_tire: false,
+    sc_laps_on_tire: 0,
+    sc_currently_out: false,
+    // New: Pit history & position
+    has_pitted: false,
+    track_position: 1,
   });
 
   const [loading, setLoading] = useState(false);
@@ -69,8 +76,7 @@ function App() {
     
     const payload = {
         ...form,
-        sc_lap: form.sc_active ? form.sc_lap : null,
-        sc_duration: form.sc_active ? form.sc_duration : null
+        current_compound: form.current_compound || null,
     };
 
     try {
@@ -130,6 +136,9 @@ function App() {
     return formatData;
   };
 
+  // Whether we're mid-race (affects which fields are relevant)
+  const isMidRace = form.current_lap > 0;
+
   return (
     <div className="dashboard-container">
       <header className="header">
@@ -147,62 +156,102 @@ function App() {
             </div>
         )}
         
+        {/* === SECTION 1: Race Setup === */}
+        <div className="form-section-label">Race Setup</div>
         <div className="form-row">
             <div className="form-group">
                 <label>YEAR</label>
-                <select value={form.year} onChange={e => setForm({...form, year: parseInt(e.target.value)})}>
+                <select id="select-year" value={form.year} onChange={e => setForm({...form, year: parseInt(e.target.value)})}>
                     {options.years.length === 0 ? <option>Loading...</option> : options.years.map(y => <option key={y} value={y}>{y}</option>)}
                 </select>
             </div>
             <div className="form-group">
                 <label>TRACK</label>
-                <select value={form.track_name} onChange={e => setForm({...form, track_name: e.target.value})}>
+                <select id="select-track" value={form.track_name} onChange={e => setForm({...form, track_name: e.target.value})}>
                     {options.tracks.length === 0 ? <option>Loading...</option> : options.tracks.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
             </div>
             <div className="form-group">
                 <label>TEAM</label>
-                <select value={form.team} onChange={e => setForm({...form, team: e.target.value})}>
+                <select id="select-team" value={form.team} onChange={e => setForm({...form, team: e.target.value})}>
                     {options.teams.length === 0 ? <option>Loading...</option> : options.teams.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
             </div>
             <div className="form-group">
                 <label>DRIVER</label>
-                <select value={form.driver} onChange={e => setForm({...form, driver: e.target.value})}>
+                <select id="select-driver" value={form.driver} onChange={e => setForm({...form, driver: e.target.value})}>
                     {options.drivers.length === 0 ? <option>Loading...</option> : options.drivers.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
             </div>
         </div>
         
-        <div className="form-row mt-3" style={{marginTop: '24px'}}>
+        <div className="form-row" style={{marginTop: '16px'}}>
             <div className="form-group">
-                <label>CURRENT LAP</label>
-                <input type="number" min="0" value={form.current_lap} onChange={e => setForm({...form, current_lap: parseInt(e.target.value)})} />
+                <label>TOTAL RACE LAPS</label>
+                <input id="input-total-laps" type="number" min="1" value={form.laps_to_complete} onChange={e => setForm({...form, laps_to_complete: parseInt(e.target.value) || 1})} />
             </div>
             <div className="form-group">
                 <label>GRID POSITION</label>
-                <input type="number" min="1" max="20" value={form.grid_pos} onChange={e => setForm({...form, grid_pos: parseInt(e.target.value)})} />
+                <input id="input-grid-pos" type="number" min="1" max="20" value={form.grid_pos} onChange={e => setForm({...form, grid_pos: parseInt(e.target.value) || 1})} />
+            </div>
+        </div>
+
+        {/* === SECTION 2: Race State (Mid-race context) === */}
+        <div className="form-section-label" style={{marginTop: '32px'}}>Race State</div>
+        <div className="form-row">
+            <div className="form-group">
+                <label>CURRENT LAP</label>
+                <input id="input-current-lap" type="number" min="0" value={form.current_lap} onChange={e => setForm({...form, current_lap: parseInt(e.target.value) || 0})} />
+            </div>
+            <div className="form-group">
+                <label>CURRENT TIRE</label>
+                <select id="select-compound" value={form.current_compound} onChange={e => setForm({...form, current_compound: e.target.value})}>
+                    <option value="">— Not Set (Pre-Race) —</option>
+                    {(options.compounds || ["SOFT", "MEDIUM", "HARD", "INTERMEDIATE", "WET"]).map(c => (
+                        <option key={c} value={c}>{c}</option>
+                    ))}
+                </select>
+            </div>
+            <div className="form-group">
+                <label>LAPS ON CURRENT TIRE</label>
+                <input id="input-tire-age" type="number" min="0" value={form.laps_on_current_tire} onChange={e => setForm({...form, laps_on_current_tire: parseInt(e.target.value) || 0})} />
+            </div>
+            <div className="form-group">
+                <label>TRACK POSITION</label>
+                <input id="input-track-pos" type="number" min="1" max="20" value={form.track_position} onChange={e => setForm({...form, track_position: parseInt(e.target.value) || 1})} />
+            </div>
+        </div>
+
+        <div className="form-row" style={{marginTop: '16px'}}>
+            <div className="form-group sc-toggle">
+                <label>ALREADY PITTED</label>
+                <div onClick={() => setForm({...form, has_pitted: !form.has_pitted})}>
+                   <input type="checkbox" checked={form.has_pitted} readOnly />
+                   <span style={{marginLeft: '10px', fontSize: '0.8rem', fontWeight: 700}}>{form.has_pitted ? 'YES' : 'NO'}</span>
+                </div>
             </div>
             <div className="form-group sc-toggle">
-                <label>SAFETY CAR</label>
-                <div onClick={() => setForm({...form, sc_active: !form.sc_active})}>
-                   <input type="checkbox" checked={form.sc_active} readOnly />
-                   <span style={{marginLeft: '10px', fontSize: '0.8rem', fontWeight: 700}}>ACTIVE DEPLOYMENT</span>
+                <label>SC ON CURRENT STINT</label>
+                <div onClick={() => setForm({...form, sc_happened_on_tire: !form.sc_happened_on_tire})}>
+                   <input type="checkbox" checked={form.sc_happened_on_tire} readOnly />
+                   <span style={{marginLeft: '10px', fontSize: '0.8rem', fontWeight: 700}}>SC DEPLOYED ON STINT</span>
                 </div>
             </div>
-            {form.sc_active && (
-                <>
+            {form.sc_happened_on_tire && (
                 <div className="form-group">
-                    <label>DEPLOY LAP</label>
-                    <input type="number" value={form.sc_lap} onChange={e => setForm({...form, sc_lap: parseInt(e.target.value)})} />
+                    <label>SC LAPS ON TIRE</label>
+                    <input id="input-sc-laps" type="number" min="0" value={form.sc_laps_on_tire} onChange={e => setForm({...form, sc_laps_on_tire: parseInt(e.target.value) || 0})} />
                 </div>
-                <div className="form-group">
-                    <label>DURATION</label>
-                    <input type="number" value={form.sc_duration} onChange={e => setForm({...form, sc_duration: parseInt(e.target.value)})} />
-                </div>
-                </>
             )}
+            <div className="form-group sc-toggle">
+                <label>SAFETY CAR</label>
+                <div onClick={() => setForm({...form, sc_currently_out: !form.sc_currently_out})}>
+                   <input type="checkbox" checked={form.sc_currently_out} readOnly />
+                   <span style={{marginLeft: '10px', fontSize: '0.8rem', fontWeight: 700}}>CURRENTLY ACTIVE</span>
+                </div>
+            </div>
         </div>
+        
         <button type="submit" className="btn-simulate" disabled={loading}>
             {loading ? 'CALCULATING OPTIMAL PATH...' : 'RUN STRATEGY SIMULATION'}
         </button>
@@ -214,6 +263,11 @@ function App() {
                 <h3>TIRE DEGRADATION PROFILE</h3>
                 <div className="mono" style={{fontSize: '0.8rem', color: 'var(--text-secondary)'}}>
                     SYNCED: {new Date().toLocaleTimeString()}
+                    {results.weather_condition && (
+                        <span style={{marginLeft: '16px', color: results.weather_condition === 'dry' ? 'var(--text-tertiary)' : 'var(--c-wet)'}}>
+                            ● {results.weather_condition.toUpperCase().replace('_', ' ')}
+                        </span>
+                    )}
                 </div>
             </div>
 
@@ -284,26 +338,29 @@ function App() {
                             <h4>OPTIMAL STRATEGY</h4>
                             <span className="mono">{(results.strategies.best_strategy?.total_optimal_delta || 0).toFixed(1)}s DELTA</span>
                         </div>
+                        <div className="strat-philosophy">Mathematically fastest race time based on degradation curves.</div>
                         <StrategyBar strategy={results.strategies.best_strategy} totalLaps={results.strategies.best_strategy?.stints_data?.reduce((a, b) => a + b.laps, 0) || 1} />
                         <div className="strat-sequence" style={{fontSize: '0.8rem', opacity: 0.6}}>{results.strategies.best_strategy?.sequence}</div>
                     </div>
 
                     <div className="strat-row safe">
                         <div className="strat-title">
-                            <h4>CONSERVATIVE</h4>
-                            <span className="mono">{(results.strategies.safer_alternative?.total_optimal_delta || 0).toFixed(1)}s DELTA</span>
+                            <h4>SAFE</h4>
+                            <span className="mono">{(results.strategies.safe_strategy?.total_optimal_delta || 0).toFixed(1)}s DELTA</span>
                         </div>
-                        <StrategyBar strategy={results.strategies.safer_alternative} totalLaps={results.strategies.safer_alternative?.stints_data?.reduce((a, b) => a + b.laps, 0) || 1} />
-                        <div className="strat-sequence" style={{fontSize: '0.8rem', opacity: 0.6}}>{results.strategies.safer_alternative?.sequence}</div>
+                        <div className="strat-philosophy">Avoids tire cliffs · Prefers wet tires in rain · Low risk of tire failure.</div>
+                        <StrategyBar strategy={results.strategies.safe_strategy} totalLaps={results.strategies.safe_strategy?.stints_data?.reduce((a, b) => a + b.laps, 0) || 1} />
+                        <div className="strat-sequence" style={{fontSize: '0.8rem', opacity: 0.6}}>{results.strategies.safe_strategy?.sequence}</div>
                     </div>
 
-                    <div className="strat-row aggressive">
+                    <div className="strat-row risky">
                         <div className="strat-title">
-                            <h4>AGGRESSIVE</h4>
-                            <span className="mono">{(results.strategies.aggressive_alternative?.total_optimal_delta || 0).toFixed(1)}s DELTA</span>
+                            <h4>RISKY</h4>
+                            <span className="mono">{(results.strategies.risky_strategy?.total_optimal_delta || 0).toFixed(1)}s DELTA</span>
                         </div>
-                        <StrategyBar strategy={results.strategies.aggressive_alternative} totalLaps={results.strategies.aggressive_alternative?.stints_data?.reduce((a, b) => a + b.laps, 0) || 1} />
-                        <div className="strat-sequence" style={{fontSize: '0.8rem', opacity: 0.6}}>{results.strategies.aggressive_alternative?.sequence}</div>
+                        <div className="strat-philosophy">Extends stints past cliff · Gambles on drys in light rain · Pits under SC for faster tires.</div>
+                        <StrategyBar strategy={results.strategies.risky_strategy} totalLaps={results.strategies.risky_strategy?.stints_data?.reduce((a, b) => a + b.laps, 0) || 1} />
+                        <div className="strat-sequence" style={{fontSize: '0.8rem', opacity: 0.6}}>{results.strategies.risky_strategy?.sequence}</div>
                     </div>
                 </div>
             </div>
