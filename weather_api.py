@@ -161,10 +161,19 @@ def get_track_weather(track_name: str, race_date: str, race_time: str = None) ->
                 
                 # Extract hourly data for the SIM engine
                 for hr in range(start_hour, end_hour + 1):
+                    hr_air = temps[hr] if temps[hr] is not None else base_temp
+                    hr_precip = precips[hr] if precips[hr] is not None else 0.0
+                    hr_is_raining = hr_precip > 1.0
+                    if is_night_race:
+                        hr_track = hr_air + (1.0 if hr_is_raining else 3.0)
+                    else:
+                        hr_track = hr_air + (5.0 if hr_is_raining else 12.0)
+                    
                     hourly_forecasts.append({
                         "hour": hr,
-                        "air_temp": round(temps[hr] if temps[hr] is not None else base_temp, 1),
-                        "rainfall_mm": round(precips[hr] if precips[hr] is not None else 0.0, 2)
+                        "air_temp": round(hr_air, 1),
+                        "track_temp": round(hr_track, 1),
+                        "rainfall_mm": round(hr_precip, 2)
                     })
                     
             except (ValueError, IndexError):

@@ -38,6 +38,42 @@ const StrategyBar = ({ strategy, totalLaps }) => {
   );
 };
 
+const WeatherForecast = ({ forecast }) => {
+  if (!forecast) return null;
+  const { air_temp, track_temp, humidity, rainfall, wind_speed, synopsis, hourly_forecasts } = forecast;
+
+  return (
+    <div className="panel weather-panel" style={{ marginBottom: '24px' }}>
+        <h3 style={{marginBottom: '16px'}}>RACE WEATHER CONDITIONS</h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+            <div>
+                <p style={{ margin: 0, fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>{synopsis.toUpperCase()}</p>
+                <p className="mono" style={{ margin: '4px 0 0 0', color: 'var(--text-secondary)' }}>
+                    AIR: {air_temp}°C | TRACK: {track_temp}°C | HUMIDITY: {humidity}% | WIND: {wind_speed}km/h
+                </p>
+            </div>
+            {rainfall && <div className="mono" style={{ color: 'var(--c-wet)', fontWeight: 'bold' }}>RAIN EXPECTED</div>}
+        </div>
+        {hourly_forecasts && hourly_forecasts.length > 0 && (
+            <div style={{ display: 'flex', gap: '12px' }}>
+                {hourly_forecasts.map((hf, i) => (
+                    <div key={i} className="card mono" style={{ flex: 1, textAlign: 'center', padding: '12px', borderLeftColor: hf.rainfall_mm > 0 ? 'var(--c-wet)' : 'var(--text-tertiary)' }}>
+                        <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '8px' }}>{hf.hour}:00</div>
+                        <div style={{ fontSize: '1.4rem', fontWeight: 'bold', color: hf.rainfall_mm > 0 ? 'var(--c-wet)' : 'var(--text-primary)' }}>
+                            {hf.rainfall_mm > 0 ? `${hf.rainfall_mm}mm` : '0.0mm'}
+                        </div>
+                        <div style={{ fontSize: '0.7rem', color: hf.rainfall_mm > 0 ? 'var(--c-wet)' : 'var(--text-secondary)', marginBottom: '8px', letterSpacing: '1px' }}>PRECIPITATION</div>
+                        <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>{hf.track_temp || hf.air_temp}°C <span style={{fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 'normal'}}>TRACK</span></div>
+                        <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '2px' }}>{hf.air_temp}°C <span style={{fontSize: '0.7rem', fontWeight: 'normal'}}>AIR</span></div>
+                    </div>
+                ))}
+            </div>
+        )}
+    </div>
+  );
+};
+
+
 function App() {
   const [options, setOptions] = useState({ tracks: [], teams: [], drivers: [], years: [], compounds: [] });
   const [form, setForm] = useState({
@@ -328,6 +364,8 @@ function App() {
                     })}
                 </div>
             </div>
+
+            <WeatherForecast forecast={results.weather_forecast} />
 
             <div className="panel strategy-panel">
                 <h3 style={{marginBottom: '24px'}}>STRATEGY RECOMMENDATIONS</h3>
