@@ -112,6 +112,12 @@ function App() {
     
     const payload = {
         ...form,
+        grid_pos: parseInt(form.grid_pos) || 1,
+        current_lap: parseInt(form.current_lap) || 0,
+        laps_to_complete: parseInt(form.laps_to_complete) || 72,
+        laps_on_current_tire: parseInt(form.laps_on_current_tire) || 0,
+        sc_laps_on_tire: parseInt(form.sc_laps_on_tire) || 0,
+        track_position: parseInt(form.track_position) || 1,
         current_compound: form.current_compound || null,
     };
 
@@ -175,6 +181,38 @@ function App() {
   // Whether we're mid-race (affects which fields are relevant)
   const isMidRace = form.current_lap > 0;
 
+  useEffect(() => {
+    if (options.driver_roster && options.driver_roster[form.year]) {
+        const validTeamsForYear = Object.keys(options.driver_roster[form.year]);
+        
+        // If current team is no longer valid for this year, clear both team and driver
+        if (form.team && !validTeamsForYear.includes(form.team)) {
+            setForm(prev => ({ ...prev, team: '', driver: '' }));
+            return;
+        }
+
+        // If team is valid, verify driver
+        if (form.team && options.driver_roster[form.year][form.team]) {
+            const teamRoster = options.driver_roster[form.year][form.team];
+            if (teamRoster.length > 0 && !teamRoster.includes(form.driver)) {
+                setForm(prev => ({ ...prev, driver: teamRoster[0] }));
+            }
+        }
+    }
+  }, [form.year, form.team, options.driver_roster]);
+
+  let validTeams = options.teams;
+  if (options.driver_roster && options.driver_roster[form.year]) {
+      validTeams = Object.keys(options.driver_roster[form.year]);
+  }
+
+  let validDrivers = options.drivers;
+  if (form.team && options.driver_roster && options.driver_roster[form.year] && options.driver_roster[form.year][form.team]) {
+      validDrivers = options.driver_roster[form.year][form.team];
+  } else if (!form.team) {
+      validDrivers = []; // Clear drivers if no team selected
+  }
+
   return (
     <div className="dashboard-container">
       <header className="header">
@@ -203,20 +241,28 @@ function App() {
             </div>
             <div className="form-group">
                 <label>TRACK</label>
-                <select id="select-track" value={form.track_name} onChange={e => setForm({...form, track_name: e.target.value})}>
+                <select id="select-track" value={form.track_name} onChange={e => {
+                    const newTrack = e.target.value;
+                    let defaultLaps = form.laps_to_complete;
+                    if (options.track_laps && options.track_laps[newTrack]) {
+                        defaultLaps = options.track_laps[newTrack];
+                    }
+                    setForm({...form, track_name: newTrack, laps_to_complete: defaultLaps});
+                }}>
                     {options.tracks.length === 0 ? <option>Loading...</option> : options.tracks.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
             </div>
             <div className="form-group">
                 <label>TEAM</label>
                 <select id="select-team" value={form.team} onChange={e => setForm({...form, team: e.target.value})}>
-                    {options.teams.length === 0 ? <option>Loading...</option> : options.teams.map(t => <option key={t} value={t}>{t}</option>)}
+                    <option value="">— Select Team —</option>
+                    {validTeams.length === 0 ? <option disabled>Loading...</option> : validTeams.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
             </div>
             <div className="form-group">
                 <label>DRIVER</label>
-                <select id="select-driver" value={form.driver} onChange={e => setForm({...form, driver: e.target.value})}>
-                    {options.drivers.length === 0 ? <option>Loading...</option> : options.drivers.map(d => <option key={d} value={d}>{d}</option>)}
+                <select id="select-driver" value={form.driver} onChange={e => setForm({...form, driver: e.target.value})} disabled={!form.team}>
+                    {!form.team ? <option value="">— Select Team First —</option> : validDrivers.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
             </div>
         </div>
@@ -224,11 +270,23 @@ function App() {
         <div className="form-row" style={{marginTop: '16px'}}>
             <div className="form-group">
                 <label>TOTAL RACE LAPS</label>
-                <input id="input-total-laps" type="number" min="1" value={form.laps_to_complete} onChange={e => setForm({...form, laps_to_complete: parseInt(e.target.value) || 1})} />
+                <input 
+                    id="input-total-laps" 
+                    type="text" 
+                    inputMode="numeric"
+                    value={form.laps_to_complete} 
+                    onChange={e => setForm({...form, laps_to_complete: e.target.value.replace(/\D/g, '')})} 
+                />
             </div>
             <div className="form-group">
                 <label>GRID POSITION</label>
-                <input id="input-grid-pos" type="number" min="1" max="20" value={form.grid_pos} onChange={e => setForm({...form, grid_pos: parseInt(e.target.value) || 1})} />
+                <input 
+                    id="input-grid-pos" 
+                    type="text" 
+                    inputMode="numeric"
+                    value={form.grid_pos} 
+                    onChange={e => setForm({...form, grid_pos: e.target.value.replace(/\D/g, '')})} 
+                />
             </div>
         </div>
 
@@ -237,7 +295,13 @@ function App() {
         <div className="form-row">
             <div className="form-group">
                 <label>CURRENT LAP</label>
-                <input id="input-current-lap" type="number" min="0" value={form.current_lap} onChange={e => setForm({...form, current_lap: parseInt(e.target.value) || 0})} />
+                <input 
+                    id="input-current-lap" 
+                    type="text" 
+                    inputMode="numeric"
+                    value={form.current_lap} 
+                    onChange={e => setForm({...form, current_lap: e.target.value.replace(/\D/g, '')})} 
+                />
             </div>
             <div className="form-group">
                 <label>CURRENT TIRE</label>
@@ -250,11 +314,23 @@ function App() {
             </div>
             <div className="form-group">
                 <label>LAPS ON CURRENT TIRE</label>
-                <input id="input-tire-age" type="number" min="0" value={form.laps_on_current_tire} onChange={e => setForm({...form, laps_on_current_tire: parseInt(e.target.value) || 0})} />
+                <input 
+                    id="input-tire-age" 
+                    type="text" 
+                    inputMode="numeric"
+                    value={form.laps_on_current_tire} 
+                    onChange={e => setForm({...form, laps_on_current_tire: e.target.value.replace(/\D/g, '')})} 
+                />
             </div>
             <div className="form-group">
                 <label>TRACK POSITION</label>
-                <input id="input-track-pos" type="number" min="1" max="20" value={form.track_position} onChange={e => setForm({...form, track_position: parseInt(e.target.value) || 1})} />
+                <input 
+                    id="input-track-pos" 
+                    type="text" 
+                    inputMode="numeric"
+                    value={form.track_position} 
+                    onChange={e => setForm({...form, track_position: e.target.value.replace(/\D/g, '')})} 
+                />
             </div>
         </div>
 
@@ -276,7 +352,13 @@ function App() {
             {form.sc_happened_on_tire && (
                 <div className="form-group">
                     <label>SC LAPS ON TIRE</label>
-                    <input id="input-sc-laps" type="number" min="0" value={form.sc_laps_on_tire} onChange={e => setForm({...form, sc_laps_on_tire: parseInt(e.target.value) || 0})} />
+                    <input 
+                        id="input-sc-laps" 
+                        type="text" 
+                        inputMode="numeric"
+                        value={form.sc_laps_on_tire} 
+                        onChange={e => setForm({...form, sc_laps_on_tire: e.target.value.replace(/\D/g, '')})} 
+                    />
                 </div>
             )}
             <div className="form-group sc-toggle">

@@ -1,7 +1,8 @@
 from flask import Flask, request, jsonify
 import sys
 import traceback
-from mappings import TRACK_PIT_LOSS, TEAM_MAPPING
+from mappings import TRACK_PIT_LOSS, TEAM_MAPPING, TRACK_CONFIG, get_roster_map
+import math
 from degradation_engine import TireDegradationSimulator
 from sim_engine import StrategySimulator
 
@@ -10,14 +11,22 @@ app = Flask(__name__)
 @app.route('/api/options', methods=['GET'])
 def get_options():
     # Provide the dynamic options for the UI dropdowns
-    drivers = ["VER", "NOR", "HAM", "RUS", "LEC", "SAI", "PIA", "PER", "ALO", "STR", "TSU", "RIC", "HUL", "MAG", "ALB", "SAR", "BOT", "ZHO", "GAS", "OCO"]
+    drivers = ["VER", "PER", "LEC", "SAI", "RUS", "HAM", "NOR", "RIC", "OCO", "ALO", "BOT", "ZHO", "VET", "STR", "HUL", "MAG", "MSC", "GAS", "TSU", "ALB", "LAT", "DEV", "PIA", "SAR", "LAW", "DOO", "BEA", "COL", "ANT", "BOR", "HAD", "LIN"]
     
+    track_laps = {}
+    for track, info in TRACK_CONFIG.items():
+        length = info.get("length_km", 5.0)
+        target_km = 260.0 if "Monaco" in track else 305.0
+        track_laps[track] = math.ceil(target_km / length)
+
     return jsonify({
         "tracks": list(TRACK_PIT_LOSS.keys()),
         "teams": list(set(TEAM_MAPPING.values())),
         "drivers": drivers,
         "years": [2022, 2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030],
-        "compounds": ["SOFT", "MEDIUM", "HARD", "INTERMEDIATE", "WET"]
+        "compounds": ["SOFT", "MEDIUM", "HARD", "INTERMEDIATE", "WET"],
+        "track_laps": track_laps,
+        "driver_roster": get_roster_map()
     })
 
 # Singleton engines to avoid reloading models on every request

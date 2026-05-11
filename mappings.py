@@ -165,3 +165,96 @@ TRACK_PIT_LOSS = {
     'Shanghai International Circuit': 23.0,
     'Autodromo Internazionale del Mugello': 25.0
 }
+
+# Base driver roster for 2026 onwards
+BASE_ROSTER = {
+    "Red Bull Racing": ["VER", "HAD"],
+    "Ferrari": ["LEC", "HAM"],
+    "Mercedes": ["RUS", "ANT"],
+    "McLaren": ["NOR", "PIA"],
+    "Alpine": ["GAS", "COL"],
+    "Audi": ["HUL", "BOR"],
+    "Aston Martin": ["ALO", "STR"],
+    "Haas": ["BEA", "OCO"],
+    "Racing Bulls": ["LAW", "LIN"],
+    "Williams": ["ALB", "SAI"],
+    "Cadillac": ["BOT", "PER"],
+}
+
+# Overrides for specific years
+ROSTER_OVERRIDES = {
+    2022: {
+        "Red Bull Racing": ["VER", "PER"],
+        "Ferrari": ["LEC", "SAI"],
+        "Mercedes": ["RUS", "HAM"],
+        "McLaren": ["NOR", "RIC"],
+        "Alpine": ["OCO", "ALO"],
+        "Alfa Romeo": ["BOT", "ZHO"],
+        "Aston Martin": ["VET", "STR", "HUL"],
+        "Haas": ["MAG", "MSC"],
+        "AlphaTauri": ["GAS", "TSU"],
+        "Williams": ["ALB", "LAT", "DEV"],
+    },
+    2023: {
+        "Red Bull Racing": ["VER", "PER"],
+        "Ferrari": ["LEC", "SAI"],
+        "Mercedes": ["RUS", "HAM"],
+        "McLaren": ["NOR", "PIA"],
+        "Alpine": ["GAS", "OCO"],
+        "Alfa Romeo": ["BOT", "ZHO"],
+        "Aston Martin": ["ALO", "STR"],
+        "Haas": ["HUL", "MAG"],
+        "AlphaTauri": ["TSU", "RIC", "LAW", "DEV"],
+        "Williams": ["ALB", "SAR"],
+    },
+    2024: {
+        "Red Bull Racing": ["VER", "PER"],
+        "Ferrari": ["LEC", "SAI"],
+        "Mercedes": ["RUS", "HAM"],
+        "McLaren": ["NOR", "PIA"],
+        "Alpine": ["GAS", "OCO", "DOO"],
+        "Kick Sauber": ["BOT", "ZHO"],
+        "Aston Martin": ["ALO", "STR"],
+        "Haas": ["HUL", "MAG", "BEA"],
+        "Racing Bulls": ["TSU", "RIC", "LAW"],
+        "Williams": ["ALB", "SAR", "COL"],
+    },
+    2025: {
+        "Red Bull Racing": ["VER", "TSU"],
+        "Ferrari": ["LEC", "HAM"],
+        "Mercedes": ["RUS", "ANT"],
+        "McLaren": ["NOR", "PIA"],
+        "Alpine": ["GAS", "DOO", "COL"],
+        "Kick Sauber": ["HUL", "BOR"],
+        "Aston Martin": ["ALO", "STR"],
+        "Haas": ["BEA", "OCO"],
+        "Racing Bulls": ["LAW", "HAD"],
+        "Williams": ["ALB", "SAI"],
+    },
+    2026: {
+        "Red Bull Racing": ["VER", "HAD"],
+        "Ferrari": ["LEC", "HAM"],
+        "Mercedes": ["RUS", "ANT"],
+        "McLaren": ["NOR", "PIA"],
+        "Alpine": ["GAS", "COL"],
+        "Audi": ["HUL", "BOR"],
+        "Aston Martin": ["ALO", "STR"],
+        "Haas": ["BEA", "OCO"],
+        "Racing Bulls": ["LAW", "LIN"],
+        "Williams": ["ALB", "SAI"],
+        "Cadillac": ["BOT", "PER"],
+    }
+}
+
+def get_roster_map():
+    """Generates a full mapping of year -> team -> [drivers] for all supported years."""
+    full_map = {}
+    
+    for year in range(2022, 2031):
+        if year in ROSTER_OVERRIDES:
+            full_map[year] = ROSTER_OVERRIDES[year]
+        else:
+            # Fallback to 2026 roster for future years
+            full_map[year] = ROSTER_OVERRIDES[2026]
+            
+    return full_map
