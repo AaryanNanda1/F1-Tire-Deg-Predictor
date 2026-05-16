@@ -467,6 +467,48 @@ input[type=number] {
   }
 }
 
+/* Track Metrics & Stress */
+.track-metrics-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.track-stress-metrics {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 24px;
+  border-top: 1px solid var(--surface-border);
+}
+
+.stress-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stress-item .label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
+}
+
+.stress-item .bar-bg {
+  height: 6px;
+  background: var(--surface-raised);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.stress-item .bar-fill {
+  height: 100%;
+  background: var(--f1-red);
+  box-shadow: 0 0 10px var(--f1-red-muted);
+  transition: width 1s ease-out;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .header {

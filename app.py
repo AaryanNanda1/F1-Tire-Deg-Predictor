@@ -134,7 +134,8 @@ def simulate_strategy():
             "degradation_graphs": out_degradation["compounds"],
             "strategies": strategies,
             "weather_condition": weather_condition,
-            "weather_forecast": weather_data
+            "weather_forecast": weather_data,
+            "input_context": out_degradation["input_context"]
         })
 
     except Exception as e:

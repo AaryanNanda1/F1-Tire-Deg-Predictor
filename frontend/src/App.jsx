@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { 
+    LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine,
+    Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis
+} from 'recharts';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -69,6 +72,56 @@ const WeatherForecast = ({ forecast }) => {
                 ))}
             </div>
         )}
+    </div>
+  );
+};
+
+const TrackMetricsChart = ({ features }) => {
+  if (!features) return null;
+  
+  const data = [
+    { subject: 'TRACTION', A: (features.traction || 0.5) * 100 },
+    { subject: 'LOAD (HS)', A: (features.high_speed_load || 0.5) * 100 },
+    { subject: 'ABRASIVE', A: (features.abrasiveness || 0.5) * 100 },
+    { subject: 'ROUGHNESS', A: (features.surface_roughness || 0.5) * 100 },
+    { subject: 'BRAKING', A: (features.braking_severity || 0.5) * 100 },
+    { subject: 'LATERAL', A: (features.lateral_load || 0.5) * 100 },
+    { subject: 'TEMP SENS', A: (features.track_temp_sensitivity || 0.5) * 100 },
+  ];
+
+  return (
+    <div className="panel track-metrics-panel" style={{ flex: 1, minWidth: '350px' }}>
+      <h3 style={{ marginBottom: '20px' }}>CIRCUIT CHARACTERISTICS</h3>
+      <div style={{ width: '100%', height: '300px' }}>
+        <ResponsiveContainer>
+          <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data}>
+            <PolarGrid stroke="var(--surface-border)" />
+            <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--text-secondary)', fontSize: 9, fontWeight: 700 }} />
+            <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+            <Radar
+              name="Metrics"
+              dataKey="A"
+              stroke="var(--f1-red)"
+              fill="var(--f1-red)"
+              fillOpacity={0.6}
+            />
+          </RadarChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="track-stress-metrics">
+          <div className="stress-item">
+              <span className="label">THERMAL STRESS</span>
+              <div className="bar-bg"><div className="bar-fill" style={{ width: `${(features.thermal_stress || 0.5) * 100}%` }}></div></div>
+          </div>
+          <div className="stress-item">
+              <span className="label">SURFACE WEAR</span>
+              <div className="bar-bg"><div className="bar-fill" style={{ width: `${(features.surface_wear || 0.5) * 100}%` }}></div></div>
+          </div>
+          <div className="stress-item">
+              <span className="label">ENERGY LOAD</span>
+              <div className="bar-bg"><div className="bar-fill" style={{ width: `${(features.energy_load || 0.5) * 100}%` }}></div></div>
+          </div>
+      </div>
     </div>
   );
 };
@@ -399,7 +452,9 @@ function App() {
                 </div>
             </div>
 
-            <div className="chart-container">
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px', marginBottom: '32px', alignItems: 'stretch' }}>
+                <div style={{ flex: 3, minWidth: '600px' }}>
+                    <div className="chart-container" style={{ height: '100%', marginBottom: 0 }}>
                 <div style={{width: '100%', height: '450px'}}>
                     <ResponsiveContainer>
                         <LineChart data={generateChartData()} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
@@ -456,6 +511,10 @@ function App() {
                     })}
                 </div>
             </div>
+        </div>
+
+        <TrackMetricsChart features={results.input_context?.track_features} />
+    </div>
 
             <WeatherForecast forecast={results.weather_forecast} />
 

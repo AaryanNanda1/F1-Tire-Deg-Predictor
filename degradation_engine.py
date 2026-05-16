@@ -264,6 +264,7 @@ class TireDegradationSimulator:
                 "year": self.year,
                 "track": track_name,
                 "track_category": track_type,
+                "track_features": track_features,
                 "race_time": race_time,
                 "weather": weather_data
             },

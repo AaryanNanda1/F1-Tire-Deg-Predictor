@@ -3,31 +3,34 @@ import datetime
 
 # Hardcoded coordinates for the tracks defined in mappings.py
 TRACK_COORDINATES = {
-    'Bahrain International Circuit': {'lat': 26.0325, 'lon': 50.5106},
-    'Jeddah Corniche Circuit': {'lat': 21.6319, 'lon': 39.1044},
-    'Albert Park Grand Prix Circuit': {'lat': -37.8497, 'lon': 144.968},
-    'Baku City Circuit': {'lat': 40.3725, 'lon': 49.8533},
-    'Miami International Autodrome': {'lat': 25.9581, 'lon': -80.2389},
-    'Circuit de Monaco': {'lat': 43.7347, 'lon': 7.4206},
-    'Circuit de Barcelona-Catalunya': {'lat': 41.57, 'lon': 2.2611},
-    'Circuit Gilles Villeneuve': {'lat': 45.5000, 'lon': -73.5228},
-    'Red Bull Ring': {'lat': 47.2197, 'lon': 14.7647},
-    'Silverstone Circuit': {'lat': 52.0786, 'lon': -1.0169},
-    'Hungaroring': {'lat': 47.5822, 'lon': 19.2511},
-    'Circuit de Spa-Francorchamps': {'lat': 50.4372, 'lon': 5.9714},
-    'Circuit Zandvoort': {'lat': 52.3888, 'lon': 4.5409},
-    'Autodromo Nazionale Monza': {'lat': 45.6156, 'lon': 9.2811},
-    'Marina Bay Street Circuit': {'lat': 1.2914, 'lon': 103.864},
-    'Suzuka Circuit': {'lat': 34.8431, 'lon': 136.533},
-    'Lusail International Circuit': {'lat': 25.4900, 'lon': 51.4542},
-    'Circuit of The Americas': {'lat': 30.1328, 'lon': -97.6411},
-    'Autódromo Hermanos Rodríguez': {'lat': 19.4042, 'lon': -99.0907},
-    'Autódromo José Carlos Pace': {'lat': -23.7036, 'lon': -46.6997},
-    'Las Vegas Strip Circuit': {'lat': 36.1147, 'lon': -115.173},
-    'Yas Marina Circuit': {'lat': 24.4672, 'lon': 54.6031},
-    'Autodromo Enzo e Dino Ferrari': {'lat': 44.3439, 'lon': 11.7167},
-    'Shanghai International Circuit': {'lat': 31.3389, 'lon': 121.222},
-    'Autodromo Internazionale del Mugello': {'lat': 43.9975, 'lon': 11.3719}
+    'Bahrain International Circuit (Bahrain)': {'lat': 26.0325, 'lon': 50.5106},
+    'Jeddah Corniche Circuit (Saudi Arabia)': {'lat': 21.6319, 'lon': 39.1044},
+    'Albert Park Grand Prix Circuit (Australia)': {'lat': -37.8497, 'lon': 144.968},
+    'Autodromo Internazionale Enzo e Dino Ferrari (Emilia-Romagna, Italy)': {'lat': 44.3439, 'lon': 11.7167},
+    'Miami International Autodrome (Miami, USA)': {'lat': 25.9581, 'lon': -80.2389},
+    'Circuit de Barcelona-Catalunya (Spain)': {'lat': 41.57, 'lon': 2.2611},
+    'Circuit de Barcelona-Catalunya (Barcelona, Spain)': {'lat': 41.57, 'lon': 2.2611},
+    'Circuit de Monaco (Monaco)': {'lat': 43.7347, 'lon': 7.4206},
+    'Baku City Circuit (Azerbaijan)': {'lat': 40.3725, 'lon': 49.8533},
+    'Circuit Gilles Villeneuve (Canada)': {'lat': 45.5000, 'lon': -73.5228},
+    'Silverstone Circuit (Great Britain)': {'lat': 52.0786, 'lon': -1.0169},
+    'Red Bull Ring (Austria)': {'lat': 47.2197, 'lon': 14.7647},
+    'Circuit Paul Ricard (France)': {'lat': 43.2506, 'lon': 5.7917},
+    'Hungaroring (Hungary)': {'lat': 47.5822, 'lon': 19.2511},
+    'Circuit de Spa-Francorchamps (Belgium)': {'lat': 50.4372, 'lon': 5.9714},
+    'Circuit Zandvoort (Netherlands)': {'lat': 52.3888, 'lon': 4.5409},
+    'Autodromo Nazionale Monza (Monza, Italy)': {'lat': 45.6156, 'lon': 9.2811},
+    'Marina Bay Street Circuit (Singapore)': {'lat': 1.2914, 'lon': 103.864},
+    'Suzuka Circuit (Japan)': {'lat': 34.8431, 'lon': 136.533},
+    'Lusail International Circuit (Qatar)': {'lat': 25.4900, 'lon': 51.4542},
+    'Circuit of The Americas (Austin, USA)': {'lat': 30.1328, 'lon': -97.6411},
+    'Autódromo Hermanos Rodríguez (Mexico)': {'lat': 19.4042, 'lon': -99.0907},
+    'Autódromo José Carlos Pace (Brazil)': {'lat': -23.7036, 'lon': -46.6997},
+    'Las Vegas Strip Circuit (Las Vegas, USA)': {'lat': 36.1147, 'lon': -115.173},
+    'Yas Marina Circuit (UAE)': {'lat': 24.4672, 'lon': 54.6031},
+    'Shanghai International Circuit (China)': {'lat': 31.3389, 'lon': 121.222},
+    'MADRING (Madrid, Spain)': {'lat': 40.4736, 'lon': -3.6186},
+    'Autodromo Internazionale del Mugello (Italy)': {'lat': 43.9975, 'lon': 11.3719}
 }
 
 # Cache for weather results to avoid redundant API calls during a single session
@@ -129,12 +132,12 @@ def get_track_weather(track_name: str, race_date: str, race_time: str = None) ->
         
         # Night races have different temperature profiles
         NIGHT_RACES = {
-            'Bahrain International Circuit',
-            'Jeddah Corniche Circuit',
-            'Marina Bay Street Circuit',
-            'Las Vegas Strip Circuit',
-            'Lusail International Circuit',
-            'Yas Marina Circuit'
+            'Bahrain International Circuit (Bahrain)',
+            'Jeddah Corniche Circuit (Saudi Arabia)',
+            'Marina Bay Street Circuit (Singapore)',
+            'Las Vegas Strip Circuit (Las Vegas, USA)',
+            'Lusail International Circuit (Qatar)',
+            'Yas Marina Circuit (UAE)'
         }
         
         is_night_race = track_name in NIGHT_RACES
