@@ -2,7 +2,7 @@ import os
 import joblib
 import numpy as np
 import pandas as pd
-from mappings import normalize_team_name, get_track_info, TRACK_PIT_LOSS
+from mappings import normalize_team_name, get_track_info, TRACK_PIT_LOSS, get_track_features
 from weather_api import get_track_weather
 from tire_life_analysis import analyze_tire_life
 
@@ -94,8 +94,13 @@ class TireDegradationSimulator:
             "WET":          25,
         }
 
-    def _simulate_compound(self, driver, norm_team, track_type, track_length_km, compound, weather_data, max_laps=50):
+    def _simulate_compound(self, driver, norm_team, track_type, track_length_km,
+                           compound, weather_data, track_features, race_laps, max_laps=50):
         """Simulates lap times for a single compound from lap 1 to max_laps.
+        
+        Args:
+            track_features: dict with 10 track characteristic values
+            race_laps: int, official race lap count for this circuit
         
         Returns:
             drop_off_curve: list of floats representing time lost vs. fresh tire (for cliff analysis)
@@ -110,7 +115,11 @@ class TireDegradationSimulator:
         rows = []
         for age in range(1, max_laps + 1):
             normalized_life = min(1.0, age / sim_stint_length)
-            rows.append({
+            normalized_lap = min(1.0, 15 / race_laps)  # LapNumber held at 15
+            laps_remaining = max(0, race_laps - 15)
+            tire_age_ratio = min(1.0, age / race_laps)
+            
+            row = {
                 'Driver': driver,
                 'Team': norm_team,
                 'LapNumber': 15,  # Held constant to isolate pure tire degradation from fuel burn
@@ -131,14 +140,31 @@ class TireDegradationSimulator:
                 'WindSpeed': weather_data.get('wind_speed', 10.0),
                 'TeamBaselinePace': 100.0,
                 'FieldBaselinePace': 100.0,
-                'RelativePace': 0.0
-            })
+                'RelativePace': 0.0,
+                # Race-distance normalization
+                'NormalizedLap': normalized_lap,
+                'LapsRemaining': laps_remaining,
+                'TireAgeRatio': tire_age_ratio,
+            }
+            
+            # Add 10 track characteristic features
+            for feat_name, feat_val in track_features.items():
+                row[feat_name] = feat_val
+            
+            # Add interaction features
+            row['tire_age_x_abrasiveness'] = age * track_features.get('abrasiveness', 0.5)
+            row['track_temp_x_sensitivity'] = weather_data['track_temp'] * track_features.get('track_temp_sensitivity', 0.5)
+            row['tire_age_x_traction'] = age * track_features.get('traction', 0.5)
+            row['tire_age_x_lateral_load'] = age * track_features.get('lateral_load', 0.5)
+            row['normalized_life_x_thermal'] = normalized_life * track_features.get('thermal_stress', 0.5)
+            
+            rows.append(row)
             
         df = pd.DataFrame(rows)
         
         # Handle categoricals: Enforce fixed categories to ensure feature alignment with models
         ALL_COMPOUNDS = ['SOFT', 'MEDIUM', 'HARD', 'INTERMEDIATE', 'WET']
-        ALL_TRACK_TYPES = ['Low', 'Medium', 'High']
+        ALL_TRACK_TYPES = ['Slow', 'Medium', 'Fast']
         
         df['Compound'] = pd.Categorical(df['Compound'], categories=ALL_COMPOUNDS)
         df['TrackType'] = pd.Categorical(df['TrackType'], categories=ALL_TRACK_TYPES)
@@ -225,6 +251,8 @@ class TireDegradationSimulator:
         track_info = get_track_info(track_name)
         track_type = track_info['type']
         track_length_km = track_info.get('length_km', 5.0)
+        race_laps = track_info.get('race_laps', 57)
+        track_features = get_track_features(track_name)
         
         # 1. Fetch live or historical weather based on date and exact time (B)
         weather_data = get_track_weather(track_name, race_date, race_time)
@@ -246,10 +274,11 @@ class TireDegradationSimulator:
         for compound in self.valid_compounds:
             # Wets don't make sense if dry, and slicks don't make sense if heavy rain,
             # but we'll generate all to provide the full "what-if" mapping.
-            max_laps = int(305 / track_length_km) + 2  # Full race distance + 2
+            max_laps = race_laps + 2  # Full race distance + 2
             
             drop_off_curve, absolute_lap_times = self._simulate_compound(
-                driver, norm_team, track_type, track_length_km, compound, weather_data, max_laps
+                driver, norm_team, track_type, track_length_km, compound,
+                weather_data, track_features, race_laps, max_laps
             )
             
             analysis = self._analyze_curve(drop_off_curve, absolute_lap_times, track_name=track_name)

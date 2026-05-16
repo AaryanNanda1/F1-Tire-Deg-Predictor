@@ -1,10 +1,17 @@
 import pandas as pd
 import numpy as np
-from mappings import TEAM_MAPPING, get_track_info, normalize_team_name
+from mappings import TEAM_MAPPING, get_track_info, normalize_team_name, get_track_features, TRACK_CONFIG
 
 def preprocess_laps(session):
     """
     Cleans and processes lap data for tire degradation modeling with advanced features.
+    
+    Features include:
+    - Core tire metrics (TyreLife, NormalizedTyreLife, TyreLifeSquared, etc.)
+    - Weather data (AirTemp, TrackTemp, Humidity, Rainfall, WindSpeed)
+    - 10 track characteristic features (7 raw + 3 derived)
+    - 3 race-distance normalization features
+    - 5 interaction features for cross-domain learning
     
     Args:
         session (fastf1.core.Session): Loaded session object.
@@ -37,8 +44,14 @@ def preprocess_laps(session):
     # 5. Track Information
     circuit_name = session.event['EventName']
     track_info = get_track_info(circuit_name)
-    laps['TrackType'] = track_info['type'] # High, Medium, Low
+    laps['TrackType'] = track_info['type']  # Slow, Medium, Fast
     track_length_km = track_info.get('length_km', 5.0)
+    race_laps = track_info.get('race_laps', 57)
+    
+    # 5b. Track Characteristics — 10 numeric features (7 raw + 3 derived)
+    track_feats = get_track_features(circuit_name)
+    for feat_name, feat_val in track_feats.items():
+        laps[feat_name] = feat_val
     
     # 6. Distance-based Tyre Life
     laps['TyreLifeKM'] = laps['TyreLife'] * track_length_km
@@ -61,6 +74,12 @@ def preprocess_laps(session):
     # Standard F1 estimate: 0.07s per lap of fuel burn removes ~0.07s of lap time per lap
     total_laps = laps['LapNumber'].max()
     laps['FuelLoad'] = (1.0 - (laps['LapNumber'] / total_laps)).clip(0, 1)
+    
+    # 7d. Race-distance normalization features
+    # These help the model understand that lap 20 at Monaco is different from lap 20 at Spa
+    laps['NormalizedLap'] = (laps['LapNumber'] / race_laps).clip(0, 1)
+    laps['LapsRemaining'] = (race_laps - laps['LapNumber']).clip(0)
+    laps['TireAgeRatio'] = (laps['TyreLife'] / race_laps).clip(0, 1)
     
     # 7. Weather Data Integration
     # Weather data is time-series. We need to merge it with laps based on 'Time'.
@@ -99,7 +118,23 @@ def preprocess_laps(session):
     # Negative = Faster, Positive = Slower
     laps['RelativePace'] = laps['TeamBaselinePace'] - laps['FieldBaselinePace']
     
-    # 10. Final Feature Selection
+    # 10. Interaction Features
+    # These help the model learn cross-domain relationships:
+    # - tire_age × abrasiveness: tire age costs more at abrasive tracks
+    # - TrackTemp × track_temp_sensitivity: temperature matters more at sensitive circuits
+    # - TyreLife × traction: rear-limited degradation at traction-heavy circuits
+    # - TyreLife × lateral_load: sustained cornering wears tires differently
+    # - NormalizedTyreLife × thermal_stress: thermal degradation accelerates with tire age
+    laps['tire_age_x_abrasiveness'] = laps['TyreLife'] * laps['abrasiveness']
+    if 'TrackTemp' in laps.columns:
+        laps['track_temp_x_sensitivity'] = laps['TrackTemp'] * laps['track_temp_sensitivity']
+    else:
+        laps['track_temp_x_sensitivity'] = 0.0
+    laps['tire_age_x_traction'] = laps['TyreLife'] * laps['traction']
+    laps['tire_age_x_lateral_load'] = laps['TyreLife'] * laps['lateral_load']
+    laps['normalized_life_x_thermal'] = laps['NormalizedTyreLife'] * laps['thermal_stress']
+    
+    # 11. Final Feature Selection
     features = [
         'Driver',
         'Team',
@@ -122,8 +157,30 @@ def preprocess_laps(session):
         'TeamBaselinePace',
         'FieldBaselinePace',
         'RelativePace',
-        'EventDate',       # Meta
-        'EventName',       # Meta
+        # Track characteristic features (10)
+        'traction',
+        'high_speed_load',
+        'abrasiveness',
+        'surface_roughness',
+        'braking_severity',
+        'lateral_load',
+        'track_temp_sensitivity',
+        'thermal_stress',
+        'surface_wear',
+        'energy_load',
+        # Race-distance normalization (3)
+        'NormalizedLap',
+        'LapsRemaining',
+        'TireAgeRatio',
+        # Interaction features (5)
+        'tire_age_x_abrasiveness',
+        'track_temp_x_sensitivity',
+        'tire_age_x_traction',
+        'tire_age_x_lateral_load',
+        'normalized_life_x_thermal',
+        # Metadata
+        'EventDate',
+        'EventName',
         'LapTimeSeconds'  # Target
     ]
     
@@ -132,9 +189,9 @@ def preprocess_laps(session):
     df = laps[features].copy()
     
     # Handle categoricals: Enforce fixed categories to ensure feature alignment across models
-    # This prevents 'Medium' only models from failing on 'Low' speed track simulations.
+    # This prevents 'Medium' only models from failing on 'Slow' speed track simulations.
     ALL_COMPOUNDS = ['SOFT', 'MEDIUM', 'HARD', 'INTERMEDIATE', 'WET']
-    ALL_TRACK_TYPES = ['Low', 'Medium', 'High']
+    ALL_TRACK_TYPES = ['Slow', 'Medium', 'Fast']
     
     df['Compound'] = pd.Categorical(df['Compound'], categories=ALL_COMPOUNDS)
     df['TrackType'] = pd.Categorical(df['TrackType'], categories=ALL_TRACK_TYPES)
@@ -161,3 +218,4 @@ if __name__ == "__main__":
     print(data.head())
     print("\nColumns:", data.columns.tolist())
     print("\nShape:", data.shape)
+

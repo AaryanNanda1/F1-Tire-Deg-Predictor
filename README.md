@@ -13,19 +13,26 @@ Unlike traditional heuristic models, our engine produces two independent, high-f
 - **Performance Cliff Detection**: Identifies the exact lap where a tire's physics begins to fail. Uses a *Sustained Acceleration Rule* (slope and curvature analysis) to detect when lap times begin to worsen uncontrollably.
 - **Strategic Useful Life**: Calculates the "crossover point" where the cumulative time lost to degradation exceeds the time lost in a pit stop.
 
-### 2. Multi-Era Modeling
+### 2. Multi-Era Modeling & Hybrid Training
 Supports disparate aerodynamic and tire regulations across F1 history and future:
-- **Ground Effect Era (2022–2025)**: Tuned for the current high-downforce technical regulations.
-- **Active Aero Era (2026–2030)**: Pre-emptive modeling for the upcoming technical overhaul, including weekly retraining capabilities.
+- **Ground Effect Era (2022–2025)**: Tuned for high-downforce technical regulations using historical telemetry from over 100 sessions.
+- **Active Aero Era (2026–2030)**: Pre-emptive modeling for the upcoming technical overhaul.
+- **Hybrid Cold Start Methodology**: To solve data sparsity for new regulations (like 2026), the engine uses a "Hybrid Cold Start" approach, blending real-time telemetry from inaugural races with physics-based priors from previous eras to ensure stable predictions.
 
-### 3. Advanced Training Methodology
+### 3. Advanced Track Feature Engineering
+The engine now understands *why* tires degrade differently at each circuit through a 10-dimensional relational feature system:
+- **Raw Characteristics**: Traction intensity, High-speed load, Abrasiveness (surface texture), Surface roughness (micro-profile), Braking severity, Lateral load, and Track temperature sensitivity.
+- **Derived Stress Metrics**: Weighted blends for **Thermal Stress**, **Surface Wear**, and **Total Energy Load**.
+- **Cross-Era Normalization**: Features are normalized (0.0–1.0) to allow the model to learn relational patterns (e.g., "how much does abrasiveness accelerate wear on a Soft compound?") that transfer across different car regulations.
+
+### 4. Advanced Training Methodology
 Built for robust "in-season" performance and backtesting:
-- **Chronological Filtering (`--as-of-date`)**: Simulates a specific point in time by only training on races completed before the target date. This is critical for evaluating how the model would have performed mid-season.
-- **Walk-Forward Validation**: An iterative evaluation loop that trains on previous events and tests on the "next" race, simulating real-world predictive requirements.
-- **Compound-Age Weighting**: Specifically increases the training weight of Soft tires as they age (up to 3.0x) to ensure the model accurately captures the performance "cliff."
+- **FastF1-to-UI Bridge**: A standardized mapping layer resolves disparate naming conventions (FastF1 EventNames vs. UI Track Keys) to ensure seamless data flow from training to inference.
+- **Chronological Filtering (`--as-of-date`)**: Simulates a specific point in time by only training on races completed before the target date.
+- **Walk-Forward Validation**: An iterative evaluation loop across up to 80 events per era to ensure high generalized accuracy.
 - **Session-Weighted Learning**: Dynamically weights data based on session type (Race=1.0, Sprint=0.75, FP2=0.5) to prioritize the most representative long-run data.
 
-### 4. Real-Time Strategy Optimization
+### 5. Real-Time Strategy Optimization
 - **Monte Carlo Simulations**: Generates thousands of potential strategy permutations to find the optimal pit windows.
 - **Weather Integration**: Live and historical weather data (air/track temp, humidity, rainfall) via Open-Meteo API to adjust degradation curves in real-time.
 - **Safety Car Scenarios**: Models the impact of SC/VSC periods on tire aging and strategic "cheap" pit stops.

@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 import sys
 import traceback
-from mappings import TRACK_PIT_LOSS, TEAM_MAPPING, TRACK_CONFIG, get_roster_map
+from mappings import TRACK_PIT_LOSS, TEAM_MAPPING, TRACK_CONFIG, get_roster_map, get_yearly_tracks
 import math
 from degradation_engine import TireDegradationSimulator
 from sim_engine import StrategySimulator
@@ -15,9 +15,7 @@ def get_options():
     
     track_laps = {}
     for track, info in TRACK_CONFIG.items():
-        length = info.get("length_km", 5.0)
-        target_km = 260.0 if "Monaco" in track else 305.0
-        track_laps[track] = math.ceil(target_km / length)
+        track_laps[track] = info.get('race_laps', 57)
 
     return jsonify({
         "tracks": list(TRACK_PIT_LOSS.keys()),
@@ -26,7 +24,8 @@ def get_options():
         "years": [2022, 2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030],
         "compounds": ["SOFT", "MEDIUM", "HARD", "INTERMEDIATE", "WET"],
         "track_laps": track_laps,
-        "driver_roster": get_roster_map()
+        "driver_roster": get_roster_map(),
+        "yearly_tracks": get_yearly_tracks()
     })
 
 # Singleton engines to avoid reloading models on every request

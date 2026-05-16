@@ -78,7 +78,7 @@ function App() {
   const [options, setOptions] = useState({ tracks: [], teams: [], drivers: [], years: [], compounds: [] });
   const [form, setForm] = useState({
     year: 2026,
-    track_name: 'Circuit Zandvoort',
+    track_name: 'Circuit Zandvoort (Netherlands)',
     team: 'Red Bull Racing',
     driver: 'VER',
     grid_pos: 1,
@@ -182,24 +182,33 @@ function App() {
   const isMidRace = form.current_lap > 0;
 
   useEffect(() => {
+    // Team & Driver validation
     if (options.driver_roster && options.driver_roster[form.year]) {
         const validTeamsForYear = Object.keys(options.driver_roster[form.year]);
         
-        // If current team is no longer valid for this year, clear both team and driver
         if (form.team && !validTeamsForYear.includes(form.team)) {
             setForm(prev => ({ ...prev, team: '', driver: '' }));
-            return;
-        }
-
-        // If team is valid, verify driver
-        if (form.team && options.driver_roster[form.year][form.team]) {
+        } else if (form.team && options.driver_roster[form.year][form.team]) {
             const teamRoster = options.driver_roster[form.year][form.team];
             if (teamRoster.length > 0 && !teamRoster.includes(form.driver)) {
                 setForm(prev => ({ ...prev, driver: teamRoster[0] }));
             }
         }
     }
-  }, [form.year, form.team, options.driver_roster]);
+
+    // Track validation
+    if (options.yearly_tracks && options.yearly_tracks[form.year]) {
+        const validTracksForYear = options.yearly_tracks[form.year];
+        if (form.track_name && !validTracksForYear.includes(form.track_name)) {
+            setForm(prev => ({ ...prev, track_name: '' }));
+        }
+    }
+  }, [form.year, form.team, form.track_name, options.driver_roster, options.yearly_tracks]);
+
+  let validTracks = options.tracks;
+  if (options.yearly_tracks && options.yearly_tracks[form.year]) {
+      validTracks = options.yearly_tracks[form.year];
+  }
 
   let validTeams = options.teams;
   if (options.driver_roster && options.driver_roster[form.year]) {
@@ -249,7 +258,8 @@ function App() {
                     }
                     setForm({...form, track_name: newTrack, laps_to_complete: defaultLaps});
                 }}>
-                    {options.tracks.length === 0 ? <option>Loading...</option> : options.tracks.map(t => <option key={t} value={t}>{t}</option>)}
+                    <option value="">— Select Track —</option>
+                    {validTracks.length === 0 ? <option disabled>Loading...</option> : validTracks.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
             </div>
             <div className="form-group">
