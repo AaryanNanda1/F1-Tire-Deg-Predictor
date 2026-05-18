@@ -114,6 +114,10 @@ def preprocess_laps(session):
     team_baselines = laps.groupby('Team')['LapTimeSeconds'].median().to_dict()
     laps['TeamBaselinePace'] = laps['Team'].map(team_baselines)
     
+    # Filter out extreme pace outliers (SC/VSC remnants, spins, yellow flag sectors, pit lane errors)
+    # Any lap > 6.0 seconds slower than the team's base pace is not representative of pure tire wear.
+    laps = laps[laps['LapTimeSeconds'] <= laps['TeamBaselinePace'] + 6.0].copy()
+    
     # Relative Pace: How much faster/slower is the team compared to field?
     # Negative = Faster, Positive = Slower
     laps['RelativePace'] = laps['TeamBaselinePace'] - laps['FieldBaselinePace']
@@ -134,7 +138,26 @@ def preprocess_laps(session):
     laps['tire_age_x_lateral_load'] = laps['TyreLife'] * laps['lateral_load']
     laps['normalized_life_x_thermal'] = laps['NormalizedTyreLife'] * laps['thermal_stress']
     
-    # 11. Final Feature Selection
+    # --- New Compound-Specific Interactions ---
+    # These help the model learn that different compounds have different degradation slopes
+    laps['is_soft'] = (laps['Compound'] == 'SOFT').astype(int)
+    laps['is_medium'] = (laps['Compound'] == 'MEDIUM').astype(int)
+    laps['is_hard'] = (laps['Compound'] == 'HARD').astype(int)
+    
+    laps['soft_age_interaction'] = laps['TyreLife'] * laps['is_soft']
+    laps['medium_age_interaction'] = laps['TyreLife'] * laps['is_medium']
+    laps['hard_age_interaction'] = laps['TyreLife'] * laps['is_hard']
+    
+    # Compound sensitivity to track characteristics
+    laps['soft_abrasiveness_interaction'] = laps['is_soft'] * laps['abrasiveness']
+    laps['soft_traction_interaction'] = laps['is_soft'] * laps['traction']
+    
+    # 11. Final Target Creation
+    # Instead of predicting absolute LapTimeSeconds, we predict the delta from the team's baseline.
+    # This prevents track features from being used as proxy "track IDs" to guess base lap times.
+    laps['LapTimeDelta'] = laps['LapTimeSeconds'] - laps['TeamBaselinePace']
+    
+    # 12. Final Feature Selection
     features = [
         'Driver',
         'Team',
@@ -178,10 +201,15 @@ def preprocess_laps(session):
         'tire_age_x_traction',
         'tire_age_x_lateral_load',
         'normalized_life_x_thermal',
+        'soft_age_interaction',
+        'medium_age_interaction',
+        'hard_age_interaction',
+        'soft_abrasiveness_interaction',
+        'soft_traction_interaction',
         # Metadata
         'EventDate',
         'EventName',
-        'LapTimeSeconds'  # Target
+        'LapTimeDelta'  # Target
     ]
     
     # Filter standard numerical/categorical columns
@@ -196,7 +224,7 @@ def preprocess_laps(session):
     df['Compound'] = pd.Categorical(df['Compound'], categories=ALL_COMPOUNDS)
     df['TrackType'] = pd.Categorical(df['TrackType'], categories=ALL_TRACK_TYPES)
     
-    categorical_cols = ['Driver', 'Team', 'Compound', 'TrackType']
+    categorical_cols = ['Driver', 'Team', 'Compound', 'TrackType', 'EventName']
     df = pd.get_dummies(df, columns=categorical_cols, drop_first=False)
     
     # Boolean to Int

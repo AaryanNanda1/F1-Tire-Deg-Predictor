@@ -83,8 +83,12 @@ def predict_lap_time(
     # and drops extra columns if any (unlikely).
     final_input = df_dummies.reindex(columns=feature_names, fill_value=0)
     
-    # 6. Predict
-    prediction = model.predict(final_input)[0]
+    # 6. Predict (LapTimeDelta)
+    predicted_delta = model.predict(final_input)[0]
+    
+    # 7. Reconstruct Absolute Lap Time
+    prediction = predicted_delta + team_baseline_pace
+    
     return prediction
 
 

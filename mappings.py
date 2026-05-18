@@ -434,6 +434,38 @@ TRACK_PIT_LOSS = {
     'MADRING (Madrid, Spain)': 23.0
 }
 
+# Approximate race pace (seconds) for absolute lap time reconstruction
+TRACK_BASE_PACE = {
+    'Bahrain International Circuit (Bahrain)': 96.0,
+    'Jeddah Corniche Circuit (Saudi Arabia)': 93.0,
+    'Albert Park Grand Prix Circuit (Australia)': 82.0,
+    'Baku City Circuit (Azerbaijan)': 106.0,
+    'Miami International Autodrome (Miami, USA)': 92.0,
+    'Circuit de Monaco (Monaco)': 76.0,
+    'Circuit de Barcelona-Catalunya (Spain)': 80.0,
+    'Circuit de Barcelona-Catalunya (Barcelona, Spain)': 80.0,
+    'Circuit Gilles Villeneuve (Canada)': 76.0,
+    'Red Bull Ring (Austria)': 69.0,
+    'Silverstone Circuit (Great Britain)': 91.0,
+    'Hungaroring (Hungary)': 83.0,
+    'Circuit de Spa-Francorchamps (Belgium)': 111.0,
+    'Circuit Zandvoort (Netherlands)': 75.0,
+    'Autodromo Nazionale Monza (Monza, Italy)': 85.0,
+    'Marina Bay Street Circuit (Singapore)': 97.0,
+    'Suzuka Circuit (Japan)': 95.0,
+    'Lusail International Circuit (Qatar)': 87.0,
+    'Circuit of The Americas (Austin, USA)': 99.0,
+    'Autódromo Hermanos Rodríguez (Mexico)': 83.0,
+    'Autódromo José Carlos Pace (Brazil)': 75.0,
+    'Las Vegas Strip Circuit (Las Vegas, USA)': 96.0,
+    'Yas Marina Circuit (UAE)': 89.0,
+    'Autodromo Internazionale Enzo e Dino Ferrari (Emilia-Romagna, Italy)': 79.0,
+    'Shanghai International Circuit (China)': 98.0,
+    'Autodromo Internazionale del Mugello (Italy)': 81.0,
+    'Circuit Paul Ricard (France)': 96.0,
+    'MADRING (Madrid, Spain)': 86.0
+}
+
 # Base driver roster for 2026 onwards
 BASE_ROSTER = {
     "Red Bull Racing": ["VER", "HAD"],

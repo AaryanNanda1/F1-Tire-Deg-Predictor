@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 import sys
 import traceback
+import os
 from mappings import TRACK_PIT_LOSS, TEAM_MAPPING, TRACK_CONFIG, get_roster_map, get_yearly_tracks
 import math
 from degradation_engine import TireDegradationSimulator
@@ -30,12 +31,20 @@ def get_options():
 
 # Singleton engines to avoid reloading models on every request
 _ENGINE_CACHE = {}
+_ENGINE_MTIMES = {}
 
 def get_engine(year):
     # Determine which era model to use
     era = "active_aero" if year >= 2026 else "ground_effect"
-    if era not in _ENGINE_CACHE:
+    prefix = "active_aero_2026_2030" if year >= 2026 else "ground_effect_2022_2025"
+    model_file = f"models/{prefix}_model.joblib"
+    
+    current_mtime = os.path.getmtime(model_file) if os.path.exists(model_file) else 0
+    
+    if era not in _ENGINE_CACHE or _ENGINE_MTIMES.get(era, 0) < current_mtime:
         _ENGINE_CACHE[era] = TireDegradationSimulator(year=year, force_jit_check=False)
+        _ENGINE_MTIMES[era] = current_mtime
+        
     return _ENGINE_CACHE[era]
 
 def _derive_weather_condition(weather_data: dict) -> str:

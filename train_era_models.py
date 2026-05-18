@@ -167,8 +167,8 @@ def train_and_save(
     sample_weights = data_df.get('SampleWeight', pd.Series(1.0, index=data_df.index))
     
     # Drop target and metadata columns so they aren't used as features
-    X = data_df.drop(columns=['LapTimeSeconds', 'SampleWeight', 'EventDate', 'EventName'], errors='ignore')
-    y = data_df['LapTimeSeconds']
+    X = data_df.drop(columns=['LapTimeDelta', 'SampleWeight', 'EventDate', 'EventName'], errors='ignore')
+    y = data_df['LapTimeDelta']
 
     model = HistGradientBoostingRegressor(
         loss="absolute_error",
@@ -223,12 +223,12 @@ def perform_walk_forward_validation(df: pd.DataFrame) -> float:
         test_data = df[df['EventName'] == test_event['EventName']]
         
         # Ensure we drop metadata columns during training
-        X_train = train_data.drop(columns=['LapTimeSeconds', 'SampleWeight', 'EventDate', 'EventName'], errors='ignore')
-        y_train = train_data['LapTimeSeconds']
+        X_train = train_data.drop(columns=['LapTimeDelta', 'SampleWeight', 'EventDate', 'EventName'], errors='ignore')
+        y_train = train_data['LapTimeDelta']
         w_train = train_data.get('SampleWeight', pd.Series(1.0, index=train_data.index))
         
-        X_test = test_data.drop(columns=['LapTimeSeconds', 'SampleWeight', 'EventDate', 'EventName'], errors='ignore')
-        y_test = test_data['LapTimeSeconds']
+        X_test = test_data.drop(columns=['LapTimeDelta', 'SampleWeight', 'EventDate', 'EventName'], errors='ignore')
+        y_test = test_data['LapTimeDelta']
         
         # We don't use early stopping here to speed up validation loops
         model = HistGradientBoostingRegressor(loss="absolute_error", max_iter=50, random_state=42)

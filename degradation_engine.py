@@ -2,9 +2,11 @@ import os
 import joblib
 import numpy as np
 import pandas as pd
-from mappings import normalize_team_name, get_track_info, TRACK_PIT_LOSS, get_track_features
+from mappings import normalize_team_name, get_track_info, TRACK_PIT_LOSS, get_track_features, TRACK_BASE_PACE, EVENT_NAME_TO_CIRCUIT
 from weather_api import get_track_weather
 from tire_life_analysis import analyze_tire_life
+
+REVERSE_EVENT_NAME_MAP = {v: k for k, v in EVENT_NAME_TO_CIRCUIT.items()}
 
 class TireDegradationSimulator:
     def __init__(self, year: int, models_dir: str = "models", force_jit_check: bool = True):
@@ -94,7 +96,7 @@ class TireDegradationSimulator:
             "WET":          25,
         }
 
-    def _simulate_compound(self, driver, norm_team, track_type, track_length_km,
+    def _simulate_compound(self, driver, norm_team, track_name, track_type, track_length_km,
                            compound, weather_data, track_features, race_laps, max_laps=50):
         """Simulates lap times for a single compound from lap 1 to max_laps.
         
@@ -158,6 +160,18 @@ class TireDegradationSimulator:
             row['tire_age_x_lateral_load'] = age * track_features.get('lateral_load', 0.5)
             row['normalized_life_x_thermal'] = normalized_life * track_features.get('thermal_stress', 0.5)
             
+            # --- New Compound-Specific Interactions ---
+            row['soft_age_interaction'] = age if compound == 'SOFT' else 0
+            row['medium_age_interaction'] = age if compound == 'MEDIUM' else 0
+            row['hard_age_interaction'] = age if compound == 'HARD' else 0
+            row['soft_abrasiveness_interaction'] = track_features.get('abrasiveness', 0.5) if compound == 'SOFT' else 0
+            row['soft_traction_interaction'] = track_features.get('traction', 0.5) if compound == 'SOFT' else 0
+            
+            event_name = REVERSE_EVENT_NAME_MAP.get(track_name, track_name)
+            row['EventName'] = event_name
+            row['EventDate'] = pd.Timestamp.now().date()
+            row['LapTimeDelta'] = 0
+            
             rows.append(row)
             
         df = pd.DataFrame(rows)
@@ -170,12 +184,15 @@ class TireDegradationSimulator:
         df['TrackType'] = pd.Categorical(df['TrackType'], categories=ALL_TRACK_TYPES)
         
         # Dummy variables matching training
-        categorical_cols = ['Driver', 'Team', 'Compound', 'TrackType']
+        categorical_cols = ['Driver', 'Team', 'Compound', 'TrackType', 'EventName']
         df_dummies = pd.get_dummies(df, columns=categorical_cols, drop_first=False)
         final_input = df_dummies.reindex(columns=self.feature_names, fill_value=0)
         
         raw_predictions = self.model.predict(final_input)
-        absolute_lap_times = [round(float(p), 3) for p in raw_predictions]
+        
+        # Since the model predicts LapTimeDelta, reconstruct absolute lap time using track's base pace
+        base_pace = TRACK_BASE_PACE.get(track_name, 90.0)
+        absolute_lap_times = [round(float(p) + base_pace, 3) for p in raw_predictions]
         
         # Calculate drop-off curve relative to the first lap on this tire
         base_lap = raw_predictions[0]
@@ -278,7 +295,7 @@ class TireDegradationSimulator:
             max_laps = race_laps + 2  # Full race distance + 2
             
             drop_off_curve, absolute_lap_times = self._simulate_compound(
-                driver, norm_team, track_type, track_length_km, compound,
+                driver, norm_team, track_name, track_type, track_length_km, compound,
                 weather_data, track_features, race_laps, max_laps
             )
             

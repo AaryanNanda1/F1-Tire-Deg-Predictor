@@ -255,53 +255,60 @@ class StrategySimulator:
         
         # Helper to generate stint length combinations that sum to laps_remaining.
         # Each stint is capped at the compound's absolute max to prune impossible combos.
-        def get_stint_combos(compounds_seq, total_laps, min_laps=5, step=2):
+        def get_stint_combos(compounds_seq, total_laps, step=2):
             num_stints = len(compounds_seq)
             # Per-stint absolute max (never exceed regardless of mode)
             maxes = [COMPOUND_ABSOLUTE_MAX_LAPS.get(c, 50) for c in compounds_seq]
+            if num_stints >= 1 and current_compound:
+                maxes[0] = max(0, maxes[0] - int(start_age))
+                
+            # The first stint (already underway) can have a short remaining length (minimum 1 lap).
+            # Subsequent stints must be at least 5 laps.
+            first_min = 1 if current_lap > 0 else 5
+            sub_min = 5
             
             if num_stints == 1:
                 if total_laps <= maxes[0]:
                     yield [total_laps]
                 return
             elif num_stints == 2:
-                hi_0 = min(maxes[0], total_laps - min_laps)
-                for i in range(min_laps, hi_0 + 1, step):
+                hi_0 = min(maxes[0], total_laps - sub_min)
+                for i in range(first_min, hi_0 + 1, step):
                     remainder = total_laps - i
-                    if min_laps <= remainder <= maxes[1]:
+                    if sub_min <= remainder <= maxes[1]:
                         yield [i, remainder]
             elif num_stints == 3:
-                hi_0 = min(maxes[0], total_laps - min_laps * 2)
-                for i in range(min_laps, hi_0 + 1, step):
-                    hi_1 = min(maxes[1], total_laps - i - min_laps)
-                    for j in range(min_laps, hi_1 + 1, step):
+                hi_0 = min(maxes[0], total_laps - sub_min * 2)
+                for i in range(first_min, hi_0 + 1, step):
+                    hi_1 = min(maxes[1], total_laps - i - sub_min)
+                    for j in range(sub_min, hi_1 + 1, step):
                         remainder = total_laps - i - j
-                        if min_laps <= remainder <= maxes[2]:
+                        if sub_min <= remainder <= maxes[2]:
                             yield [i, j, remainder]
             elif num_stints == 4:
                 s = step if total_laps < 50 else step * 2
-                hi_0 = min(maxes[0], total_laps - min_laps * 3)
-                for i in range(min_laps, hi_0 + 1, s):
-                    hi_1 = min(maxes[1], total_laps - i - min_laps * 2)
-                    for j in range(min_laps, hi_1 + 1, s):
-                        hi_2 = min(maxes[2], total_laps - i - j - min_laps)
-                        for k in range(min_laps, hi_2 + 1, s):
+                hi_0 = min(maxes[0], total_laps - sub_min * 3)
+                for i in range(first_min, hi_0 + 1, s):
+                    hi_1 = min(maxes[1], total_laps - i - sub_min * 2)
+                    for j in range(sub_min, hi_1 + 1, s):
+                        hi_2 = min(maxes[2], total_laps - i - j - sub_min)
+                        for k in range(sub_min, hi_2 + 1, s):
                             remainder = total_laps - i - j - k
-                            if min_laps <= remainder <= maxes[3]:
+                            if sub_min <= remainder <= maxes[3]:
                                 yield [i, j, k, remainder]
             elif num_stints == 5:
                 # 4 stops (only for wet/chaotic races)
                 s = step * 2 if total_laps < 50 else step * 3
-                hi_0 = min(maxes[0], total_laps - min_laps * 4)
-                for i in range(min_laps, hi_0 + 1, s):
-                    hi_1 = min(maxes[1], total_laps - i - min_laps * 3)
-                    for j in range(min_laps, hi_1 + 1, s):
-                        hi_2 = min(maxes[2], total_laps - i - j - min_laps * 2)
-                        for k in range(min_laps, hi_2 + 1, s):
-                            hi_3 = min(maxes[3], total_laps - i - j - k - min_laps)
-                            for l in range(min_laps, hi_3 + 1, s):
+                hi_0 = min(maxes[0], total_laps - sub_min * 4)
+                for i in range(first_min, hi_0 + 1, s):
+                    hi_1 = min(maxes[1], total_laps - i - sub_min * 3)
+                    for j in range(sub_min, hi_1 + 1, s):
+                        hi_2 = min(maxes[2], total_laps - i - j - sub_min * 2)
+                        for k in range(sub_min, hi_2 + 1, s):
+                            hi_3 = min(maxes[3], total_laps - i - j - k - sub_min)
+                            for l in range(sub_min, hi_3 + 1, s):
                                 remainder = total_laps - i - j - k - l
-                                if min_laps <= remainder <= maxes[4]:
+                                if sub_min <= remainder <= maxes[4]:
                                     yield [i, j, k, l, remainder]
         
         # Determine stop range
@@ -391,10 +398,18 @@ class StrategySimulator:
         safe_candidates = [
             s for s in all_evaluations
             if self._stint_respects_cap(s["compounds"], s["stints"], "safe", start_age)
+            and s["stops"] <= 2
         ]
+        
+        # Fallback: If no perfectly safe 2-stop exists, find the 2-stops with the least cliff overshoot
+        if not safe_candidates:
+            safe_candidates = [s for s in all_evaluations if s["stops"] <= 2]
+            # Sort by cliff overshoot first, then by total time
+            safe_candidates.sort(key=lambda s: (s["max_cliff_overshoot"], s["total_delta"]))
+
         # Apply weather adjustments and re-rank
         if safe_candidates:
-            safe_candidates.sort(key=lambda s: self._apply_weather_adjustments(s, weather_condition, "safe"))
+            safe_candidates.sort(key=lambda s: (s["max_cliff_overshoot"], self._apply_weather_adjustments(s, weather_condition, "safe")))
             safe_strategy = safe_candidates[0]
         else:
             safe_strategy = None
@@ -427,30 +442,34 @@ class StrategySimulator:
         else:
             risky_strategy = None
             
-        # Ensure safe is different from optimal — if identical strategy, pick next best
+        # Ensure safe is different from optimal — if identical sequence, try to find a different sequence
         if safe_strategy:
-            if (safe_strategy["compounds"] == best_strategy["compounds"]
-                and safe_strategy["stints"] == best_strategy["stints"]):
-                # Try the next safe candidate that's actually different
+            if safe_strategy["compounds"] == best_strategy["compounds"]:
+                # Try to find a safe candidate with a DIFFERENT compound sequence
                 for candidate in safe_candidates[1:]:
-                    if (candidate["compounds"] != best_strategy["compounds"]
-                        or candidate["stints"] != best_strategy["stints"]):
+                    if candidate["compounds"] != best_strategy["compounds"]:
                         safe_strategy = candidate
                         break
                 else:
-                    safe_strategy = None  # No meaningfully different safe strategy exists
+                    diff = abs(safe_strategy["total_delta"] - best_strategy["total_delta"])
+                    threshold = best_strategy["total_delta"] * MIN_STRATEGY_DIVERGENCE_FRAC
+                    if diff < threshold:
+                        safe_strategy = None  # Too similar to optimal in both sequence and time
                     
         # Ensure risky is different from optimal
         if risky_strategy:
-            if (risky_strategy["compounds"] == best_strategy["compounds"]
-                and risky_strategy["stints"] == best_strategy["stints"]):
+            if risky_strategy["compounds"] == best_strategy["compounds"]:
+                # Try to find a risky candidate with a DIFFERENT compound sequence
                 for candidate in risky_candidates[1:]:
-                    if (candidate["compounds"] != best_strategy["compounds"]
-                        or candidate["stints"] != best_strategy["stints"]):
+                    if candidate["compounds"] != best_strategy["compounds"]:
                         risky_strategy = candidate
                         break
                 else:
-                    risky_strategy = None  # No meaningfully different risky strategy exists
+                    # If only identical sequences exist, check if it's too close in overall race time
+                    diff = abs(risky_strategy["total_delta"] - best_strategy["total_delta"])
+                    threshold = best_strategy["total_delta"] * MIN_STRATEGY_DIVERGENCE_FRAC
+                    if diff < threshold:
+                        risky_strategy = None  # Too similar to optimal in both sequence and time
 
         return {
             "best_strategy": self._format_output(best_strategy, current_lap),

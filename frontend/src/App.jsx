@@ -92,7 +92,7 @@ const TrackMetricsChart = ({ features }) => {
   return (
     <div className="panel track-metrics-panel" style={{ flex: 1, minWidth: '350px' }}>
       <h3 style={{ marginBottom: '20px' }}>CIRCUIT CHARACTERISTICS</h3>
-      <div style={{ width: '100%', height: '300px' }}>
+      <div style={{ width: '100%', height: '350px' }}>
         <ResponsiveContainer>
           <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data}>
             <PolarGrid stroke="var(--surface-border)" />
@@ -451,71 +451,61 @@ function App() {
                     )}
                 </div>
             </div>
-
+            
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px', marginBottom: '32px', alignItems: 'stretch' }}>
-                <div style={{ flex: 3, minWidth: '600px' }}>
+                <div style={{ flex: 2, minWidth: '600px' }}>
                     <div className="chart-container" style={{ height: '100%', marginBottom: 0 }}>
-                <div style={{width: '100%', height: '450px'}}>
-                    <ResponsiveContainer>
-                        <LineChart data={generateChartData()} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#2B2B35" vertical={false} />
-                            <XAxis 
-                                dataKey="lap" 
-                                type="number" 
-                                domain={[1, 'dataMax']} 
-                                stroke="var(--text-tertiary)" 
-                                tick={{fontFamily: 'JetBrains Mono', fontSize: 10}}
-                                label={{ value: 'TIRE AGE (LAPS)', position: 'insideBottom', offset: -10, fill: 'var(--text-secondary)', style: {fontSize: 10, fontWeight: 700}}} 
-                            />
-                            <YAxis 
-                                stroke="var(--text-tertiary)" 
-                                domain={['auto', 'auto']} 
-                                tick={{fontFamily: 'JetBrains Mono', fontSize: 10}}
-                                tickFormatter={(v) => `${v.toFixed(1)}s`} 
-                                label={{ value: 'LAP TIME DELTA', angle: -90, position: 'insideLeft', fill: 'var(--text-secondary)', style: {fontSize: 10, fontWeight: 700} }}
-                            />
-                            <Tooltip content={<CustomTooltip />} />
-                            <Legend wrapperStyle={{paddingTop: '20px', fontFamily: 'Outfit', fontWeight: 900, fontSize: '10px'}} />
-                            
-                            {results.degradation_graphs.SOFT && <Line type="monotone" dataKey="SOFT" stroke="var(--c-soft)" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />}
-                            {results.degradation_graphs.MEDIUM && <Line type="monotone" dataKey="MEDIUM" stroke="var(--c-medium)" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />}
-                            {results.degradation_graphs.HARD && <Line type="monotone" dataKey="HARD" stroke="var(--c-hard)" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />}
-                            {results.degradation_graphs.INTERMEDIATE && <Line type="monotone" dataKey="INTERMEDIATE" stroke="var(--c-inter)" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />}
-                            {results.degradation_graphs.WET && <Line type="monotone" dataKey="WET" stroke="var(--c-wet)" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />}
-                            
-                            {/* Performance Cliff markers (tire physics — dashed) */}
-                            {results.degradation_graphs.SOFT?.performance_cliff_lap && <ReferenceLine x={results.degradation_graphs.SOFT.performance_cliff_lap} stroke="var(--c-soft)" strokeDasharray="3 3" strokeWidth={1.5} label={{ value: 'CLIFF', fill: 'var(--c-soft)', fontSize: 9, fontWeight: 900, position: 'top'}} />}
-                            {results.degradation_graphs.MEDIUM?.performance_cliff_lap && <ReferenceLine x={results.degradation_graphs.MEDIUM.performance_cliff_lap} stroke="var(--c-medium)" strokeDasharray="3 3" strokeWidth={1.5} />}
-                            {results.degradation_graphs.HARD?.performance_cliff_lap && <ReferenceLine x={results.degradation_graphs.HARD.performance_cliff_lap} stroke="var(--c-hard)" strokeDasharray="3 3" strokeWidth={1.5} />}
-
-                            {/* Strategy Useful Life markers (pit strategy — bold dashed) */}
-                            {results.degradation_graphs.SOFT?.strategy_useful_life_lap && <ReferenceLine x={results.degradation_graphs.SOFT.strategy_useful_life_lap} stroke="var(--c-soft)" strokeDasharray="8 4" strokeWidth={2.5} label={{ value: 'PIT', fill: 'var(--c-soft)', fontSize: 9, fontWeight: 900, position: 'insideTopRight'}} />}
-                            {results.degradation_graphs.MEDIUM?.strategy_useful_life_lap && <ReferenceLine x={results.degradation_graphs.MEDIUM.strategy_useful_life_lap} stroke="var(--c-medium)" strokeDasharray="8 4" strokeWidth={2.5} />}
-                            {results.degradation_graphs.HARD?.strategy_useful_life_lap && <ReferenceLine x={results.degradation_graphs.HARD.strategy_useful_life_lap} stroke="var(--c-hard)" strokeDasharray="8 4" strokeWidth={2.5} />}
-                        </LineChart>
-                    </ResponsiveContainer>
+                        <div style={{width: '100%', height: '450px'}}>
+                            <ResponsiveContainer>
+                                <LineChart data={generateChartData()} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#2B2B35" vertical={false} />
+                                    <XAxis 
+                                        dataKey="lap" 
+                                        type="number" 
+                                        domain={[1, 'dataMax']} 
+                                        stroke="var(--text-tertiary)" 
+                                        tick={{fontFamily: 'JetBrains Mono', fontSize: 10}}
+                                        label={{ value: 'TIRE AGE (LAPS)', position: 'insideBottom', offset: -10, fill: 'var(--text-secondary)', style: {fontSize: 10, fontWeight: 700}}} 
+                                    />
+                                    <YAxis 
+                                        stroke="var(--text-tertiary)" 
+                                        domain={['auto', 'auto']} 
+                                        tick={{fontFamily: 'JetBrains Mono', fontSize: 10}}
+                                        tickFormatter={(v) => `${v.toFixed(1)}s`} 
+                                        label={{ value: 'TOTAL LAP TIME', angle: -90, position: 'insideLeft', fill: 'var(--text-secondary)', style: {fontSize: 10, fontWeight: 700} }}
+                                    />
+                                    <Tooltip content={<CustomTooltip />} />
+                                    <Legend wrapperStyle={{paddingTop: '20px', fontFamily: 'Outfit', fontWeight: 900, fontSize: '10px'}} />
+                                    
+                                    {results.degradation_graphs.SOFT && <Line type="monotone" dataKey="SOFT" stroke="var(--c-soft)" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />}
+                                    {results.degradation_graphs.MEDIUM && <Line type="monotone" dataKey="MEDIUM" stroke="var(--c-medium)" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />}
+                                    {results.degradation_graphs.HARD && <Line type="monotone" dataKey="HARD" stroke="var(--c-hard)" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />}
+                                    {results.degradation_graphs.INTERMEDIATE && <Line type="monotone" dataKey="INTERMEDIATE" stroke="var(--c-inter)" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />}
+                                    {results.degradation_graphs.WET && <Line type="monotone" dataKey="WET" stroke="var(--c-wet)" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />}
+                                </LineChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
                 </div>
                 
-                <div className="metrics-cards">
-                    {["SOFT", "MEDIUM", "HARD"].map(comp => {
-                        const data = results.degradation_graphs[comp];
-                        if (!data) return null;
-                        return (
-                            <div className="card" key={comp} style={{borderLeftColor: `var(--c-${comp.toLowerCase()})`}}>
-                                <h4 style={{color: `var(--c-${comp.toLowerCase()})`}}>COMPOUND: {comp}</h4>
-                                <p><strong>PERF. CLIFF:</strong> <span className="mono" style={{color: '#fff'}}>{data.performance_cliff_lap ? `LAP ${data.performance_cliff_lap}` : 'NONE'}</span></p>
-                                <p><strong>USEFUL LIFE:</strong> <span className="mono" style={{color: '#fff'}}>LAP {data.strategy_useful_life_lap}</span></p>
-                                <p><strong>EST. DEGRADATION:</strong> <span className="mono" style={{color: '#fff'}}>+{data.drop_off_per_lap_sec.toFixed(3)}s</span> / lap</p>
-                            </div>
-                        )
-                    })}
-                </div>
+                <TrackMetricsChart features={results.input_context?.track_features} />
             </div>
-        </div>
 
-        <TrackMetricsChart features={results.input_context?.track_features} />
-    </div>
-
+            <div className="metrics-cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
+                {["SOFT", "MEDIUM", "HARD"].map(comp => {
+                    const data = results.degradation_graphs[comp];
+                    if (!data) return null;
+                    return (
+                        <div className="card" key={comp} style={{borderLeftColor: `var(--c-${comp.toLowerCase()})`, margin: 0}}>
+                            <h4 style={{color: `var(--c-${comp.toLowerCase()})`, fontSize: '1rem'}}>COMPOUND: {comp}</h4>
+                            <p><strong>PERF. CLIFF:</strong> <span className="mono" style={{color: '#fff'}}>{data.performance_cliff_lap ? `LAP ${data.performance_cliff_lap}` : 'NONE'}</span></p>
+                            <p><strong>USEFUL LIFE:</strong> <span className="mono" style={{color: '#fff'}}>LAP {data.strategy_useful_life_lap}</span></p>
+                            <p><strong>EST. DEGRADATION:</strong> <span className="mono" style={{color: '#fff'}}>+{data.drop_off_per_lap_sec.toFixed(3)}s</span> / lap</p>
+                        </div>
+                    )
+                })}
+            </div>
+            
             <WeatherForecast forecast={results.weather_forecast} />
 
             <div className="panel strategy-panel">
@@ -532,25 +522,29 @@ function App() {
                         <div className="strat-sequence" style={{fontSize: '0.8rem', opacity: 0.6}}>{results.strategies.best_strategy?.sequence}</div>
                     </div>
 
-                    <div className="strat-row safe">
-                        <div className="strat-title">
-                            <h4>SAFE</h4>
-                            <span className="mono">{(results.strategies.safe_strategy?.total_optimal_delta || 0).toFixed(1)}s DELTA</span>
+                    {results.strategies.safe_strategy && (
+                        <div className="strat-row safe">
+                            <div className="strat-title">
+                                <h4>SAFE</h4>
+                                <span className="mono">{(results.strategies.safe_strategy?.total_optimal_delta || 0).toFixed(1)}s DELTA</span>
+                            </div>
+                            <div className="strat-philosophy">Avoids tire cliffs · Prefers wet tires in rain · Low risk of tire failure.</div>
+                            <StrategyBar strategy={results.strategies.safe_strategy} totalLaps={results.strategies.safe_strategy?.stints_data?.reduce((a, b) => a + b.laps, 0) || 1} />
+                            <div className="strat-sequence" style={{fontSize: '0.8rem', opacity: 0.6}}>{results.strategies.safe_strategy?.sequence}</div>
                         </div>
-                        <div className="strat-philosophy">Avoids tire cliffs · Prefers wet tires in rain · Low risk of tire failure.</div>
-                        <StrategyBar strategy={results.strategies.safe_strategy} totalLaps={results.strategies.safe_strategy?.stints_data?.reduce((a, b) => a + b.laps, 0) || 1} />
-                        <div className="strat-sequence" style={{fontSize: '0.8rem', opacity: 0.6}}>{results.strategies.safe_strategy?.sequence}</div>
-                    </div>
+                    )}
 
-                    <div className="strat-row risky">
-                        <div className="strat-title">
-                            <h4>RISKY</h4>
-                            <span className="mono">{(results.strategies.risky_strategy?.total_optimal_delta || 0).toFixed(1)}s DELTA</span>
+                    {results.strategies.risky_strategy && (
+                        <div className="strat-row risky">
+                            <div className="strat-title">
+                                <h4>RISKY</h4>
+                                <span className="mono">{(results.strategies.risky_strategy?.total_optimal_delta || 0).toFixed(1)}s DELTA</span>
+                            </div>
+                            <div className="strat-philosophy">Extends stints past cliff · Gambles on drys in light rain · Pits under SC for faster tires.</div>
+                            <StrategyBar strategy={results.strategies.risky_strategy} totalLaps={results.strategies.risky_strategy?.stints_data?.reduce((a, b) => a + b.laps, 0) || 1} />
+                            <div className="strat-sequence" style={{fontSize: '0.8rem', opacity: 0.6}}>{results.strategies.risky_strategy?.sequence}</div>
                         </div>
-                        <div className="strat-philosophy">Extends stints past cliff · Gambles on drys in light rain · Pits under SC for faster tires.</div>
-                        <StrategyBar strategy={results.strategies.risky_strategy} totalLaps={results.strategies.risky_strategy?.stints_data?.reduce((a, b) => a + b.laps, 0) || 1} />
-                        <div className="strat-sequence" style={{fontSize: '0.8rem', opacity: 0.6}}>{results.strategies.risky_strategy?.sequence}</div>
-                    </div>
+                    )}
                 </div>
             </div>
         </div>
