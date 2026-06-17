@@ -434,6 +434,40 @@ TRACK_PIT_LOSS = {
     'MADRING (Madrid, Spain)': 23.0
 }
 
+# Penalty (in seconds) applied to each stop BEYOND the first one.
+# This represents the virtual track position/traffic penalty on circuits where overtaking is difficult.
+TRACK_OVERTAKING_PENALTY = {
+    'Circuit de Monaco (Monaco)': 15.0,         # Overtaking is almost impossible, 2-stop is highly penalized
+    'Marina Bay Street Circuit (Singapore)': 8.0, # Street circuit, very hard to pass
+    'Hungaroring (Hungary)': 6.0,                # "Monaco without barriers", very hard to pass
+    'Circuit Zandvoort (Netherlands)': 5.0,      # Narrow, twisty track
+    'Circuit de Barcelona-Catalunya (Spain)': 4.0,
+    'Circuit de Barcelona-Catalunya (Barcelona, Spain)': 4.0,
+    'Autódromo Hermanos Rodríguez (Mexico)': 3.0,
+    'Albert Park Grand Prix Circuit (Australia)': 3.0,
+    'Yas Marina Circuit (UAE)': 2.0,
+    'Autodromo Internazionale Enzo e Dino Ferrari (Emilia-Romagna, Italy)': 3.0,
+    # High-overtaking tracks get 0.0 penalty
+    'Silverstone Circuit (Great Britain)': 0.0,
+    'Circuit de Spa-Francorchamps (Belgium)': 0.0,
+    'Autodromo Nazionale Monza (Monza, Italy)': 0.0,
+    'Las Vegas Strip Circuit (Las Vegas, USA)': 0.0,
+    'Bahrain International Circuit (Bahrain)': 0.0,
+    'Jeddah Corniche Circuit (Saudi Arabia)': 0.0,
+    'Baku City Circuit (Azerbaijan)': 0.0,
+    'Circuit Gilles Villeneuve (Canada)': 0.0,
+    'Red Bull Ring (Austria)': 0.0,
+    'Suzuka Circuit (Japan)': 0.0,
+    'Lusail International Circuit (Qatar)': 0.0,
+    'Circuit of The Americas (Austin, USA)': 0.0,
+    'Autódromo José Carlos Pace (Brazil)': 0.0,
+    'Shanghai International Circuit (China)': 0.0,
+    'Autodromo Internazionale del Mugello (Italy)': 0.0,
+    'Circuit Paul Ricard (France)': 0.0,
+    'MADRING (Madrid, Spain)': 2.0
+}
+
+
 # Approximate race pace (seconds) for absolute lap time reconstruction
 TRACK_BASE_PACE = {
     'Bahrain International Circuit (Bahrain)': 96.0,

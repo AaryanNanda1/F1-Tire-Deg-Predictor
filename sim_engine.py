@@ -1,7 +1,7 @@
 import itertools
 import math
 
-from mappings import TRACK_PIT_LOSS
+from mappings import TRACK_PIT_LOSS, TRACK_OVERTAKING_PENALTY
 
 # Default Constants
 FUEL_BURN_PER_LAP = 0.07
@@ -126,10 +126,11 @@ class StrategySimulator:
             if idx > 0 and overshoot > max_future_cliff_overshoot:
                 max_future_cliff_overshoot = overshoot
                 
-        # Total optimization time = Deg + Pit losses
+        # Total optimization time = Deg + Pit losses + Overtaking/Traffic penalty
         num_stops = len(compounds) - 1
         track_name = self.context["track"]
         pit_loss_sec = TRACK_PIT_LOSS.get(track_name, 24.0)
+        overtaking_penalty_per_extra_stop = TRACK_OVERTAKING_PENALTY.get(track_name, 0.0)
         
         # If SC is currently out, reduce pit loss (opportunistic pitting)
         if sc_currently_out and num_stops > 0:
@@ -138,7 +139,13 @@ class StrategySimulator:
         else:
             total_pit_loss = num_stops * pit_loss_sec
             
-        total_time_delta = total_deg_delta + total_pit_loss
+        # Overtaking penalty applies to stops beyond the first one.
+        # Since the first stop is mandatory anyway, it doesn't incur extra traffic risk.
+        # But additional stops drop you back into traffic and require overtaking.
+        traffic_penalty = max(0, num_stops - 1) * overtaking_penalty_per_extra_stop
+        
+        total_time_delta = total_deg_delta + total_pit_loss + traffic_penalty
+
         
         return {
             "compounds": compounds,
