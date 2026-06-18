@@ -1,3 +1,4 @@
+import json
 from flask import Flask, request, jsonify
 import sys
 import traceback
@@ -18,6 +19,16 @@ def get_options():
     for track, info in TRACK_CONFIG.items():
         track_laps[track] = info.get('race_laps', 57)
 
+    # Load model metadata if it exists
+    model_metadata = {}
+    metadata_path = "models/era_training_metadata.json"
+    if os.path.exists(metadata_path):
+        try:
+            with open(metadata_path, "r", encoding="utf-8") as f:
+                model_metadata = json.load(f)
+        except Exception as e:
+            print(f"Error reading metadata: {e}")
+
     return jsonify({
         "tracks": list(TRACK_PIT_LOSS.keys()),
         "teams": list(set(TEAM_MAPPING.values())),
@@ -26,7 +37,8 @@ def get_options():
         "compounds": ["SOFT", "MEDIUM", "HARD", "INTERMEDIATE", "WET"],
         "track_laps": track_laps,
         "driver_roster": get_roster_map(),
-        "yearly_tracks": get_yearly_tracks()
+        "yearly_tracks": get_yearly_tracks(),
+        "model_metadata": model_metadata
     })
 
 # Singleton engines to avoid reloading models on every request

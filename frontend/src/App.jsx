@@ -275,11 +275,18 @@ function App() {
       validDrivers = []; // Clear drivers if no team selected
   }
 
+  const getModelTrainedDate = () => {
+    if (!options.model_metadata) return 'LOADING...';
+    const eraKey = form.year >= 2026 ? 'active_aero_2026_2030' : 'ground_effect_2022_2025';
+    const eraInfo = options.model_metadata[eraKey];
+    return eraInfo ? eraInfo.as_of : 'UNKNOWN';
+  };
+
   return (
     <div className="dashboard-container">
       <header className="header">
         <h1>F1 TIRE STRATEGY <span style={{color: 'var(--text-secondary)', fontWeight: 300}}>PREDICTOR</span></h1>
-        <div className="status-badge"><span className="dot"></span> LIVE TELEMETRY FEED</div>
+        <div className="status-badge"><span className="dot"></span> MODEL TRAINED: {getModelTrainedDate()}</div>
       </header>
 
       <form className="panel input-panel" onSubmit={handleSimulate}>
