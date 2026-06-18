@@ -12,3 +12,5 @@ ruptures>=1.1.9
 timple>=0.1.8
 python-dateutil>=2.8.2
 typing_extensions>=4.8.0
+gunicorn>=22.0.0
+
