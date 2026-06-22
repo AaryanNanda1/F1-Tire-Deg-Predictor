@@ -1,0 +1,5 @@
+[[redirects]]
+  from = "/api/*"
+  to = "https://f1-tire-deg-predictor.onrender.com/api/:splat"
+  status = 200
+  force = true
