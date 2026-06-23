@@ -1,4 +1,4 @@
-name: Weekly Model Retraining
+name: Weekly Active-Aero Model Retraining
 
 on:
   schedule:
@@ -27,14 +27,32 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run training script
+      - name: Run active-aero training script
         run: |
-          python train_era_models.py --mode both
+          python train_era_models.py --mode active_aero
 
       - name: Commit and push updated models
+        id: commit_models
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add models/
-          # Commit changes only if the models actually changed
-          git diff-index --quiet HEAD || (git commit -m "chore: automated weekly model retraining [skip ci]" && git push origin main)
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No model changes detected."
+          else
+            git commit -m "chore: automated weekly active-aero model retraining [skip ci]"
+            git push origin main
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Trigger Render deploy
+        if: steps.commit_models.outputs.changed == 'true'
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
+            echo "::error::RENDER_DEPLOY_HOOK_URL secret is not configured."
+            exit 1
+          fi
+          curl --fail --silent --show-error "$RENDER_DEPLOY_HOOK_URL"
