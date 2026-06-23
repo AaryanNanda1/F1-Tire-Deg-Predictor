@@ -292,6 +292,7 @@ function App() {
   const getModelTrainedDate = () => {
     if (!options.model_metadata) return 'LOADING...';
     const eraKey = form.year >= 2026 ? 'active_aero_2026_2030' : 'ground_effect_2022_2025';
+    const modelLabel = form.year >= 2026 ? 'active_aero' : 'ground_effect';
     const eraInfo = options.model_metadata[eraKey];
     if (!eraInfo) return 'UNKNOWN';
 
@@ -299,9 +300,10 @@ function App() {
     if (!trainedDate) return 'UNKNOWN';
 
     const parsed = new Date(trainedDate);
-    return Number.isNaN(parsed.getTime())
+    const displayDate = Number.isNaN(parsed.getTime())
         ? trainedDate
         : parsed.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    return `${displayDate} (${modelLabel})`;
   };
 
   return (
