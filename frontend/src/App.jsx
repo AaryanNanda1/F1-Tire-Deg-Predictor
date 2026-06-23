@@ -151,6 +151,7 @@ function App() {
 
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState(null);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     fetch('/api/options')
@@ -162,6 +163,7 @@ function App() {
   const handleSimulate = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
     
     const payload = {
         ...form,
@@ -180,17 +182,29 @@ function App() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-        const data = await res.json();
+        const responseText = await res.text();
+        let data;
+        try {
+            data = responseText ? JSON.parse(responseText) : {};
+        } catch {
+            data = {};
+        }
+
+        if (!res.ok) {
+            throw new Error(data.message || `Simulation request failed (${res.status})`);
+        }
         
         if (data.status === 'success') {
             setResults(data);
         } else {
-            alert('Simulation Error: ' + data.message);
+            throw new Error(data.message || 'The simulation did not return results.');
         }
     } catch (err) {
         console.error(err);
+        setError(err.message || 'Unable to run the simulation. Please try again.');
+    } finally {
+        setLoading(false);
     }
-    setLoading(false);
   };
 
   const generateChartData = () => {
@@ -279,7 +293,15 @@ function App() {
     if (!options.model_metadata) return 'LOADING...';
     const eraKey = form.year >= 2026 ? 'active_aero_2026_2030' : 'ground_effect_2022_2025';
     const eraInfo = options.model_metadata[eraKey];
-    return eraInfo ? eraInfo.as_of : 'UNKNOWN';
+    if (!eraInfo) return 'UNKNOWN';
+
+    const trainedDate = eraInfo.trained_at || eraInfo.as_of;
+    if (!trainedDate) return 'UNKNOWN';
+
+    const parsed = new Date(trainedDate);
+    return Number.isNaN(parsed.getTime())
+        ? trainedDate
+        : parsed.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
   return (
@@ -444,6 +466,12 @@ function App() {
             {loading ? 'CALCULATING OPTIMAL PATH...' : 'RUN STRATEGY SIMULATION'}
         </button>
       </form>
+
+      {error && (
+        <div className="panel" role="alert" style={{borderColor: 'var(--c-soft)', color: 'var(--c-soft)', marginBottom: '24px'}}>
+            <strong>SIMULATION ERROR:</strong> {error}
+        </div>
+      )}
 
       {results && !loading && (
         <div className="fade-in-up">

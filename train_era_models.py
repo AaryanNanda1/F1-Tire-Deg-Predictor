@@ -1,7 +1,7 @@
 import argparse
 import json
 import shutil
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Tuple
 
@@ -15,6 +15,23 @@ from sklearn.model_selection import train_test_split
 
 from data_loader import load_race_data
 from preprocessing import preprocess_laps
+
+
+def _training_timestamp() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
+def _merge_training_result(existing: Dict, candidate: Dict) -> Dict:
+    """Keep the last usable model metadata when a retraining attempt has no data."""
+    candidate_status = candidate.get("status", "")
+    existing_status = existing.get("status", "")
+    if candidate_status == "no_data" and existing_status.startswith("trained"):
+        preserved = dict(existing)
+        preserved["last_retrain_attempt"] = candidate.get("as_of")
+        preserved["last_retrain_status"] = candidate_status
+        preserved["last_retrain_failed_events"] = candidate.get("failed_events", [])
+        return preserved
+    return candidate
 
 
 def _to_event_date(value) -> date:
@@ -273,6 +290,7 @@ def train_era(
         "start_year": start_year,
         "end_year": end_year,
         "as_of": as_of.isoformat(),
+        "trained_at": _training_timestamp(),
         "model_path": str(model_path),
         "features_path": str(features_path),
         **metrics,
@@ -306,10 +324,24 @@ def main():
     out_dir = Path(args.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    results: Dict[str, Dict] = {}
+    metadata_path = out_dir / "era_training_metadata.json"
+    existing_results: Dict[str, Dict] = {}
+    if metadata_path.exists():
+        try:
+            with open(metadata_path, "r", encoding="utf-8") as f:
+                existing_results = json.load(f)
+        except (OSError, json.JSONDecodeError):
+            existing_results = {}
+
+    # Preserve metadata for eras that are not part of this invocation.
+    results: Dict[str, Dict] = dict(existing_results)
     if args.mode in {"both", "ground_effect"}:
-        results["ground_effect_2022_2025"] = train_era(
+        candidate = train_era(
             2022, 2025, "ground_effect_2022_2025", as_of, out_dir
+        )
+        results["ground_effect_2022_2025"] = _merge_training_result(
+            existing_results.get("ground_effect_2022_2025", {}),
+            candidate,
         )
     if args.mode in {"both", "active_aero"}:
         # PASSING 2024-2025 AS PRIOR FOR 2026+ (Hybrid Cold Start)
@@ -341,21 +373,33 @@ def main():
             data_df = data_2026
             
         if data_df.empty:
-            results["active_aero_2026_2030"] = {"status": "no_data", **details_2026}
+            candidate = {
+                "status": "no_data",
+                "start_year": 2026,
+                "end_year": 2030,
+                "as_of": as_of.isoformat(),
+                **details_2026,
+            }
         else:
             model_path = out_dir / "active_aero_2026_2030_model.joblib"
             features_path = out_dir / "active_aero_2026_2030_features.joblib"
             metrics = train_and_save(data_df, model_path, features_path)
-            results["active_aero_2026_2030"] = {
+            candidate = {
                 "status": "trained_hybrid",
                 "start_year": 2026,
                 "end_year": 2030,
                 "as_of": as_of.isoformat(),
+                "trained_at": _training_timestamp(),
+                "model_path": str(model_path),
+                "features_path": str(features_path),
                 **metrics,
                 **details_2026
             }
+        results["active_aero_2026_2030"] = _merge_training_result(
+            existing_results.get("active_aero_2026_2030", {}),
+            candidate,
+        )
 
-    metadata_path = out_dir / "era_training_metadata.json"
     with open(metadata_path, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2)
 

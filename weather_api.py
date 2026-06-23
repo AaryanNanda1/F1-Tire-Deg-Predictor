@@ -109,7 +109,9 @@ def get_track_weather(track_name: str, race_date: str, race_time: str = None) ->
         }
 
     try:
-        response = requests.get(url, params=params)
+        # Weather is useful context, but it must not hold the simulation
+        # endpoint open long enough to hit the hosting proxy timeout.
+        response = requests.get(url, params=params, timeout=(3.05, 5))
         response.raise_for_status()
         data = response.json()
         

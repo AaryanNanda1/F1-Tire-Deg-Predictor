@@ -38,33 +38,89 @@ class StrategySimulator:
         """
         self.profiles = degradation_profiles["compounds"]
         self.context = degradation_profiles["input_context"]
+        # Normalize graph keys once. The previous implementation rebuilt an
+        # int-keyed graph for every simulated lap in every candidate strategy,
+        # which made a normal 72-lap request exceed deployment timeouts.
+        self._graphs = {}
+        self._graph_max_ages = {}
+        for compound, profile in self.profiles.items():
+            graph = {int(k): float(v) for k, v in profile["graph_data"].items()}
+            self._graphs[compound] = graph
+            self._graph_max_ages[compound] = max(graph)
+
+        # Candidate strategies repeatedly evaluate the same compound/age and
+        # compound/stint combinations. Cache both levels for the lifetime of a
+        # single request.
+        self._deg_time_cache = {}
+        self._stint_cache = {}
         
     def _get_deg_time(self, compound: str, effective_age: float):
         """Linearly interpolates degradation time from the ML curve based on effective tire age."""
-        graph = self.profiles[compound]["graph_data"]
-        # Convert string keys from JSON back to int
-        graph = {int(k): v for k, v in graph.items()}
+        age = round(float(effective_age), 6)
+        cache_key = (compound, age)
+        if cache_key in self._deg_time_cache:
+            return self._deg_time_cache[cache_key]
+
+        graph = self._graphs[compound]
+        max_age = self._graph_max_ages[compound]
         
-        max_age = max(graph.keys())
-        if effective_age <= 1.0:
-            return graph[1]
-        if effective_age >= max_age:
+        if age <= 1.0:
+            result = graph[1]
+        elif age >= max_age:
             # If we blow past the curve data, extrapolate aggressively using the cliff slope
-            overshoot = effective_age - max_age
-            return graph[max_age] + (overshoot * self.profiles[compound]["drop_off_per_lap_sec"] * 2.0)
-            
-        lower_age = math.floor(effective_age)
-        upper_age = math.ceil(effective_age)
-        
-        if lower_age == upper_age:
-            return graph.get(lower_age, 0.0)
-            
-        # Interpolate
-        lower_val = graph.get(lower_age, 0.0)
-        upper_val = graph.get(upper_age, 0.0)
-        fraction = effective_age - lower_age
-        
-        return lower_val + (upper_val - lower_val) * fraction
+            overshoot = age - max_age
+            result = graph[max_age] + (
+                overshoot * self.profiles[compound]["drop_off_per_lap_sec"] * 2.0
+            )
+        else:
+            lower_age = math.floor(age)
+            upper_age = math.ceil(age)
+
+            if lower_age == upper_age:
+                result = graph.get(lower_age, 0.0)
+            else:
+                # Interpolate
+                lower_val = graph.get(lower_age, 0.0)
+                upper_val = graph.get(upper_age, 0.0)
+                fraction = age - lower_age
+                result = lower_val + (upper_val - lower_val) * fraction
+
+        self._deg_time_cache[cache_key] = result
+        return result
+
+    def _eval_stint(self, compound: str, length: int, position: int,
+                    start_age: float = 0.0, sc_laps: int = 0,
+                    sc_currently_out: bool = False):
+        """Evaluate one stint, reusing identical stints across candidate strategies."""
+        cache_key = (
+            compound,
+            int(length),
+            int(position),
+            round(float(start_age), 6),
+            int(sc_laps),
+            bool(sc_currently_out),
+        )
+        if cache_key in self._stint_cache:
+            return self._stint_cache[cache_key]
+
+        effective_age = float(start_age)
+        if sc_laps > 0:
+            effective_age -= sc_laps * (1.0 - SC_WEAR_MULTIPLIER)
+            effective_age = max(0.0, effective_age)
+
+        total_deg_delta = 0.0
+        for lap_in_stint in range(length):
+            wear_factor = DIRTY_AIR_WEAR_MULTIPLIER if position > 1 else 1.0
+            if sc_currently_out and lap_in_stint < 3:
+                wear_factor *= SC_WEAR_MULTIPLIER
+
+            effective_age += wear_factor
+            total_deg_delta += self._get_deg_time(compound, effective_age)
+
+        useful_life = self._get_useful_life(compound)
+        result = (total_deg_delta, max(0, effective_age - useful_life))
+        self._stint_cache[cache_key] = result
+        return result
 
     def _get_useful_life(self, compound: str):
         """Returns the strategy useful life lap for a compound from degradation engine output."""
@@ -100,26 +156,16 @@ class StrategySimulator:
         max_future_cliff_overshoot = 0  # Overshoot on stints AFTER the inherited tire
         
         for idx, (compound, length) in enumerate(zip(compounds, stint_lengths)):
-            # If this is the starting tire, carries over its previous age
-            effective_age = start_age if idx == 0 else 0.0
-            useful_life = self._get_useful_life(compound)
-            
-            # Account for SC laps already served on the current tire (first stint only)
-            if idx == 0 and sc_laps_on_first_stint > 0:
-                effective_age -= sc_laps_on_first_stint * (1.0 - SC_WEAR_MULTIPLIER)
-                effective_age = max(0.0, effective_age)
-            
-            for lap_in_stint in range(length):
-                wear_factor = DIRTY_AIR_WEAR_MULTIPLIER if position > 1 else 1.0
-                
-                # If SC is currently out, reduce wear for the first few laps of the sim
-                if sc_currently_out and idx == 0 and lap_in_stint < 3:
-                    wear_factor *= SC_WEAR_MULTIPLIER
-                
-                effective_age += wear_factor
-                total_deg_delta += self._get_deg_time(compound, effective_age)
-                
-            overshoot = max(0, effective_age - useful_life)
+            stint_delta, overshoot = self._eval_stint(
+                compound,
+                length,
+                position,
+                start_age=start_age if idx == 0 else 0.0,
+                sc_laps=sc_laps_on_first_stint if idx == 0 else 0,
+                sc_currently_out=sc_currently_out if idx == 0 else False,
+            )
+            total_deg_delta += stint_delta
+
             if overshoot > max_cliff_overshoot:
                 max_cliff_overshoot = overshoot
             # Track overshoot on fresh tire stints only (idx > 0 = after a pit stop)
