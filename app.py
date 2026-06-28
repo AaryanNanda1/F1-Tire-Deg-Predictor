@@ -172,5 +172,5 @@ def simulate_strategy():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == '__main__':
-    # Flask runs on 5001 to avoid macOS AirPlay conflict on 5000
-    app.run(port=5001, debug=True)
+    port = int(os.environ.get('PORT', 5001))
+    app.run(host='0.0.0.0', port=port, debug=False)
