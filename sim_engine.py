@@ -409,10 +409,17 @@ class StrategySimulator:
             for combo in compound_combos:
                 # Check 2-compound rule across the ENTIRE race (including compounds_used)
                 all_compounds_in_race = set(compounds_used) | set(combo)
-                # In dry conditions, need at least 2 different dry compounds
+                # In dry conditions, prefer at least 2 different dry compounds for a pure dry strategy.
+                # However, if the current compound is a wet tyre and the race is otherwise dry,
+                # allow a switch to a single dry compound when it is the best/only viable option
+                # (for example, during a safety car or when the forecast remains dry).
                 if weather_condition == "dry":
                     dry_in_race = [c for c in all_compounds_in_race if c in dry_compounds]
-                    if len(set(dry_in_race)) < 2:
+                    wet_in_race = [c for c in all_compounds_in_race if c in wet_compounds]
+                    if not dry_in_race:
+                        # A pure wet-only strategy is not a valid dry-weather race strategy.
+                        continue
+                    if len(set(dry_in_race)) < 2 and not (wet_in_race and current_compound in wet_compounds):
                         continue
                 else:
                     # In wet/mixed conditions, compound diversity is less strict
