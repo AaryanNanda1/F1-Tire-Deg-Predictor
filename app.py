@@ -10,6 +10,14 @@ from sim_engine import StrategySimulator
 
 app = Flask(__name__)
 
+@app.route('/health', methods=['GET'])
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    return jsonify({
+        "status": "ok",
+        "service": "f1-tire-deg-predictor"
+    })
+
 @app.route('/api/options', methods=['GET'])
 def get_options():
     # Provide the dynamic options for the UI dropdowns

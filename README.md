@@ -220,3 +220,10 @@ The project includes a weekly retraining script for the 2026+ era to incorporate
 # Install cron job (Every Monday at 03:00)
 (crontab -l 2>/dev/null; echo "0 3 * * 1 cd \"$PWD\" && ./scripts/retrain_active_aero_weekly.sh >> active_aero_retrain.log 2>&1") | crontab -
 ```
+
+### Keep the backend awake on Render
+Render will spin down the service after 15 minutes of inactivity. A simple cron job or external uptime bot can keep it warm by hitting the health endpoint:
+```bash
+# Ping every 10 minutes
+*/10 * * * * curl -fsS https://your-render-app.onrender.com/health >/dev/null 2>&1
+```
