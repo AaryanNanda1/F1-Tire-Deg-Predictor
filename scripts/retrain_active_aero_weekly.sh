@@ -5,9 +5,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "${REPO_ROOT}"
 
-echo "Starting model retraining at $(date)..."
+echo "Starting weekly Active Aero model retraining at $(date)..."
 
-# Run the training script (specifying active_aero mode to update the 2026+ models)
+# Weekly automation only retrains the Active Aero model for the 2026+ era.
 python train_era_models.py --mode active_aero
 
 # Check if there are changes in the models directory
