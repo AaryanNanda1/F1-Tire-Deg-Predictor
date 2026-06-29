@@ -11,6 +11,8 @@ const COMPOUND_CHART_LABELS = {
 
 const getCompoundChartLabel = (compound) => COMPOUND_CHART_LABELS[compound] || compound;
 
+const formatStintTooltip = (stint) => `${stint.compound} L[${stint.start} - ${stint.end}] ${stint.laps} laps`;
+
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
@@ -28,22 +30,39 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 const StrategyBar = ({ strategy, totalLaps }) => {
+  const [activeStint, setActiveStint] = useState(null);
+
   if (!strategy || !strategy.stints_data) return null;
   
   return (
-    <div className="stint-bar-container">
-      {strategy.stints_data.map((stint, idx) => (
-        <div 
-          key={idx} 
-          className="stint-segment" 
-          data-compound={stint.compound}
-          style={{ width: `${(stint.laps / totalLaps) * 100}%` }}
-          title={`${stint.compound}: Lap ${stint.start} - ${stint.end} (${stint.laps} laps)`}
-        >
-          <span className="stint-label">{stint.compound}</span>
-          <span className="stint-laps">{stint.laps}</span>
-        </div>
-      ))}
+    <div className="stint-bar-shell">
+      <div className="stint-bar-container">
+        {strategy.stints_data.map((stint, idx) => {
+          const tooltip = formatStintTooltip(stint);
+
+          return (
+            <div 
+              key={idx} 
+              className="stint-segment" 
+              data-compound={stint.compound}
+              style={{ width: `${(stint.laps / totalLaps) * 100}%` }}
+              title={tooltip}
+              aria-label={tooltip}
+              tabIndex={0}
+              onMouseEnter={() => setActiveStint(stint)}
+              onMouseLeave={() => setActiveStint(null)}
+              onFocus={() => setActiveStint(stint)}
+              onBlur={() => setActiveStint(null)}
+            >
+              <span className="stint-label">{stint.compound}</span>
+              <span className="stint-laps">{stint.laps}</span>
+            </div>
+          );
+        })}
+      </div>
+      <div className={`stint-hover-detail ${activeStint ? 'is-visible' : ''}`}>
+        {activeStint ? formatStintTooltip(activeStint) : ''}
+      </div>
     </div>
   );
 };

@@ -300,6 +300,11 @@ input[type=number] {
 }
 
 /* Strategy Visual Bars */
+.stint-bar-shell {
+  width: 100%;
+  margin: 16px 0;
+}
+
 .stint-bar-container {
   width: 100%;
   height: 48px;
@@ -308,7 +313,6 @@ input[type=number] {
   position: relative;
   overflow: hidden;
   border-radius: 4px;
-  margin: 16px 0;
   border: 1px solid var(--surface-border);
 }
 
@@ -326,6 +330,12 @@ input[type=number] {
 .stint-segment:hover {
   filter: brightness(1.2);
   z-index: 2;
+}
+
+.stint-segment:focus-visible {
+  outline: 2px solid var(--text-primary);
+  outline-offset: -3px;
+  z-index: 3;
 }
 
 .stint-segment::after {
@@ -354,6 +364,20 @@ input[type=number] {
   font-size: 0.7rem;
   opacity: 0.8;
   margin-left: 6px;
+}
+
+.stint-hover-detail {
+  min-height: 18px;
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  opacity: 0;
+  transition: var(--transition-fast);
+}
+
+.stint-hover-detail.is-visible {
+  opacity: 1;
 }
 
 .stint-segment[data-compound="SOFT"] { background: var(--c-soft); }
