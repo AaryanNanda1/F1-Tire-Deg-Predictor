@@ -5,12 +5,49 @@ import os
 
 app = Flask(__name__)
 
+_DEPLOY_METADATA = None
+
+
+def get_deploy_metadata():
+    global _DEPLOY_METADATA
+    if _DEPLOY_METADATA is not None:
+        return _DEPLOY_METADATA
+
+    commit = os.environ.get("RENDER_GIT_COMMIT")
+    source = "render" if commit else "unknown"
+
+    if not commit:
+        try:
+            import subprocess
+
+            result = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=os.path.dirname(os.path.abspath(__file__)),
+                capture_output=True,
+                text=True,
+                timeout=1,
+                check=True,
+            )
+            commit = result.stdout.strip()
+            source = "local-git"
+        except Exception:
+            commit = "unknown"
+
+    _DEPLOY_METADATA = {
+        "commit": commit,
+        "commit_short": commit[:7] if commit != "unknown" else commit,
+        "source": source,
+    }
+    return _DEPLOY_METADATA
+
+
 @app.route('/health', methods=['GET'])
 @app.route('/api/health', methods=['GET'])
 def health_check():
     return jsonify({
         "status": "ok",
-        "service": "f1-tire-deg-predictor"
+        "service": "f1-tire-deg-predictor",
+        "version": get_deploy_metadata(),
     })
 
 @app.route('/api/options', methods=['GET'])
