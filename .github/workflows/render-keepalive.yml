@@ -3,26 +3,26 @@ name: Render keepalive
 on:
   schedule:
     # GitHub cron uses UTC. Render free web services sleep after inactivity,
-    # so keep this below Render's idle window.
-    - cron: '*/10 * * * *'
+    # so use the shortest supported cadence.
+    - cron: '*/5 * * * *'
   workflow_dispatch:
-
-concurrency:
-  group: render-keepalive
-  cancel-in-progress: true
 
 jobs:
   ping:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 7
     env:
       HEALTH_URL: ${{ vars.RENDER_HEALTH_URL || 'https://f1-tire-deg-predictor.onrender.com/health' }}
     steps:
       - name: Ping Render health endpoint
+        shell: bash
         run: |
           curl --fail --silent --show-error \
-            --max-time 60 \
-            --retry 3 \
-            --retry-delay 10 \
+            --location \
+            --connect-timeout 20 \
+            --max-time 240 \
+            --retry 2 \
+            --retry-delay 15 \
             --retry-all-errors \
+            --retry-max-time 300 \
             "$HEALTH_URL"

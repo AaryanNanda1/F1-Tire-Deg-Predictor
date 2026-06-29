@@ -4,6 +4,13 @@ import {
     Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis
 } from 'recharts';
 
+const COMPOUND_CHART_LABELS = {
+  INTERMEDIATE: 'Intermediate (Wet Conditions)',
+  WET: 'Wet (Wet Conditions)',
+};
+
+const getCompoundChartLabel = (compound) => COMPOUND_CHART_LABELS[compound] || compound;
+
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
@@ -11,7 +18,7 @@ const CustomTooltip = ({ active, payload, label }) => {
         <p className="label" style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{ `LAP ${label}` }</p>
         {payload.map((entry, index) => (
           <p key={index} style={{ margin: '4px 0', color: entry.color, fontWeight: 'bold' }}>
-            {entry.name}: {entry.value.toFixed(3)}s
+            {getCompoundChartLabel(entry.name)}: {entry.value.toFixed(3)}s
           </p>
         ))}
       </div>
@@ -514,11 +521,11 @@ function App() {
                                     <Tooltip content={<CustomTooltip />} />
                                     <Legend wrapperStyle={{paddingTop: '20px', fontFamily: 'Outfit', fontWeight: 900, fontSize: '10px'}} />
                                     
-                                    {results.degradation_graphs.SOFT && <Line type="monotone" dataKey="SOFT" stroke="var(--c-soft)" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />}
-                                    {results.degradation_graphs.MEDIUM && <Line type="monotone" dataKey="MEDIUM" stroke="var(--c-medium)" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />}
-                                    {results.degradation_graphs.HARD && <Line type="monotone" dataKey="HARD" stroke="var(--c-hard)" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />}
-                                    {results.degradation_graphs.INTERMEDIATE && <Line type="monotone" dataKey="INTERMEDIATE" stroke="var(--c-inter)" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />}
-                                    {results.degradation_graphs.WET && <Line type="monotone" dataKey="WET" stroke="var(--c-wet)" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />}
+                                    {results.degradation_graphs.SOFT && <Line type="monotone" dataKey="SOFT" name={getCompoundChartLabel("SOFT")} stroke="var(--c-soft)" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />}
+                                    {results.degradation_graphs.MEDIUM && <Line type="monotone" dataKey="MEDIUM" name={getCompoundChartLabel("MEDIUM")} stroke="var(--c-medium)" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />}
+                                    {results.degradation_graphs.HARD && <Line type="monotone" dataKey="HARD" name={getCompoundChartLabel("HARD")} stroke="var(--c-hard)" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />}
+                                    {results.degradation_graphs.INTERMEDIATE && <Line type="monotone" dataKey="INTERMEDIATE" name={getCompoundChartLabel("INTERMEDIATE")} stroke="var(--c-inter)" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />}
+                                    {results.degradation_graphs.WET && <Line type="monotone" dataKey="WET" name={getCompoundChartLabel("WET")} stroke="var(--c-wet)" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />}
                                 </LineChart>
                             </ResponsiveContainer>
                         </div>

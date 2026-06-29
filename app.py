@@ -1,12 +1,7 @@
 import json
 from flask import Flask, request, jsonify
-import sys
 import traceback
 import os
-from mappings import TRACK_PIT_LOSS, TEAM_MAPPING, TRACK_CONFIG, get_roster_map, get_yearly_tracks
-import math
-from degradation_engine import TireDegradationSimulator
-from sim_engine import StrategySimulator
 
 app = Flask(__name__)
 
@@ -20,6 +15,8 @@ def health_check():
 
 @app.route('/api/options', methods=['GET'])
 def get_options():
+    from mappings import TRACK_PIT_LOSS, TEAM_MAPPING, TRACK_CONFIG, get_roster_map, get_yearly_tracks
+
     # Provide the dynamic options for the UI dropdowns
     drivers = ["VER", "PER", "LEC", "SAI", "RUS", "HAM", "NOR", "RIC", "OCO", "ALO", "BOT", "ZHO", "VET", "STR", "HUL", "MAG", "MSC", "GAS", "TSU", "ALB", "LAT", "DEV", "PIA", "SAR", "LAW", "DOO", "BEA", "COL", "ANT", "BOR", "HAD", "LIN"]
     
@@ -54,6 +51,8 @@ _ENGINE_CACHE = {}
 _ENGINE_MTIMES = {}
 
 def get_engine(year):
+    from degradation_engine import TireDegradationSimulator
+
     # Determine which era model to use
     era = "active_aero" if year >= 2026 else "ground_effect"
     prefix = "active_aero_2026_2030" if year >= 2026 else "ground_effect_2022_2025"
@@ -139,6 +138,8 @@ def simulate_strategy():
         weather_condition = data.get("weather_override", None) or _derive_weather_condition(weather_data)
         
         # 3. Boot Strategy Simulator (consumes degradation output unchanged)
+        from sim_engine import StrategySimulator
+
         sim = StrategySimulator(out_degradation)
         strategies = sim.generate_strategies(
             total_laps=total_laps,
