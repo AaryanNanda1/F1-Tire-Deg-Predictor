@@ -217,8 +217,8 @@ Use the [deployed dashboard](https://f1-tire-deg.netlify.app/) or run the fronte
 ## 🔧 Automation
 The project includes a weekly retraining script for the 2026+ era to incorporate new data as it becomes available:
 ```bash
-# Install cron job (Every Monday at 08:15 UTC)
-(crontab -l 2>/dev/null; echo "15 8 * * 1 cd \"$PWD\" && ./scripts/retrain_active_aero_weekly.sh >> active_aero_retrain.log 2>&1") | crontab -
+# Install cron job (Every Monday at 03:00 local time)
+(crontab -l 2>/dev/null; echo "0 3 * * 1 cd \"$PWD\" && ./scripts/retrain_active_aero_weekly.sh >> active_aero_retrain.log 2>&1") | crontab -
 ```
 
 ### Keep the backend awake on Render
