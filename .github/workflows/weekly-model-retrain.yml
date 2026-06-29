@@ -2,7 +2,7 @@ name: Weekly Active Aero model retraining
 
 on:
   schedule:
-    - cron: '0 3 * * 1'
+    - cron: '50 3 * * 1'
   workflow_dispatch:
 
 jobs:

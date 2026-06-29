@@ -217,13 +217,15 @@ Use the [deployed dashboard](https://f1-tire-deg.netlify.app/) or run the fronte
 ## 🔧 Automation
 The project includes a weekly retraining script for the 2026+ era to incorporate new data as it becomes available:
 ```bash
-# Install cron job (Every Monday at 03:00)
-(crontab -l 2>/dev/null; echo "0 3 * * 1 cd \"$PWD\" && ./scripts/retrain_active_aero_weekly.sh >> active_aero_retrain.log 2>&1") | crontab -
+# Install cron job (Every Monday at 03:50)
+(crontab -l 2>/dev/null; echo "50 3 * * 1 cd \"$PWD\" && ./scripts/retrain_active_aero_weekly.sh >> active_aero_retrain.log 2>&1") | crontab -
 ```
 
 ### Keep the backend awake on Render
-Render will spin down the service after 15 minutes of inactivity. A simple cron job or external uptime bot can keep it warm by hitting the health endpoint:
-```bash
-# Ping every 10 minutes
-*/10 * * * * curl -fsS https://your-render-app.onrender.com/health >/dev/null 2>&1
+Render will spin down the service after 15 minutes of inactivity. The GitHub Actions workflow at `.github/workflows/render-keepalive.yml` pings the backend health endpoint every 10 minutes:
+
+```text
+https://f1-tire-deg-predictor.onrender.com/health
 ```
+
+If the Render service URL changes, set a repository variable named `RENDER_HEALTH_URL` to the new health endpoint. GitHub cron schedules use UTC and can be delayed slightly by Actions queueing.

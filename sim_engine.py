@@ -25,6 +25,18 @@ COMPOUND_ABSOLUTE_MAX_LAPS = {
 SAFE_DRY_IN_WET_PENALTY = 15.0       # Safe: penalize staying on drys in any wet condition
 RISKY_DRY_IN_LIGHT_WET_BONUS = -5.0  # Risky: reward gambling on drys in light wet
 
+# Wet and intermediate tyres are trained/predicted in wet context. When a race
+# scenario is dry but the car is still on wet-weather tyres, apply a strategy
+# scoring correction so the raw wet-weather curve is not treated as competitive.
+WET_TIRE_DRY_BASE_PENALTY_SEC = {
+    "INTERMEDIATE": 3.0,
+    "WET": 6.0,
+}
+WET_TIRE_DRY_AGE_PENALTY_SEC = {
+    "INTERMEDIATE": 0.12,
+    "WET": 0.25,
+}
+
 # Minimum delta difference (%) for safe/risky to be shown — if it's within this
 # threshold of optimal, it's not meaningfully different and we return null
 MIN_STRATEGY_DIVERGENCE_FRAC = 0.003  # 0.3% of optimal delta
@@ -88,9 +100,21 @@ class StrategySimulator:
         self._deg_time_cache[cache_key] = result
         return result
 
+    def _wrong_condition_penalty(self, compound: str, effective_age: float,
+                                 weather_condition: str):
+        """Returns per-lap tyre mismatch penalty for strategy scoring."""
+        if weather_condition != "dry" or compound not in WET_TIRE_DRY_BASE_PENALTY_SEC:
+            return 0.0
+
+        age = max(1.0, float(effective_age))
+        base_penalty = WET_TIRE_DRY_BASE_PENALTY_SEC[compound]
+        age_penalty = WET_TIRE_DRY_AGE_PENALTY_SEC[compound] * max(0.0, age - 1.0)
+        return base_penalty + age_penalty
+
     def _eval_stint(self, compound: str, length: int, position: int,
                     start_age: float = 0.0, sc_laps: int = 0,
-                    sc_currently_out: bool = False):
+                    sc_currently_out: bool = False,
+                    weather_condition: str = "dry"):
         """Evaluate one stint, reusing identical stints across candidate strategies."""
         cache_key = (
             compound,
@@ -99,6 +123,7 @@ class StrategySimulator:
             round(float(start_age), 6),
             int(sc_laps),
             bool(sc_currently_out),
+            weather_condition,
         )
         if cache_key in self._stint_cache:
             return self._stint_cache[cache_key]
@@ -115,7 +140,10 @@ class StrategySimulator:
                 wear_factor *= SC_WEAR_MULTIPLIER
 
             effective_age += wear_factor
-            total_deg_delta += self._get_deg_time(compound, effective_age)
+            total_deg_delta += (
+                self._get_deg_time(compound, effective_age)
+                + self._wrong_condition_penalty(compound, effective_age, weather_condition)
+            )
 
         useful_life = self._get_useful_life(compound)
         result = (total_deg_delta, max(0, effective_age - useful_life))
@@ -149,7 +177,8 @@ class StrategySimulator:
     def _eval_strategy(self, compounds: list, stint_lengths: list, position: int,
                        laps_to_complete: int, start_age: float = 0.0,
                        sc_laps_on_first_stint: int = 0,
-                       sc_currently_out: bool = False):
+                       sc_currently_out: bool = False,
+                       weather_condition: str = "dry"):
         """Evaluates total race delta time for a specific combination of stints."""
         total_deg_delta = 0.0
         max_cliff_overshoot = 0
@@ -163,6 +192,7 @@ class StrategySimulator:
                 start_age=start_age if idx == 0 else 0.0,
                 sc_laps=sc_laps_on_first_stint if idx == 0 else 0,
                 sc_currently_out=sc_currently_out if idx == 0 else False,
+                weather_condition=weather_condition,
             )
             total_deg_delta += stint_delta
 
@@ -391,7 +421,8 @@ class StrategySimulator:
                 eval_result = self._eval_strategy(
                     [current_compound], [laps_remaining], position, laps_remaining,
                     start_age=start_age, sc_laps_on_first_stint=sc_laps_first,
-                    sc_currently_out=sc_currently_out
+                    sc_currently_out=sc_currently_out,
+                    weather_condition=weather_condition,
                 )
                 all_evaluations.append(eval_result)
                 continue
@@ -430,7 +461,8 @@ class StrategySimulator:
                     eval_result = self._eval_strategy(
                         list(combo), lengths, position, laps_remaining,
                         start_age=start_age, sc_laps_on_first_stint=sc_laps_first,
-                        sc_currently_out=sc_currently_out
+                        sc_currently_out=sc_currently_out,
+                        weather_condition=weather_condition,
                     )
                     all_evaluations.append(eval_result)
                     
