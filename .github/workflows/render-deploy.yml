@@ -1,0 +1,45 @@
+name: Deploy Render backend
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/render-deploy.yml"
+      - "app.py"
+      - "data_loader.py"
+      - "degradation_engine.py"
+      - "mappings.py"
+      - "models/**"
+      - "predict.py"
+      - "preprocessing.py"
+      - "render.yaml"
+      - "requirements.txt"
+      - "run_strategy.py"
+      - "scripts/**"
+      - "sim_engine.py"
+      - "strategy_optimizer.py"
+      - "tire_life_analysis.py"
+      - "train_era_models.py"
+      - "weather_api.py"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Trigger Render deploy hook
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
+            echo "::error::RENDER_DEPLOY_HOOK_URL secret is not configured. Add the Render deploy hook URL as a GitHub Actions repository secret, or enable Auto-Deploy in Render."
+            exit 1
+          fi
+
+          curl --fail --silent --show-error \
+            --request POST \
+            --connect-timeout 20 \
+            --max-time 60 \
+            "$RENDER_DEPLOY_HOOK_URL"
