@@ -3,3 +3,6 @@
   to = "https://f1-tire-deg-predictor.onrender.com/api/:splat"
   status = 200
   force = true
+
+[functions."render-keepalive"]
+  schedule = "*/10 * * * *"

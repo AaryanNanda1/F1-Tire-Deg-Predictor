@@ -222,10 +222,10 @@ The project includes a weekly retraining script for the 2026+ era to incorporate
 ```
 
 ### Keep the backend awake on Render
-Render will spin down the service after 15 minutes of inactivity. The GitHub Actions workflow at `.github/workflows/render-keepalive.yml` pings the lightweight backend health endpoint every 5 minutes:
+Render will spin down the service after 15 minutes of inactivity. The Netlify Scheduled Function at `frontend/netlify/functions/render-keepalive.cjs` pings the lightweight backend health endpoint every 10 minutes:
 
 ```text
 https://f1-tire-deg-predictor.onrender.com/health
 ```
 
-If the Render service URL changes, set a repository variable named `RENDER_HEALTH_URL` to the new health endpoint. GitHub cron schedules use UTC and can be delayed by Actions queueing, so the workflow allows a longer cold-start timeout.
+If the Render service URL changes, set a Netlify environment variable named `RENDER_HEALTH_URL` to the new health endpoint. The GitHub Actions workflow at `.github/workflows/render-keepalive.yml` remains as a backup ping, but GitHub cron scheduling is not frequent enough to be the primary keepalive mechanism for Render's 15-minute idle window.
