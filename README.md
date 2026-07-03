@@ -215,11 +215,13 @@ Use the [deployed dashboard](https://f1-tire-deg.netlify.app/) or run the fronte
 ---
 
 ## 🔧 Automation
-The project includes a weekly retraining script for the 2026+ era to incorporate new data as it becomes available:
-```bash
-# Install cron job (Every Monday at 03:00 local time)
-(crontab -l 2>/dev/null; echo "0 3 * * 1 cd \"$PWD\" && ./scripts/retrain_active_aero_weekly.sh >> active_aero_retrain.log 2>&1") | crontab -
+The project includes a single GitHub Actions workflow for weekly 2026+ era retraining:
+
+```text
+.github/workflows/weekly-model-retrain.yml
 ```
+
+It runs every Monday at 03:00 EST (`0 8 * * 1` in GitHub's UTC cron) and forces an Active Aero model retraining attempt through `scripts/retrain_active_aero_weekly.sh`. During daylight saving time, the same UTC schedule runs at 04:00 EDT.
 
 ### Keep the backend awake on Render
 Render will spin down the service after 15 minutes of inactivity. The Netlify Scheduled Function at `frontend/netlify/functions/render-keepalive.cjs` pings the lightweight backend health endpoint every 10 minutes:

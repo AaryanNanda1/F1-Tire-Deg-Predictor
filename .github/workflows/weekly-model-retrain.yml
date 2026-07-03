@@ -2,7 +2,8 @@ name: Weekly Active Aero model retraining
 
 on:
   schedule:
-    # Run every Monday at 03:00 AM EST (08:00 UTC)
+    # Run every Monday at 03:00 AM EST (08:00 UTC).
+    # During daylight saving time, this is 04:00 AM EDT.
     - cron: '0 8 * * 1'
   workflow_dispatch:
 
@@ -27,7 +28,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run weekly Active Aero retraining
+      - name: Force weekly Active Aero retraining
         env:
           GITHUB_REF_NAME: ${{ github.ref_name }}
         run: |
