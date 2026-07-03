@@ -84,6 +84,18 @@
       "2026:Austrian Grand Prix:R",
       "2026:Austrian Grand Prix:FP2"
     ],
-    "failed_events": []
+    "failed_events": [],
+    "last_retrain_attempt": "2026-07-03",
+    "last_retrain_status": "no_data",
+    "last_retrain_failed_events": [
+      "2026:Australian Grand Prix:R:The data you are trying to access has not been loaded yet. See `Session.load`",
+      "2026:Chinese Grand Prix:R:The data you are trying to access has not been loaded yet. See `Session.load`",
+      "2026:Japanese Grand Prix:R:The data you are trying to access has not been loaded yet. See `Session.load`",
+      "2026:Miami Grand Prix:R:The data you are trying to access has not been loaded yet. See `Session.load`",
+      "2026:Canadian Grand Prix:R:The data you are trying to access has not been loaded yet. See `Session.load`",
+      "2026:Monaco Grand Prix:R:The data you are trying to access has not been loaded yet. See `Session.load`",
+      "2026:Barcelona Grand Prix:R:The data you are trying to access has not been loaded yet. See `Session.load`",
+      "2026:Austrian Grand Prix:R:The data you are trying to access has not been loaded yet. See `Session.load`"
+    ]
   }
 }
