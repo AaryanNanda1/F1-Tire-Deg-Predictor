@@ -1,0 +1,36 @@
+name: Test Active Aero model retraining
+
+on:
+  schedule:
+    # One-off test: Thursday, July 2, 2026 at 11:30 PM EDT
+    # GitHub cron uses UTC, so this is Friday, July 3, 2026 at 03:30 UTC.
+    - cron: '30 3 3 7 *'
+  workflow_dispatch:
+
+jobs:
+  retrain:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run test Active Aero retraining
+        env:
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+        run: |
+          chmod +x scripts/retrain_active_aero_weekly.sh
+          ./scripts/retrain_active_aero_weekly.sh
