@@ -221,7 +221,13 @@ The project includes a single GitHub Actions workflow for weekly 2026+ era retra
 .github/workflows/weekly-model-retrain.yml
 ```
 
-It runs every Monday at 03:00 EST (`0 8 * * 1` in GitHub's UTC cron) and forces an Active Aero model retraining attempt through `scripts/retrain_active_aero_weekly.sh`. During daylight saving time, the same UTC schedule runs at 04:00 EDT.
+It runs every Monday at 03:00 EST (`0 8 * * 1` in GitHub's UTC cron). During daylight saving time, the same fixed UTC schedule runs at 04:00 EDT.
+
+Before training, the workflow runs `scripts/check_active_aero_retrain_needed.py`. The preflight reads `models/era_training_metadata.json`, checks FastF1's completed race schedule for the Active Aero era, and only allows retraining when a completed race is missing from the active model metadata. If no new completed race data is available, the workflow skips training and records the reason in the GitHub Actions step summary. If FastF1 schedule lookup fails, the workflow fails visibly instead of silently treating the run as "no update needed."
+
+Manual workflow dispatch includes a `force_retrain` option for deliberately running `scripts/retrain_active_aero_weekly.sh` even when the preflight says the model is current. Completed training attempts continue to update `models/era_training_metadata.json` with loaded and failed FastF1 sessions.
+
+A temporary test workflow also exists at `.github/workflows/weekly-model-retrain-test.yml`. It is scheduled once for Friday, July 3, 2026 at 2:00 PM EDT (`0 18 3 7 *` UTC) and directly forces the same Active Aero retraining script. Remove this file after the test run is verified.
 
 ### Keep the backend awake on Render
 Render will spin down the service after 15 minutes of inactivity. The Netlify Scheduled Function at `frontend/netlify/functions/render-keepalive.cjs` pings the lightweight backend health endpoint every 10 minutes:

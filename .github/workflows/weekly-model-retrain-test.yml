@@ -2,9 +2,9 @@ name: Test Active Aero model retraining
 
 on:
   schedule:
-    # One-off test: Friday, July 3, 2026 at 12:10 AM EDT.
-    # GitHub cron uses UTC, so this is Friday, July 3, 2026 at 04:10 UTC.
-    - cron: '10 4 3 7 *'
+    # One-off test: Friday, July 3, 2026 at 2:00 PM EDT.
+    # GitHub cron uses UTC, so this is Friday, July 3, 2026 at 18:00 UTC.
+    - cron: '0 18 3 7 *'
   workflow_dispatch:
 
 jobs:

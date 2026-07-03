@@ -6,6 +6,12 @@ on:
     # During daylight saving time, this is 04:00 AM EDT.
     - cron: '0 8 * * 1'
   workflow_dispatch:
+    inputs:
+      force_retrain:
+        description: "Run training even if preflight finds no new completed races"
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   retrain:
@@ -28,9 +34,19 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Force weekly Active Aero retraining
+      - name: Check for new Active Aero race data
+        id: preflight
+        continue-on-error: ${{ github.event_name == 'workflow_dispatch' && inputs.force_retrain }}
+        run: python scripts/check_active_aero_retrain_needed.py
+
+      - name: Retrain Active Aero model
+        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.force_retrain) || steps.preflight.outputs.should_retrain == 'true' }}
         env:
           GITHUB_REF_NAME: ${{ github.ref_name }}
         run: |
           chmod +x scripts/retrain_active_aero_weekly.sh
           ./scripts/retrain_active_aero_weekly.sh
+
+      - name: Report retraining skip
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.force_retrain) && steps.preflight.outputs.should_retrain != 'true' }}
+        run: echo "No Active Aero retraining required: ${{ steps.preflight.outputs.reason }}"
