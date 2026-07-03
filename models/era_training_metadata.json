@@ -58,12 +58,12 @@
     "status": "trained_hybrid",
     "start_year": 2026,
     "end_year": 2030,
-    "as_of": "2026-05-16",
-    "trained_at": "2026-05-16T23:48:01+00:00",
+    "as_of": "2026-07-03",
+    "trained_at": "2026-07-03T07:39:28+00:00",
     "model_path": "models/active_aero_2026_2030_model.joblib",
     "features_path": "models/active_aero_2026_2030_features.joblib",
-    "rows": 32377,
-    "features": 111,
+    "rows": 22515,
+    "features": 106,
     "mae": 0.0,
     "cold_start_prior_active": false,
     "loaded_events": [
@@ -74,7 +74,15 @@
       "2026:Japanese Grand Prix:R",
       "2026:Japanese Grand Prix:FP2",
       "2026:Miami Grand Prix:R",
-      "2026:Miami Grand Prix:S"
+      "2026:Miami Grand Prix:S",
+      "2026:Canadian Grand Prix:R",
+      "2026:Canadian Grand Prix:S",
+      "2026:Monaco Grand Prix:R",
+      "2026:Monaco Grand Prix:FP2",
+      "2026:Barcelona Grand Prix:R",
+      "2026:Barcelona Grand Prix:FP2",
+      "2026:Austrian Grand Prix:R",
+      "2026:Austrian Grand Prix:FP2"
     ],
     "failed_events": []
   }
