@@ -287,6 +287,35 @@ class StrategySimulator:
         has_wet_weather_tyre = any(c in ("INTERMEDIATE", "WET") for c in compounds_in_race)
         return has_wet_weather_tyre or len(compounds_in_race) >= 2
 
+    def _is_light_wet_compound_sequence_allowed(self, compounds: list):
+        """
+        Light rain normally searches dry tyres plus intermediates. Full wets are
+        only allowed in controlled transition patterns so they do not explode the
+        mixed-weather candidate space.
+        """
+        if "WET" not in compounds:
+            return True
+
+        phases = []
+        for compound in compounds:
+            phase = "DRY" if compound in ("SOFT", "MEDIUM", "HARD") else compound
+            if not phases or phases[-1] != phase:
+                phases.append(phase)
+
+        allowed_phases = {
+            ("INTERMEDIATE", "WET"),
+            ("WET", "INTERMEDIATE"),
+            ("INTERMEDIATE", "WET", "INTERMEDIATE"),
+            ("WET", "INTERMEDIATE", "WET"),
+            ("DRY", "INTERMEDIATE", "WET"),
+            ("WET", "INTERMEDIATE", "DRY"),
+            ("INTERMEDIATE", "WET", "DRY"),
+            ("DRY", "INTERMEDIATE", "WET", "INTERMEDIATE"),
+            ("INTERMEDIATE", "WET", "INTERMEDIATE", "DRY"),
+            ("DRY", "INTERMEDIATE", "WET", "INTERMEDIATE", "DRY"),
+        }
+        return tuple(phases) in allowed_phases
+
     def generate_strategies(self, total_laps: int, current_lap: int = 0,
                             current_compound: str = None, laps_on_current_tire: int = 0,
                             sc_happened_on_tire: bool = False, sc_laps_on_tire: int = 0,
@@ -340,7 +369,7 @@ class StrategySimulator:
         if weather_condition == "heavy_wet":
             valid_compounds = wet_compounds
         elif weather_condition == "light_wet":
-            valid_compounds = dry_compounds + ["INTERMEDIATE"]
+            valid_compounds = dry_compounds + wet_compounds
         else:
             valid_compounds = dry_compounds
         
@@ -447,6 +476,11 @@ class StrategySimulator:
                 compound_combos = list(itertools.product(valid_compounds, repeat=num_stints))
                 
             for combo in compound_combos:
+                if (
+                    weather_condition == "light_wet"
+                    and not self._is_light_wet_compound_sequence_allowed(combo)
+                ):
+                    continue
                 if not self._satisfies_compound_rule(compounds_used, combo):
                     continue
 

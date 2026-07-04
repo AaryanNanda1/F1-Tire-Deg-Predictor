@@ -215,7 +215,33 @@ class StrategySimulatorWetToDryTest(unittest.TestCase):
             and best_compounds[0] in {"SOFT", "MEDIUM", "HARD"}
         )
 
-    def test_light_wet_strategy_excludes_full_wets(self):
+    def test_light_wet_allows_controlled_full_wet_transitions(self):
+        simulator = StrategySimulator(self._build_profiles())
+
+        self.assertTrue(
+            simulator._is_light_wet_compound_sequence_allowed(["WET", "INTERMEDIATE", "SOFT"])
+        )
+        self.assertTrue(
+            simulator._is_light_wet_compound_sequence_allowed(["INTERMEDIATE", "WET", "SOFT"])
+        )
+        self.assertTrue(
+            simulator._is_light_wet_compound_sequence_allowed(["SOFT", "INTERMEDIATE", "WET"])
+        )
+
+    def test_light_wet_rejects_arbitrary_full_wet_transitions(self):
+        simulator = StrategySimulator(self._build_profiles())
+
+        self.assertFalse(
+            simulator._is_light_wet_compound_sequence_allowed(["WET", "SOFT"])
+        )
+        self.assertFalse(
+            simulator._is_light_wet_compound_sequence_allowed(["SOFT", "WET", "HARD"])
+        )
+        self.assertFalse(
+            simulator._is_light_wet_compound_sequence_allowed(["WET", "WET"])
+        )
+
+    def test_light_wet_strategy_can_return_controlled_full_wet_transition(self):
         simulator = StrategySimulator(self._build_full_wet_preferred_profiles())
 
         result = simulator.generate_strategies(
@@ -226,7 +252,8 @@ class StrategySimulatorWetToDryTest(unittest.TestCase):
         )
 
         best_compounds = [s["compound"] for s in result["best_strategy"]["stints_data"]]
-        self.assertNotIn("WET", best_compounds)
+        self.assertIn("WET", best_compounds)
+        self.assertTrue(simulator._is_light_wet_compound_sequence_allowed(best_compounds))
 
     def test_all_intermediate_race_strategy_is_valid_with_physical_stop(self):
         simulator = StrategySimulator(self._build_ranked_profiles())
