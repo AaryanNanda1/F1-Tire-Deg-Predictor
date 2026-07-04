@@ -49,4 +49,5 @@ jobs:
 
       - name: Report retraining skip
         if: ${{ github.event.inputs.force_retrain != 'true' && steps.preflight.outputs.should_retrain != 'true' }}
-        run: echo "No Active Aero retraining required: ${{ steps.preflight.outputs.reason }}"
+        run: |
+          echo "No Active Aero retraining required: ${{ steps.preflight.outputs.reason }}"
