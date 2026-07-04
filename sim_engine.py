@@ -277,6 +277,16 @@ class StrategySimulator:
                 return False
         return True
 
+    def _satisfies_compound_rule(self, compounds_used: list, planned_compounds: list):
+        """
+        F1 requires at least two tyre compound types unless an intermediate or
+        wet tyre is used during the race. A same-compound strategy is therefore
+        only legal when that compound is INTERMEDIATE or WET.
+        """
+        compounds_in_race = set(compounds_used) | set(planned_compounds)
+        has_wet_weather_tyre = any(c in ("INTERMEDIATE", "WET") for c in compounds_in_race)
+        return has_wet_weather_tyre or len(compounds_in_race) >= 2
+
     def generate_strategies(self, total_laps: int, current_lap: int = 0,
                             current_compound: str = None, laps_on_current_tire: int = 0,
                             sc_happened_on_tire: bool = False, sc_laps_on_tire: int = 0,
@@ -330,7 +340,7 @@ class StrategySimulator:
         if weather_condition == "heavy_wet":
             valid_compounds = wet_compounds
         elif weather_condition == "light_wet":
-            valid_compounds = dry_compounds + wet_compounds
+            valid_compounds = dry_compounds + ["INTERMEDIATE"]
         else:
             valid_compounds = dry_compounds
         
@@ -410,8 +420,7 @@ class StrategySimulator:
                 # Zero-stop: stay out on current tire for remaining laps
                 if not current_compound:
                     continue
-                # Check 2-compound rule: must have already used a different compound
-                if len(set(compounds_used)) < 2:
+                if not self._satisfies_compound_rule(compounds_used, [current_compound]):
                     continue
                 # Don't allow zero-stop if remaining laps would blow past absolute max
                 total_life = start_age + laps_remaining
@@ -438,25 +447,9 @@ class StrategySimulator:
                 compound_combos = list(itertools.product(valid_compounds, repeat=num_stints))
                 
             for combo in compound_combos:
-                # Check 2-compound rule across the ENTIRE race (including compounds_used)
-                all_compounds_in_race = set(compounds_used) | set(combo)
-                # In dry conditions, prefer at least 2 different dry compounds for a pure dry strategy.
-                # However, if the current compound is a wet tyre and the race is otherwise dry,
-                # allow a switch to a single dry compound when it is the best/only viable option
-                # (for example, during a safety car or when the forecast remains dry).
-                if weather_condition == "dry":
-                    dry_in_race = [c for c in all_compounds_in_race if c in dry_compounds]
-                    wet_in_race = [c for c in all_compounds_in_race if c in wet_compounds]
-                    if not dry_in_race:
-                        # A pure wet-only strategy is not a valid dry-weather race strategy.
-                        continue
-                    if len(set(dry_in_race)) < 2 and not (wet_in_race and current_compound in wet_compounds):
-                        continue
-                else:
-                    # In wet/mixed conditions, compound diversity is less strict
-                    if len(all_compounds_in_race) < 1:
-                        continue
-                    
+                if not self._satisfies_compound_rule(compounds_used, combo):
+                    continue
+
                 for lengths in get_stint_combos(list(combo), laps_remaining):
                     eval_result = self._eval_strategy(
                         list(combo), lengths, position, laps_remaining,
