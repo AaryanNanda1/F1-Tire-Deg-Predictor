@@ -227,7 +227,7 @@ Before training, the workflow runs `scripts/check_active_aero_retrain_needed.py`
 
 Manual workflow dispatch includes a `force_retrain` option for deliberately running `scripts/retrain_active_aero_weekly.sh` even when the preflight says the model is current. Completed training attempts continue to update `models/era_training_metadata.json` with loaded and failed FastF1 sessions.
 
-A temporary test workflow also exists at `.github/workflows/weekly-model-retrain-test.yml`. It is scheduled once for Friday, July 3, 2026 at 10:45 PM EDT (`45 2 4 7 *` UTC on July 4) and directly forces the same Active Aero retraining script. Remove this file after the test run is verified.
+A temporary test workflow also exists at `.github/workflows/weekly-model-retrain-test.yml`. It is scheduled once for Friday, July 3, 2026 at 11:30 PM EDT (`30 3 4 7 *` UTC on July 4) and exercises the same preflight-gated Active Aero retraining path. Remove this file after the test run is verified.
 
 ### Keep the backend awake on Render
 Render will spin down the service after 15 minutes of inactivity. The Netlify Scheduled Function at `frontend/netlify/functions/render-keepalive.cjs` pings the lightweight backend health endpoint every 10 minutes:
