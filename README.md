@@ -62,7 +62,7 @@ Circuit behavior is represented through a normalized 10-dimensional relational f
 
 ### 6. Real-Time Strategy Optimization
 
-- **Constrained Strategy Search**: Evaluates compound permutations and bounded stint-length combinations while enforcing compound diversity and physical stint caps.
+- **Constrained Strategy Search**: Evaluates compound permutations and bounded stint-length combinations while enforcing the mandatory pit-stop rule, wet-weather compound exceptions, and physical stint caps.
 - **Weather Integration**: Live and historical weather data (air/track temp, humidity, rainfall) via Open-Meteo API to adjust degradation curves in real-time.
 - **Safety Car Modeling**: Applies reduced tire-wear accumulation and discounted pit-loss estimates during active safety-car scenarios.
 
@@ -73,6 +73,7 @@ A React-based analytical dashboard provides:
 - Multi-compound lap-time degradation curves rendered with Recharts.
 - Track-stress metrics, weather forecasts, tire-life diagnostics, and degradation-rate summaries.
 - Dynamic stint bars for optimal, safe, and risky strategy comparisons.
+- Race-state input guardrails that auto-correct invalid lap, tire-age, safety-car, and track-position combinations without changing the input style.
 
 ---
 
@@ -132,20 +133,23 @@ The machine-learning layer is deliberately isolated from strategy policy. It pro
 ### Backend
 - **Core**: Python 3.10+
 - **Analysis**: NumPy, Pandas, SciPy, Scikit-Learn
-- **API**: Flask
+- **API**: Flask + Flask-CORS
 - **Data**: FastF1 API integration
+- **Deployment**: Render with Gunicorn (`gunicorn --timeout 120 app:app`)
 
 ### Frontend
 - **Framework**: React 18
 - **Build Tool**: Vite
 - **Visualization**: Recharts
 - **Aesthetic**: Custom "Carbon Black" CSS design system
+- **Hosting**: Netlify
 
 ---
 
 ## 📂 Project Structure
 
 ```text
+├── .github/workflows/      # GitHub Actions automation
 ├── app.py                  # Flask API Entry Point
 ├── degradation_engine.py    # Core ML-based degradation simulation
 ├── tire_life_analysis.py    # Performance cliff & useful life logic
@@ -153,7 +157,8 @@ The machine-learning layer is deliberately isolated from strategy policy. It pro
 ├── strategy_optimizer.py    # Multi-path optimization algorithms
 ├── train_era_models.py      # Era-specific ML model trainer
 ├── weather_api.py           # Open-Meteo integration & caching
-├── frontend/               # React + Vite Dashboard
+├── render.yaml             # Render deployment config
+├── frontend/               # React + Vite Dashboard and Netlify config
 └── scripts/                # Retraining & automation utilities
 ```
 
@@ -174,12 +179,20 @@ pip install -r requirements.txt
 python app.py
 ```
 
+Production runs the backend with Render's Gunicorn command:
+
+```bash
+gunicorn --timeout 120 app:app
+```
+
 ### 2. Frontend Setup
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
+
+Local Vite development proxies `/api/*` requests to `http://127.0.0.1:5001`. Production defaults directly to the Render backend at `https://f1-tire-deg-predictor.onrender.com` to avoid Netlify proxy timeouts on long simulations. Netlify still keeps an `/api/*` redirect fallback. Override the API origin with `VITE_API_BASE_URL` when needed.
 
 ### 3. Model Training
 To train era-specific models (Ground Effect & Active Aero):
@@ -212,6 +225,45 @@ Use the [deployed dashboard](https://f1-tire-deg.netlify.app/) or run the fronte
 3. Add tire-age, pit-history, and safety-car context when simulating mid-race decisions.
 4. Run the simulation to compare degradation curves and strategy recommendations.
 
+Race-state inputs are normalized automatically:
+
+- Current lap cannot exceed total race laps.
+- Laps on the current tire cannot exceed the current lap.
+- Safety-car laps on the current tire cannot exceed laps on the current tire.
+- At lap 0, tire age and safety-car tire laps are forced to 0, and track position is forced to grid position.
+- If the driver has already pitted, laps on the current tire must be less than the current lap.
+
+### Tire Strategy Rules
+
+Every generated strategy must include at least one physical pit stop unless the driver has already pitted earlier in the race. The dry-race two-compound requirement is waived when an Intermediate or Wet tire is used at any point in the race. As a result, same-compound race plans are only valid when they are entirely Intermediate or entirely Wet.
+
+Weather-specific strategy behavior:
+
+- Dry conditions search dry compounds and penalize Intermediate or Wet tires.
+- Light-wet conditions search dry compounds and Intermediates, with Full Wet tires allowed only in controlled Intermediate/Wet transition patterns.
+- Heavy-wet conditions search Intermediate and Wet tires.
+- Dry tires receive a rain penalty in wet conditions; Soft loses the least lap time, Medium sits between them, and Hard loses the most.
+
+### API & Deployment
+
+The backend exposes health metadata at both `/health` and `/api/health`:
+
+```json
+{
+  "status": "ok",
+  "service": "f1-tire-deg-predictor",
+  "version": {
+    "commit": "full git sha or unknown",
+    "commit_short": "short sha",
+    "source": "render, local-git, or unknown"
+  }
+}
+```
+
+Use this endpoint to confirm which commit Render is currently running. Render provides `RENDER_GIT_COMMIT` in production; local runs fall back to `git rev-parse HEAD` when available.
+
+The backend allows CORS from the Netlify production app and local Vite development origins by default. Set `CORS_ORIGINS` on Render as a comma-separated list if the frontend origin changes.
+
 ---
 
 ## 🔧 Automation
@@ -234,4 +286,4 @@ Render will spin down the service after 15 minutes of inactivity. The Netlify Sc
 https://f1-tire-deg-predictor.onrender.com/health
 ```
 
-If the Render service URL changes, set a Netlify environment variable named `RENDER_HEALTH_URL` to the new health endpoint. The GitHub Actions workflow at `.github/workflows/render-keepalive.yml` remains as a backup ping, but GitHub cron scheduling is not frequent enough to be the primary keepalive mechanism for Render's 15-minute idle window.
+If the Render service URL changes, set a Netlify environment variable named `RENDER_HEALTH_URL` to the new health endpoint. This scheduled function uses Netlify function compute, not production deploy credits. The GitHub Actions workflow at `.github/workflows/render-keepalive.yml` remains as a backup ping, but GitHub cron scheduling is not frequent enough to be the primary keepalive mechanism for Render's 15-minute idle window.
