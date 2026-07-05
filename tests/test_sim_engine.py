@@ -133,6 +133,27 @@ class StrategySimulatorWetToDryTest(unittest.TestCase):
         self.assertAlmostEqual(intermediate_delta, 206.12)
         self.assertLess(intermediate_delta, wet_delta)
 
+    def test_penalizes_dry_tires_on_light_wet_track_by_compound_hardness(self):
+        simulator = StrategySimulator(self._build_profiles())
+
+        soft_delta, _ = simulator._eval_stint("SOFT", 2, 1, weather_condition="light_wet")
+        medium_delta, _ = simulator._eval_stint("MEDIUM", 2, 1, weather_condition="light_wet")
+        hard_delta, _ = simulator._eval_stint("HARD", 2, 1, weather_condition="light_wet")
+
+        self.assertAlmostEqual(soft_delta, 200.7)
+        self.assertAlmostEqual(medium_delta, 200.9)
+        self.assertAlmostEqual(hard_delta, 201.1)
+        self.assertLess(soft_delta, medium_delta)
+        self.assertLess(medium_delta, hard_delta)
+
+    def test_heavy_wet_dry_tire_penalty_is_larger_than_light_wet(self):
+        simulator = StrategySimulator(self._build_profiles())
+
+        light_wet_delta, _ = simulator._eval_stint("HARD", 2, 1, weather_condition="light_wet")
+        heavy_wet_delta, _ = simulator._eval_stint("HARD", 2, 1, weather_condition="heavy_wet")
+
+        self.assertAlmostEqual(heavy_wet_delta - light_wet_delta, 2.2)
+
     def test_allows_switch_from_wet_to_single_dry_compound_in_dry_conditions(self):
         profiles = {
             "compounds": {

@@ -37,6 +37,15 @@ WET_TIRE_DRY_AGE_PENALTY_SEC = {
     "WET": 0.25,
 }
 
+# Dry tyres retain less grip as rain increases. Softer compounds lose the
+# least lap time; hards lose the most because they are harder to keep warm.
+DRY_TIRE_WET_BASE_PENALTY_SEC = {
+    "SOFT": 0.35,
+    "MEDIUM": 0.45,
+    "HARD": 0.55,
+}
+DRY_TIRE_HEAVY_WET_MULTIPLIER = 3.0
+
 # Minimum delta difference (%) for safe/risky to be shown — if it's within this
 # threshold of optimal, it's not meaningfully different and we return null
 MIN_STRATEGY_DIVERGENCE_FRAC = 0.003  # 0.3% of optimal delta
@@ -103,6 +112,12 @@ class StrategySimulator:
     def _wrong_condition_penalty(self, compound: str, effective_age: float,
                                  weather_condition: str):
         """Returns per-lap tyre mismatch penalty for strategy scoring."""
+        if weather_condition in ("light_wet", "heavy_wet") and compound in DRY_TIRE_WET_BASE_PENALTY_SEC:
+            penalty = DRY_TIRE_WET_BASE_PENALTY_SEC[compound]
+            if weather_condition == "heavy_wet":
+                penalty *= DRY_TIRE_HEAVY_WET_MULTIPLIER
+            return penalty
+
         if weather_condition != "dry" or compound not in WET_TIRE_DRY_BASE_PENALTY_SEC:
             return 0.0
 
