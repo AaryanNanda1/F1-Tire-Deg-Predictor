@@ -9,6 +9,15 @@ const COMPOUND_CHART_LABELS = {
   WET: 'Wet (Wet Conditions)',
 };
 
+const RENDER_API_BASE_URL = 'https://f1-tire-deg-predictor.onrender.com';
+const API_BASE_URL = (
+  import.meta.env.VITE_API_BASE_URL
+  || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? ''
+    : RENDER_API_BASE_URL)
+).replace(/\/$/, '');
+const apiUrl = (path) => `${API_BASE_URL}${path}`;
+
 const getCompoundChartLabel = (compound) => COMPOUND_CHART_LABELS[compound] || compound;
 
 const formatStintTooltip = (stint) => `${stint.compound} L[${stint.start} - ${stint.end}] ${stint.laps} laps`;
@@ -180,7 +189,7 @@ function App() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetch('/api/options')
+    fetch(apiUrl('/api/options'))
       .then(res => res.json())
       .then(data => setOptions(data))
       .catch(err => console.error("API options error:", err));
@@ -203,7 +212,7 @@ function App() {
     };
 
     try {
-        const res = await fetch('/api/simulate', {
+        const res = await fetch(apiUrl('/api/simulate'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)

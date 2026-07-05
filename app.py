@@ -1,9 +1,22 @@
 import json
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import traceback
 import os
 
 app = Flask(__name__)
+CORS(
+    app,
+    resources={
+        r"/api/*": {
+            "origins": os.environ.get(
+                "CORS_ORIGINS",
+                "https://f1-tire-deg.netlify.app,http://localhost:3000,http://127.0.0.1:3000",
+            ).split(",")
+        },
+        r"/health": {"origins": "*"},
+    },
+)
 
 _DEPLOY_METADATA = None
 
