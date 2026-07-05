@@ -51,6 +51,17 @@ const normalizeRaceForm = (nextForm) => {
     lapsOnCurrentTire = clampedCurrentLap;
   }
 
+  if (
+    normalized.has_pitted
+    && clampedCurrentLap !== null
+    && clampedCurrentLap > 0
+    && lapsOnCurrentTire !== null
+    && lapsOnCurrentTire >= clampedCurrentLap
+  ) {
+    normalized.laps_on_current_tire = clampedCurrentLap - 1;
+    lapsOnCurrentTire = clampedCurrentLap - 1;
+  }
+
   const scLapsOnTire = parseOptionalNumber(normalized.sc_laps_on_tire);
   if (
     lapsOnCurrentTire !== null
