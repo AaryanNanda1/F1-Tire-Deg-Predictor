@@ -18,6 +18,48 @@ const API_BASE_URL = (
 ).replace(/\/$/, '');
 const apiUrl = (path) => `${API_BASE_URL}${path}`;
 
+const parseNumericInput = (value) => {
+  const digits = String(value).replace(/\D/g, '');
+  return digits === '' ? '' : parseInt(digits, 10);
+};
+
+const parseOptionalNumber = (value) => {
+  if (value === '' || value === null || value === undefined) return null;
+  const parsed = parseInt(value, 10);
+  return Number.isNaN(parsed) ? null : parsed;
+};
+
+const normalizeRaceForm = (nextForm) => {
+  const normalized = { ...nextForm };
+  const totalLaps = parseOptionalNumber(normalized.laps_to_complete);
+  const gridPos = parseOptionalNumber(normalized.grid_pos);
+  const currentLap = parseOptionalNumber(normalized.current_lap);
+
+  if (totalLaps !== null && currentLap !== null && currentLap > totalLaps) {
+    normalized.current_lap = totalLaps;
+  }
+
+  const clampedCurrentLap = parseOptionalNumber(normalized.current_lap);
+  const lapsOnCurrentTire = parseOptionalNumber(normalized.laps_on_current_tire);
+
+  if (
+    clampedCurrentLap !== null
+    && lapsOnCurrentTire !== null
+    && lapsOnCurrentTire > clampedCurrentLap
+  ) {
+    normalized.laps_on_current_tire = clampedCurrentLap;
+  }
+
+  if (clampedCurrentLap === 0) {
+    normalized.laps_on_current_tire = 0;
+    if (gridPos !== null) {
+      normalized.track_position = gridPos;
+    }
+  }
+
+  return normalized;
+};
+
 const getCompoundChartLabel = (compound) => COMPOUND_CHART_LABELS[compound] || compound;
 
 const formatStintTooltip = (stint) => `${stint.compound} L[${stint.start} - ${stint.end}] ${stint.laps} laps`;
@@ -188,6 +230,14 @@ function App() {
   const [results, setResults] = useState(null);
   const [error, setError] = useState('');
 
+  const updateForm = (updates) => {
+    setForm(prev => normalizeRaceForm({ ...prev, ...updates }));
+  };
+
+  const updateNumericField = (field, value) => {
+    updateForm({ [field]: parseNumericInput(value) });
+  };
+
   useEffect(() => {
     fetch(apiUrl('/api/options'))
       .then(res => res.json())
@@ -199,16 +249,18 @@ function App() {
     e.preventDefault();
     setLoading(true);
     setError('');
+    const normalizedForm = normalizeRaceForm(form);
+    setForm(normalizedForm);
     
     const payload = {
-        ...form,
-        grid_pos: parseInt(form.grid_pos) || 1,
-        current_lap: parseInt(form.current_lap) || 0,
-        laps_to_complete: parseInt(form.laps_to_complete) || 72,
-        laps_on_current_tire: parseInt(form.laps_on_current_tire) || 0,
-        sc_laps_on_tire: parseInt(form.sc_laps_on_tire) || 0,
-        track_position: parseInt(form.track_position) || 1,
-        current_compound: form.current_compound || null,
+        ...normalizedForm,
+        grid_pos: parseInt(normalizedForm.grid_pos) || 1,
+        current_lap: parseInt(normalizedForm.current_lap) || 0,
+        laps_to_complete: parseInt(normalizedForm.laps_to_complete) || 72,
+        laps_on_current_tire: parseInt(normalizedForm.laps_on_current_tire) || 0,
+        sc_laps_on_tire: parseInt(normalizedForm.sc_laps_on_tire) || 0,
+        track_position: parseInt(normalizedForm.track_position) || 1,
+        current_compound: normalizedForm.current_compound || null,
     };
 
     try {
@@ -363,7 +415,7 @@ function App() {
         <div className="form-row">
             <div className="form-group">
                 <label>YEAR</label>
-                <select id="select-year" value={form.year} onChange={e => setForm({...form, year: parseInt(e.target.value)})}>
+                <select id="select-year" value={form.year} onChange={e => updateForm({ year: parseInt(e.target.value) })}>
                     {options.years.length === 0 ? <option>Loading...</option> : options.years.map(y => <option key={y} value={y}>{y}</option>)}
                 </select>
             </div>
@@ -375,7 +427,7 @@ function App() {
                     if (options.track_laps && options.track_laps[newTrack]) {
                         defaultLaps = options.track_laps[newTrack];
                     }
-                    setForm({...form, track_name: newTrack, laps_to_complete: defaultLaps});
+                    updateForm({ track_name: newTrack, laps_to_complete: defaultLaps });
                 }}>
                     <option value="">— Select Track —</option>
                     {validTracks.length === 0 ? <option disabled>Loading...</option> : validTracks.map(t => <option key={t} value={t}>{t}</option>)}
@@ -383,14 +435,14 @@ function App() {
             </div>
             <div className="form-group">
                 <label>TEAM</label>
-                <select id="select-team" value={form.team} onChange={e => setForm({...form, team: e.target.value})}>
+                <select id="select-team" value={form.team} onChange={e => updateForm({ team: e.target.value })}>
                     <option value="">— Select Team —</option>
                     {validTeams.length === 0 ? <option disabled>Loading...</option> : validTeams.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
             </div>
             <div className="form-group">
                 <label>DRIVER</label>
-                <select id="select-driver" value={form.driver} onChange={e => setForm({...form, driver: e.target.value})} disabled={!form.team}>
+                <select id="select-driver" value={form.driver} onChange={e => updateForm({ driver: e.target.value })} disabled={!form.team}>
                     {!form.team ? <option value="">— Select Team First —</option> : validDrivers.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
             </div>
@@ -404,7 +456,7 @@ function App() {
                     type="text" 
                     inputMode="numeric"
                     value={form.laps_to_complete} 
-                    onChange={e => setForm({...form, laps_to_complete: e.target.value.replace(/\D/g, '')})} 
+                    onChange={e => updateNumericField('laps_to_complete', e.target.value)} 
                 />
             </div>
             <div className="form-group">
@@ -414,7 +466,7 @@ function App() {
                     type="text" 
                     inputMode="numeric"
                     value={form.grid_pos} 
-                    onChange={e => setForm({...form, grid_pos: e.target.value.replace(/\D/g, '')})} 
+                    onChange={e => updateNumericField('grid_pos', e.target.value)} 
                 />
             </div>
         </div>
@@ -429,12 +481,12 @@ function App() {
                     type="text" 
                     inputMode="numeric"
                     value={form.current_lap} 
-                    onChange={e => setForm({...form, current_lap: e.target.value.replace(/\D/g, '')})} 
+                    onChange={e => updateNumericField('current_lap', e.target.value)} 
                 />
             </div>
             <div className="form-group">
                 <label>CURRENT TIRE</label>
-                <select id="select-compound" value={form.current_compound} onChange={e => setForm({...form, current_compound: e.target.value})}>
+                <select id="select-compound" value={form.current_compound} onChange={e => updateForm({ current_compound: e.target.value })}>
                     <option value="">— Not Set (Pre-Race) —</option>
                     {(options.compounds || ["SOFT", "MEDIUM", "HARD", "INTERMEDIATE", "WET"]).map(c => (
                         <option key={c} value={c}>{c}</option>
@@ -448,7 +500,7 @@ function App() {
                     type="text" 
                     inputMode="numeric"
                     value={form.laps_on_current_tire} 
-                    onChange={e => setForm({...form, laps_on_current_tire: e.target.value.replace(/\D/g, '')})} 
+                    onChange={e => updateNumericField('laps_on_current_tire', e.target.value)} 
                 />
             </div>
             <div className="form-group">
@@ -458,7 +510,7 @@ function App() {
                     type="text" 
                     inputMode="numeric"
                     value={form.track_position} 
-                    onChange={e => setForm({...form, track_position: e.target.value.replace(/\D/g, '')})} 
+                    onChange={e => updateNumericField('track_position', e.target.value)} 
                 />
             </div>
         </div>
@@ -466,14 +518,14 @@ function App() {
         <div className="form-row" style={{marginTop: '16px'}}>
             <div className="form-group sc-toggle">
                 <label>ALREADY PITTED</label>
-                <div onClick={() => setForm({...form, has_pitted: !form.has_pitted})}>
+                <div onClick={() => updateForm({ has_pitted: !form.has_pitted })}>
                    <input type="checkbox" checked={form.has_pitted} readOnly />
                    <span style={{marginLeft: '10px', fontSize: '0.8rem', fontWeight: 700}}>{form.has_pitted ? 'YES' : 'NO'}</span>
                 </div>
             </div>
             <div className="form-group sc-toggle">
                 <label>SC ON CURRENT STINT</label>
-                <div onClick={() => setForm({...form, sc_happened_on_tire: !form.sc_happened_on_tire})}>
+                <div onClick={() => updateForm({ sc_happened_on_tire: !form.sc_happened_on_tire })}>
                    <input type="checkbox" checked={form.sc_happened_on_tire} readOnly />
                    <span style={{marginLeft: '10px', fontSize: '0.8rem', fontWeight: 700}}>SC DEPLOYED ON STINT</span>
                 </div>
@@ -486,13 +538,13 @@ function App() {
                         type="text" 
                         inputMode="numeric"
                         value={form.sc_laps_on_tire} 
-                        onChange={e => setForm({...form, sc_laps_on_tire: e.target.value.replace(/\D/g, '')})} 
+                        onChange={e => updateNumericField('sc_laps_on_tire', e.target.value)} 
                     />
                 </div>
             )}
             <div className="form-group sc-toggle">
                 <label>SAFETY CAR</label>
-                <div onClick={() => setForm({...form, sc_currently_out: !form.sc_currently_out})}>
+                <div onClick={() => updateForm({ sc_currently_out: !form.sc_currently_out })}>
                    <input type="checkbox" checked={form.sc_currently_out} readOnly />
                    <span style={{marginLeft: '10px', fontSize: '0.8rem', fontWeight: 700}}>CURRENTLY ACTIVE</span>
                 </div>
