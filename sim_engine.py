@@ -40,9 +40,9 @@ WET_TIRE_DRY_AGE_PENALTY_SEC = {
 # Dry tyres retain less grip as rain increases. Softer compounds lose the
 # least lap time; hards lose the most because they are harder to keep warm.
 DRY_TIRE_WET_BASE_PENALTY_SEC = {
-    "SOFT": 0.35,
-    "MEDIUM": 0.45,
-    "HARD": 0.55,
+    "SOFT": 0.75,
+    "MEDIUM": 1.0,
+    "HARD": 1.25,
 }
 DRY_TIRE_HEAVY_WET_MULTIPLIER = 3.0
 

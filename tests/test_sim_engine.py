@@ -140,9 +140,9 @@ class StrategySimulatorWetToDryTest(unittest.TestCase):
         medium_delta, _ = simulator._eval_stint("MEDIUM", 2, 1, weather_condition="light_wet")
         hard_delta, _ = simulator._eval_stint("HARD", 2, 1, weather_condition="light_wet")
 
-        self.assertAlmostEqual(soft_delta, 200.7)
-        self.assertAlmostEqual(medium_delta, 200.9)
-        self.assertAlmostEqual(hard_delta, 201.1)
+        self.assertAlmostEqual(soft_delta, 201.5)
+        self.assertAlmostEqual(medium_delta, 202.0)
+        self.assertAlmostEqual(hard_delta, 202.5)
         self.assertLess(soft_delta, medium_delta)
         self.assertLess(medium_delta, hard_delta)
 
@@ -152,7 +152,7 @@ class StrategySimulatorWetToDryTest(unittest.TestCase):
         light_wet_delta, _ = simulator._eval_stint("HARD", 2, 1, weather_condition="light_wet")
         heavy_wet_delta, _ = simulator._eval_stint("HARD", 2, 1, weather_condition="heavy_wet")
 
-        self.assertAlmostEqual(heavy_wet_delta - light_wet_delta, 2.2)
+        self.assertAlmostEqual(heavy_wet_delta - light_wet_delta, 5.0)
 
     def test_allows_switch_from_wet_to_single_dry_compound_in_dry_conditions(self):
         profiles = {
