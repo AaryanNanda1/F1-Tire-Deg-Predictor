@@ -40,7 +40,7 @@ const normalizeRaceForm = (nextForm) => {
   }
 
   const clampedCurrentLap = parseOptionalNumber(normalized.current_lap);
-  const lapsOnCurrentTire = parseOptionalNumber(normalized.laps_on_current_tire);
+  let lapsOnCurrentTire = parseOptionalNumber(normalized.laps_on_current_tire);
 
   if (
     clampedCurrentLap !== null
@@ -48,10 +48,21 @@ const normalizeRaceForm = (nextForm) => {
     && lapsOnCurrentTire > clampedCurrentLap
   ) {
     normalized.laps_on_current_tire = clampedCurrentLap;
+    lapsOnCurrentTire = clampedCurrentLap;
+  }
+
+  const scLapsOnTire = parseOptionalNumber(normalized.sc_laps_on_tire);
+  if (
+    lapsOnCurrentTire !== null
+    && scLapsOnTire !== null
+    && scLapsOnTire > lapsOnCurrentTire
+  ) {
+    normalized.sc_laps_on_tire = lapsOnCurrentTire;
   }
 
   if (clampedCurrentLap === 0) {
     normalized.laps_on_current_tire = 0;
+    normalized.sc_laps_on_tire = 0;
     if (gridPos !== null) {
       normalized.track_position = gridPos;
     }
