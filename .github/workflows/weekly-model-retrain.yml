@@ -43,6 +43,7 @@ jobs:
         if: ${{ github.event.inputs.force_retrain == 'true' || steps.preflight.outputs.should_retrain == 'true' }}
         env:
           GITHUB_REF_NAME: ${{ github.ref_name }}
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
         run: |
           chmod +x scripts/retrain_active_aero_weekly.sh
           ./scripts/retrain_active_aero_weekly.sh

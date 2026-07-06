@@ -77,4 +77,14 @@ else
     git push origin HEAD:${GITHUB_REF_NAME:-main}
     echo "GitHub repository updated successfully with the new model!"
     append_summary "## Active Aero commit result\n- Model artifacts or metadata changed and were pushed to \`${GITHUB_REF_NAME:-main}\`."
+
+    if [ -n "${RENDER_DEPLOY_HOOK_URL:-}" ]; then
+        echo "Triggering Render deploy hook..."
+        curl --fail --silent --show-error --request POST "${RENDER_DEPLOY_HOOK_URL}"
+        echo "Render deploy hook triggered successfully."
+        append_summary "## Render deploy hook\n- Triggered Render deploy hook after pushing the model commit."
+    else
+        echo "RENDER_DEPLOY_HOOK_URL is not set. Skipping Render deploy hook."
+        append_summary "## Render deploy hook\n- Skipped because \`RENDER_DEPLOY_HOOK_URL\` is not configured."
+    fi
 fi
