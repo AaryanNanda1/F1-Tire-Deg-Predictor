@@ -1,0 +1,36 @@
+name: Test Active Aero model retraining deploy hook
+
+on:
+  schedule:
+    # One-off test slot: 11:45 PM EDT on July 6, 2026 is 03:45 UTC on July 7.
+    - cron: '45 3 7 7 *'
+  workflow_dispatch:
+
+jobs:
+  retrain:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Force retrain Active Aero model and trigger Render
+        env:
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          chmod +x scripts/retrain_active_aero_weekly.sh
+          ./scripts/retrain_active_aero_weekly.sh
