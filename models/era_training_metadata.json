@@ -58,12 +58,12 @@
     "status": "trained_hybrid",
     "start_year": 2026,
     "end_year": 2030,
-    "as_of": "2026-07-03",
-    "trained_at": "2026-07-03T07:39:28+00:00",
+    "as_of": "2026-07-06",
+    "trained_at": "2026-07-06T12:03:25+00:00",
     "model_path": "models/active_aero_2026_2030_model.joblib",
     "features_path": "models/active_aero_2026_2030_features.joblib",
-    "rows": 22515,
-    "features": 106,
+    "rows": 23045,
+    "features": 105,
     "mae": 0.0,
     "cold_start_prior_active": false,
     "loaded_events": [
@@ -82,20 +82,10 @@
       "2026:Barcelona Grand Prix:R",
       "2026:Barcelona Grand Prix:FP2",
       "2026:Austrian Grand Prix:R",
-      "2026:Austrian Grand Prix:FP2"
+      "2026:Austrian Grand Prix:FP2",
+      "2026:British Grand Prix:R",
+      "2026:British Grand Prix:S"
     ],
-    "failed_events": [],
-    "last_retrain_attempt": "2026-07-03",
-    "last_retrain_status": "no_data",
-    "last_retrain_failed_events": [
-      "2026:Australian Grand Prix:R:The data you are trying to access has not been loaded yet. See `Session.load`",
-      "2026:Chinese Grand Prix:R:The data you are trying to access has not been loaded yet. See `Session.load`",
-      "2026:Japanese Grand Prix:R:The data you are trying to access has not been loaded yet. See `Session.load`",
-      "2026:Miami Grand Prix:R:The data you are trying to access has not been loaded yet. See `Session.load`",
-      "2026:Canadian Grand Prix:R:The data you are trying to access has not been loaded yet. See `Session.load`",
-      "2026:Monaco Grand Prix:R:The data you are trying to access has not been loaded yet. See `Session.load`",
-      "2026:Barcelona Grand Prix:R:The data you are trying to access has not been loaded yet. See `Session.load`",
-      "2026:Austrian Grand Prix:R:The data you are trying to access has not been loaded yet. See `Session.load`"
-    ]
+    "failed_events": []
   }
 }
