@@ -35,7 +35,7 @@ const clampParsedNumber = (value, min, max) => {
   return Math.min(max, Math.max(min, parsed));
 };
 
-const normalizeRaceForm = (nextForm) => {
+const normalizeRaceForm = (nextForm, { finalize = false } = {}) => {
   const normalized = { ...nextForm };
   const totalLaps = parseOptionalNumber(normalized.laps_to_complete);
   const gridPos = parseOptionalNumber(normalized.grid_pos);
@@ -87,7 +87,9 @@ const normalizeRaceForm = (nextForm) => {
 
   if (normalized.has_pitted) {
     const compoundsUsedCount = clampParsedNumber(normalized.compounds_used_count, 1, 5);
-    normalized.compounds_used_count = compoundsUsedCount === null ? 1 : compoundsUsedCount;
+    normalized.compounds_used_count = compoundsUsedCount === null
+      ? (finalize ? 1 : '')
+      : compoundsUsedCount;
   } else {
     normalized.compounds_used_count = 0;
   }
@@ -285,7 +287,7 @@ function App() {
     e.preventDefault();
     setLoading(true);
     setError('');
-    const normalizedForm = normalizeRaceForm(form);
+    const normalizedForm = normalizeRaceForm(form, { finalize: true });
     setForm(normalizedForm);
     
     const payload = {
@@ -297,7 +299,9 @@ function App() {
         sc_laps_on_tire: parseInt(normalizedForm.sc_laps_on_tire) || 0,
         track_position: parseInt(normalizedForm.track_position) || 1,
         current_compound: normalizedForm.current_compound || null,
-        compounds_used_count: parseInt(normalizedForm.compounds_used_count) || 0,
+        compounds_used_count: normalizedForm.has_pitted
+          ? parseInt(normalizedForm.compounds_used_count) || 1
+          : 0,
     };
 
     try {
@@ -562,11 +566,12 @@ function App() {
             </div>
             {form.has_pitted && (
                 <div className="form-group">
-                    <label>DISTINCT COMPOUNDS USED</label>
+                    <label>Distinct Tire Compounds Used (Including Current Tire)</label>
                     <input
                         id="input-compounds-used-count"
                         type="text"
                         inputMode="numeric"
+                        aria-label="Distinct tire compounds used including current tire"
                         value={form.compounds_used_count}
                         onChange={e => updateNumericField('compounds_used_count', e.target.value)}
                     />
