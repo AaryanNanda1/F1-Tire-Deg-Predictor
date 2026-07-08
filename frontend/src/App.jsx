@@ -29,6 +29,12 @@ const parseOptionalNumber = (value) => {
   return Number.isNaN(parsed) ? null : parsed;
 };
 
+const clampParsedNumber = (value, min, max) => {
+  const parsed = parseOptionalNumber(value);
+  if (parsed === null) return null;
+  return Math.min(max, Math.max(min, parsed));
+};
+
 const normalizeRaceForm = (nextForm) => {
   const normalized = { ...nextForm };
   const totalLaps = parseOptionalNumber(normalized.laps_to_complete);
@@ -77,6 +83,13 @@ const normalizeRaceForm = (nextForm) => {
     if (gridPos !== null) {
       normalized.track_position = gridPos;
     }
+  }
+
+  if (normalized.has_pitted) {
+    const compoundsUsedCount = clampParsedNumber(normalized.compounds_used_count, 1, 5);
+    normalized.compounds_used_count = compoundsUsedCount === null ? 1 : compoundsUsedCount;
+  } else {
+    normalized.compounds_used_count = 0;
   }
 
   return normalized;
@@ -245,6 +258,7 @@ function App() {
     sc_currently_out: false,
     // New: Pit history & position
     has_pitted: false,
+    compounds_used_count: 0,
     track_position: 1,
   });
 
@@ -283,6 +297,7 @@ function App() {
         sc_laps_on_tire: parseInt(normalizedForm.sc_laps_on_tire) || 0,
         track_position: parseInt(normalizedForm.track_position) || 1,
         current_compound: normalizedForm.current_compound || null,
+        compounds_used_count: parseInt(normalizedForm.compounds_used_count) || 0,
     };
 
     try {
@@ -545,6 +560,18 @@ function App() {
                    <span style={{marginLeft: '10px', fontSize: '0.8rem', fontWeight: 700}}>{form.has_pitted ? 'YES' : 'NO'}</span>
                 </div>
             </div>
+            {form.has_pitted && (
+                <div className="form-group">
+                    <label>DISTINCT COMPOUNDS USED</label>
+                    <input
+                        id="input-compounds-used-count"
+                        type="text"
+                        inputMode="numeric"
+                        value={form.compounds_used_count}
+                        onChange={e => updateNumericField('compounds_used_count', e.target.value)}
+                    />
+                </div>
+            )}
             <div className="form-group sc-toggle">
                 <label>SC ON CURRENT STINT</label>
                 <div onClick={() => updateForm({ sc_happened_on_tire: !form.sc_happened_on_tire })}>

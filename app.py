@@ -160,14 +160,18 @@ def simulate_strategy():
         
         # New: Pit history
         has_pitted = bool(data.get("has_pitted", False))
+        compounds_used_count = max(0, int(data.get("compounds_used_count", 0) or 0))
         
         # New: Track position (distinct from grid_pos for mid-race sims)
         track_position = int(data.get("track_position", grid_pos))
         
         # New: Compounds already used (for 2-compound rule tracking)
         compounds_used = data.get("compounds_used", [])
+        if not isinstance(compounds_used, list):
+            compounds_used = []
         if current_compound and current_compound not in compounds_used:
             compounds_used.append(current_compound)
+        compounds_used_count = max(compounds_used_count, len(set(compounds_used)))
         
         # Mocking Date & Time based on input year (Normally we'd lookup true F1 calendar dates)
         race_date = f"{year}-08-30" 
@@ -203,7 +207,8 @@ def simulate_strategy():
             track_position=track_position,
             grid_pos=grid_pos,
             weather_condition=weather_condition,
-            compounds_used=compounds_used
+            compounds_used=compounds_used,
+            compounds_used_count=compounds_used_count,
         )
         
         # Merge the outputs to send back to the UI

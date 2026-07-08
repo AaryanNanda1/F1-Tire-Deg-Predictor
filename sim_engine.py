@@ -292,15 +292,18 @@ class StrategySimulator:
                 return False
         return True
 
-    def _satisfies_compound_rule(self, compounds_used: list, planned_compounds: list):
+    def _satisfies_compound_rule(self, compounds_used: list, planned_compounds: list,
+                                 compounds_used_count: int = 0):
         """
         F1 requires at least two tyre compound types unless an intermediate or
         wet tyre is used during the race. A same-compound strategy is therefore
         only legal when that compound is INTERMEDIATE or WET.
         """
         compounds_in_race = set(compounds_used) | set(planned_compounds)
+        known_distinct_compounds = len(compounds_in_race)
+        distinct_compounds_used = max(known_distinct_compounds, int(compounds_used_count or 0))
         has_wet_weather_tyre = any(c in ("INTERMEDIATE", "WET") for c in compounds_in_race)
-        return has_wet_weather_tyre or len(compounds_in_race) >= 2
+        return has_wet_weather_tyre or distinct_compounds_used >= 2
 
     def _is_light_wet_compound_sequence_allowed(self, compounds: list):
         """
@@ -338,7 +341,8 @@ class StrategySimulator:
                             has_pitted: bool = False,
                             track_position: int = 1, grid_pos: int = 1,
                             weather_condition: str = "dry",
-                            compounds_used: list = None):
+                            compounds_used: list = None,
+                            compounds_used_count: int = 0):
         """
         Brute forces 1, 2, and 3 stop strategies to find the mathematical optimum.
         Categorizes them into Optimal, Safe, and Risky.
@@ -356,6 +360,7 @@ class StrategySimulator:
             grid_pos: Starting grid position (used for dirty air when current_lap == 0)
             weather_condition: "dry", "light_wet", or "heavy_wet"
             compounds_used: List of compounds already used in the race (for 2-compound rule)
+            compounds_used_count: Number of distinct compounds used so far, including current tire
         """
         # Derive laps remaining
         laps_remaining = total_laps - current_lap
@@ -376,6 +381,7 @@ class StrategySimulator:
             compounds_used = []
         if current_compound and current_compound not in compounds_used:
             compounds_used.append(current_compound)
+        compounds_used_count = max(int(compounds_used_count or 0), len(set(compounds_used)))
             
         # Determine available compounds based on weather
         dry_compounds = ["SOFT", "MEDIUM", "HARD"]
@@ -464,7 +470,11 @@ class StrategySimulator:
                 # Zero-stop: stay out on current tire for remaining laps
                 if not current_compound:
                     continue
-                if not self._satisfies_compound_rule(compounds_used, [current_compound]):
+                if not self._satisfies_compound_rule(
+                    compounds_used,
+                    [current_compound],
+                    compounds_used_count=compounds_used_count,
+                ):
                     continue
                 # Don't allow zero-stop if remaining laps would blow past absolute max
                 total_life = start_age + laps_remaining
@@ -496,7 +506,11 @@ class StrategySimulator:
                     and not self._is_light_wet_compound_sequence_allowed(combo)
                 ):
                     continue
-                if not self._satisfies_compound_rule(compounds_used, combo):
+                if not self._satisfies_compound_rule(
+                    compounds_used,
+                    combo,
+                    compounds_used_count=compounds_used_count,
+                ):
                     continue
 
                 for lengths in get_stint_combos(list(combo), laps_remaining):

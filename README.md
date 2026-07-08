@@ -232,6 +232,7 @@ Race-state inputs are normalized automatically:
 - Safety-car laps on the current tire cannot exceed laps on the current tire.
 - At lap 0, tire age and safety-car tire laps are forced to 0, and track position is forced to grid position.
 - If the driver has already pitted, laps on the current tire must be less than the current lap.
+- If the driver has already pitted, distinct compounds used is collected and clamped between 1 and 5.
 
 ### Tire Strategy Rules
 

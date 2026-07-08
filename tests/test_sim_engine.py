@@ -209,6 +209,24 @@ class StrategySimulatorWetToDryTest(unittest.TestCase):
         self.assertFalse(simulator._satisfies_compound_rule([], ["MEDIUM", "MEDIUM"]))
         self.assertFalse(simulator._satisfies_compound_rule(["SOFT"], ["SOFT"]))
 
+    def test_distinct_compound_count_satisfies_dry_compound_rule(self):
+        simulator = StrategySimulator(self._build_profiles())
+
+        self.assertFalse(
+            simulator._satisfies_compound_rule(
+                ["MEDIUM"],
+                ["MEDIUM"],
+                compounds_used_count=1,
+            )
+        )
+        self.assertTrue(
+            simulator._satisfies_compound_rule(
+                ["MEDIUM"],
+                ["MEDIUM"],
+                compounds_used_count=2,
+            )
+        )
+
     def test_allows_same_compound_when_all_wet_or_intermediate(self):
         simulator = StrategySimulator(self._build_profiles())
 
