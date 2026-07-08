@@ -556,7 +556,7 @@ function App() {
             </div>
         </div>
 
-        <div className="form-row" style={{marginTop: '16px'}}>
+        <div className="form-row race-state-options-row" style={{marginTop: '16px'}}>
             <div className="form-group sc-toggle">
                 <label>ALREADY PITTED</label>
                 <div onClick={() => updateForm({ has_pitted: !form.has_pitted })}>
