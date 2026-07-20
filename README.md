@@ -7,7 +7,7 @@ A high-performance Formula 1 tire-degradation inference and race-strategy optimi
 The application provides two primary analytical outputs:
 
 - **Compound Degradation Forecasting**: Predicts tire wear and lap-time evolution for each available compound at a selected circuit, conditioned on driver, constructor, technical era, and environmental inputs.
-- **Race Strategy Optimization**: Searches valid compound sequences and stint allocations using the predicted degradation curves, current race state, circuit-specific pit loss, safety-car state, and live or historical weather data.
+- **Race Strategy Optimization**: Searches valid compound sequences and stint allocations using the predicted degradation curves, current race state, circuit-specific pit loss, safety-car state, and date-aware Open-Meteo weather context.
 
 ---
 
@@ -60,18 +60,31 @@ Circuit behavior is represented through a normalized 10-dimensional relational f
 - **Derived Stress Metrics**: Weighted blends for **Thermal Stress**, **Surface Wear**, and **Total Energy Load**.
 - **Cross-Era Normalization**: Features are normalized to `[0, 1]`, enabling transferable interaction learning between circuit stress, compound choice, and tire age.
 
-### 6. Real-Time Strategy Optimization
+### 6. Date-Aware Weather Context
+
+The dashboard accepts a race date and local start time for every simulation. When a selected circuit and season resolve to a FastF1 event, the fields are prefilled with the scheduled race start and remain user-editable.
+
+Weather retrieval is scoped to the selected circuit coordinates and exact race date:
+
+- **Forecast horizon**: Dates from today through 16 days ahead use Open-Meteo's hourly forecast endpoint.
+- **Historical races**: Completed dates more than five days old use Open-Meteo's historical archive.
+- **Long-range simulations**: Dates beyond the forecast horizon use weather from approximately the same date in a prior year as a clearly defined seasonal estimate.
+- **Caching**: Forecast results expire after one hour; historical and seasonal results are cached for 30 days.
+
+The weather context passed to the degradation model includes air temperature, humidity, precipitation, and wind. Track temperature is a deterministic estimate derived from air temperature: daytime dry conditions add 12°C, daytime wet conditions add 5°C, night dry conditions add 3°C, and night wet conditions add 1°C. These offsets are modeling assumptions, not measurements returned by Open-Meteo.
+
+### 7. Real-Time Strategy Optimization
 
 - **Constrained Strategy Search**: Evaluates compound permutations and bounded stint-length combinations while enforcing the mandatory pit-stop rule, wet-weather compound exceptions, and physical stint caps.
-- **Weather Integration**: Live and historical weather data (air/track temp, humidity, rainfall) via Open-Meteo API to adjust degradation curves in real-time.
+- **Weather Integration**: Selected-date forecast, historical, or seasonal-estimate weather context via the [Open-Meteo API](https://open-meteo.com/en/docs), used to adjust degradation curves.
 - **Safety Car Modeling**: Applies reduced tire-wear accumulation and discounted pit-loss estimates during active safety-car scenarios.
 
-### 7. Interactive Dashboard
+### 8. Interactive Dashboard
 
 A React-based analytical dashboard provides:
 
 - Multi-compound lap-time degradation curves rendered with Recharts.
-- Track-stress metrics, weather forecasts, tire-life diagnostics, and degradation-rate summaries.
+- FastF1 calendar-backed race date/time defaults, editable weather timing inputs, track-stress metrics, weather conditions, tire-life diagnostics, and degradation-rate summaries.
 - Dynamic stint bars for optimal, safe, and risky strategy comparisons.
 - Race-state input guardrails that auto-correct invalid lap, tire-age, safety-car, and track-position combinations without changing the input style.
 
@@ -134,7 +147,7 @@ The machine-learning layer is deliberately isolated from strategy policy. It pro
 - **Core**: Python 3.10+
 - **Analysis**: NumPy, Pandas, SciPy, Scikit-Learn
 - **API**: Flask + Flask-CORS
-- **Data**: FastF1 API integration
+- **Data**: FastF1 event schedules and telemetry; Open-Meteo weather API
 - **Deployment**: Render with Gunicorn (`gunicorn --timeout 120 app:app`)
 
 ### Frontend
@@ -221,9 +234,12 @@ python run_strategy.py \
 Use the [deployed dashboard](https://f1-tire-deg.netlify.app/) or run the frontend locally at `http://localhost:3000`.
 
 1. Select the race year, track, team, and driver.
-2. Enter the race distance and current race-state information.
-3. Add tire-age, pit-history, and safety-car context when simulating mid-race decisions.
-4. Run the simulation to compare degradation curves and strategy recommendations.
+2. Confirm or edit the FastF1 calendar-defaulted race date and local start time. If FastF1 cannot resolve the event, choose the timing manually.
+3. Enter the race distance and current race-state information.
+4. Add tire-age, pit-history, and safety-car context when simulating mid-race decisions.
+5. Run the simulation to compare degradation curves and strategy recommendations.
+
+For dates inside the 16-day forecast horizon, the simulation uses the selected date's Open-Meteo forecast. Historical dates use archived conditions; simulations beyond the forecast horizon use a prior-year seasonal estimate rather than a weather forecast.
 
 Race-state inputs are normalized automatically:
 
