@@ -244,7 +244,7 @@ const TrackMetricsChart = ({ features }) => {
 function App() {
   const [options, setOptions] = useState({ tracks: [], teams: [], drivers: [], years: [], compounds: [] });
   const [form, setForm] = useState({
-    year: 2026,
+    year: new Date().getFullYear(),
     track_name: 'Circuit Zandvoort (Netherlands)',
     team: 'Red Bull Racing',
     driver: 'VER',
@@ -279,7 +279,16 @@ function App() {
   useEffect(() => {
     fetch(apiUrl('/api/options'))
       .then(res => res.json())
-      .then(data => setOptions(data))
+      .then(data => {
+        setOptions(data);
+        if (data.years?.length) {
+          setForm(prev => (
+            data.years.includes(prev.year)
+              ? prev
+              : { ...prev, year: data.years[data.years.length - 1] }
+          ));
+        }
+      })
       .catch(err => console.error("API options error:", err));
   }, []);
 
@@ -455,7 +464,7 @@ function App() {
         <div className="form-section-label">Race Setup</div>
         <div className="form-row">
             <div className="form-group">
-                <label>YEAR</label>
+                <label>SEASON (FASTF1 DATA)</label>
                 <select id="select-year" value={form.year} onChange={e => updateForm({ year: parseInt(e.target.value) })}>
                     {options.years.length === 0 ? <option>Loading...</option> : options.years.map(y => <option key={y} value={y}>{y}</option>)}
                 </select>

@@ -3,6 +3,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import traceback
 import os
+from datetime import date
 
 app = Flask(__name__)
 CORS(
@@ -19,6 +20,21 @@ CORS(
 )
 
 _DEPLOY_METADATA = None
+
+# FastF1 provides historical seasons as well as the active season, but future
+# event data is not available. Keep the simulator aligned with that boundary
+# instead of exposing placeholder future-season calendars.
+MODEL_FIRST_YEAR = 2022
+MODEL_LAST_YEAR = 2030
+
+
+def get_available_simulation_years():
+    """Return supported historical seasons through the active FastF1 season."""
+    current_year = date.today().year
+    last_available_year = min(current_year, MODEL_LAST_YEAR)
+    if last_available_year < MODEL_FIRST_YEAR:
+        return []
+    return list(range(MODEL_FIRST_YEAR, last_available_year + 1))
 
 
 def get_deploy_metadata():
@@ -67,6 +83,8 @@ def health_check():
 def get_options():
     from mappings import TRACK_PIT_LOSS, TEAM_MAPPING, TRACK_CONFIG, get_roster_map, get_yearly_tracks
 
+    available_years = get_available_simulation_years()
+
     # Provide the dynamic options for the UI dropdowns
     drivers = ["VER", "PER", "LEC", "SAI", "RUS", "HAM", "NOR", "RIC", "OCO", "ALO", "BOT", "ZHO", "VET", "STR", "HUL", "MAG", "MSC", "GAS", "TSU", "ALB", "LAT", "DEV", "PIA", "SAR", "LAW", "DOO", "BEA", "COL", "ANT", "BOR", "HAD", "LIN"]
     
@@ -88,11 +106,12 @@ def get_options():
         "tracks": list(TRACK_PIT_LOSS.keys()),
         "teams": list(set(TEAM_MAPPING.values())),
         "drivers": drivers,
-        "years": [2022, 2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030],
+        "years": available_years,
+        "current_year": date.today().year,
         "compounds": ["SOFT", "MEDIUM", "HARD", "INTERMEDIATE", "WET"],
         "track_laps": track_laps,
-        "driver_roster": get_roster_map(),
-        "yearly_tracks": get_yearly_tracks(),
+        "driver_roster": get_roster_map(available_years),
+        "yearly_tracks": get_yearly_tracks(available_years),
         "model_metadata": model_metadata
     })
 
@@ -140,6 +159,16 @@ def simulate_strategy():
     data = request.json
     try:
         year = int(data.get("year", 2026))
+        available_years = get_available_simulation_years()
+        if year not in available_years:
+            current_year = date.today().year
+            return jsonify({
+                "status": "error",
+                "message": (
+                    f"Only seasons through {min(current_year, MODEL_LAST_YEAR)} can be simulated. "
+                    "Future-season FastF1 race data is not available."
+                ),
+            }), 400
         driver = data.get("driver", "VER")
         team = data.get("team", "Red Bull Racing")
         track_name = data.get("track_name", "Circuit Zandvoort")

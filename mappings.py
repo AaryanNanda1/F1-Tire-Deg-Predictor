@@ -580,11 +580,12 @@ ROSTER_OVERRIDES = {
     }
 }
 
-def get_roster_map():
-    """Generates a full mapping of year -> team -> [drivers] for all supported years."""
+def get_roster_map(years=None):
+    """Generates a mapping of requested year -> team -> [drivers]."""
     full_map = {}
-    
-    for year in range(2022, 2031):
+
+    requested_years = years if years is not None else range(2022, 2031)
+    for year in requested_years:
         if year in ROSTER_OVERRIDES:
             full_map[year] = ROSTER_OVERRIDES[year]
         else:
@@ -646,5 +647,8 @@ YEARLY_TRACKS = {
     ]
 }
 
-def get_yearly_tracks():
-    return YEARLY_TRACKS
+def get_yearly_tracks(years=None):
+    """Returns track calendars for the requested seasons."""
+    if years is None:
+        return YEARLY_TRACKS
+    return {year: YEARLY_TRACKS[year] for year in years if year in YEARLY_TRACKS}
