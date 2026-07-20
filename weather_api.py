@@ -116,7 +116,6 @@ def get_track_weather(track_name: str, race_date: str, race_time: str = None) ->
             "end_date": race_date,
             "hourly": "temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m",
             "timezone": "auto",
-            "forecast_days": 16,
         }
 
     try:

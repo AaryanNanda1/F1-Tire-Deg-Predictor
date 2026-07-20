@@ -170,13 +170,7 @@ const StrategyBar = ({ strategy, totalLaps }) => {
 
 const WeatherForecast = ({ forecast }) => {
   if (!forecast) return null;
-  const { air_temp, track_temp, humidity, rainfall, wind_speed, synopsis, hourly_forecasts, source, requested_date: requestedDate, source_date: sourceDate } = forecast;
-  const sourceLabel = {
-    forecast: 'OPEN-METEO FORECAST',
-    historical: 'HISTORICAL WEATHER',
-    seasonal_estimate: 'SEASONAL ESTIMATE (PRIOR-YEAR DATA)',
-    fallback: 'DEFAULT WEATHER ESTIMATE',
-  }[source] || 'WEATHER ESTIMATE';
+  const { air_temp, track_temp, humidity, rainfall, wind_speed, synopsis, hourly_forecasts } = forecast;
 
   return (
     <div className="panel weather-panel" style={{ marginBottom: '24px' }}>
@@ -186,9 +180,6 @@ const WeatherForecast = ({ forecast }) => {
                 <p style={{ margin: 0, fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>{synopsis.toUpperCase()}</p>
                 <p className="mono" style={{ margin: '4px 0 0 0', color: 'var(--text-secondary)' }}>
                     AIR: {air_temp}°C | TRACK: {track_temp}°C | HUMIDITY: {humidity}% | WIND: {wind_speed}km/h
-                </p>
-                <p className="mono" style={{ margin: '8px 0 0 0', color: 'var(--text-tertiary)', fontSize: '0.7rem' }}>
-                    {sourceLabel} · REQUESTED: {requestedDate}{sourceDate && sourceDate !== requestedDate ? ` · BASED ON: ${sourceDate}` : ''}
                 </p>
             </div>
             {rainfall && <div className="mono" style={{ color: 'var(--c-wet)', fontWeight: 'bold' }}>RAIN EXPECTED</div>}
