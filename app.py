@@ -3,7 +3,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import traceback
 import os
-from datetime import date
+from datetime import date, datetime
 
 app = Flask(__name__)
 CORS(
@@ -20,6 +20,7 @@ CORS(
 )
 
 _DEPLOY_METADATA = None
+_RACE_CALENDAR_CACHE = {}
 
 # FastF1 provides historical seasons as well as the active season, but future
 # event data is not available. Keep the simulator aligned with that boundary
@@ -35,6 +36,39 @@ def get_available_simulation_years():
     if last_available_year < MODEL_FIRST_YEAR:
         return []
     return list(range(MODEL_FIRST_YEAR, last_available_year + 1))
+
+
+def get_fastf1_race_calendar(year):
+    """Return local race start times keyed by the application's circuit names."""
+    if year in _RACE_CALENDAR_CACHE:
+        return _RACE_CALENDAR_CACHE[year]
+
+    try:
+        import fastf1
+        from mappings import resolve_circuit_key
+
+        schedule = fastf1.get_event_schedule(year, include_testing=False)
+        race_calendar = {}
+        for _, event in schedule.iterrows():
+            race_start = event.get("Session5Date")
+            event_name = event.get("EventName")
+            if not hasattr(race_start, "date") or not event_name:
+                continue
+
+            try:
+                circuit = resolve_circuit_key(str(event_name))
+                race_calendar[circuit] = {
+                    "date": race_start.strftime("%Y-%m-%d"),
+                    "time": race_start.strftime("%H:%M"),
+                    "event_name": str(event_name),
+                }
+            except (TypeError, ValueError):
+                continue
+        _RACE_CALENDAR_CACHE[year] = race_calendar
+        return race_calendar
+    except Exception as exc:
+        print(f"Unable to load FastF1 race schedule for {year}: {exc}")
+        return {}
 
 
 def get_deploy_metadata():
@@ -115,6 +149,27 @@ def get_options():
         "model_metadata": model_metadata
     })
 
+
+@app.route('/api/race-default', methods=['GET'])
+def get_race_default():
+    try:
+        year = int(request.args.get("year", ""))
+    except ValueError:
+        return jsonify({"message": "Provide a valid season year."}), 400
+
+    track_name = request.args.get("track", "")
+    if year not in get_available_simulation_years() or not track_name:
+        return jsonify({"message": "Provide a supported season and track."}), 400
+
+    race = get_fastf1_race_calendar(year).get(track_name)
+    if not race:
+        return jsonify({"race": None})
+
+    race_date = date.fromisoformat(race["date"])
+    days_until_race = (race_date - date.today()).days
+    race["within_forecast_window"] = 0 <= days_until_race <= 16
+    return jsonify({"race": race})
+
 # Singleton engines to avoid reloading models on every request
 _ENGINE_CACHE = {}
 _ENGINE_MTIMES = {}
@@ -169,6 +224,24 @@ def simulate_strategy():
                     "Future-season FastF1 race data is not available."
                 ),
             }), 400
+
+        race_date = str(data.get("race_date", "")).strip()
+        race_time = str(data.get("race_time", "15:00")).strip()
+        try:
+            parsed_race_date = date.fromisoformat(race_date)
+            datetime.strptime(race_time, "%H:%M")
+        except ValueError:
+            return jsonify({
+                "status": "error",
+                "message": "Provide a valid race date and local start time.",
+            }), 400
+
+        if parsed_race_date.year != year:
+            return jsonify({
+                "status": "error",
+                "message": "The race date must fall within the selected season.",
+            }), 400
+
         driver = data.get("driver", "VER")
         team = data.get("team", "Red Bull Racing")
         track_name = data.get("track_name", "Circuit Zandvoort")
@@ -202,10 +275,6 @@ def simulate_strategy():
             compounds_used.append(current_compound)
         compounds_used_count = max(compounds_used_count, len(set(compounds_used)))
         
-        # Mocking Date & Time based on input year (Normally we'd lookup true F1 calendar dates)
-        race_date = f"{year}-08-30" 
-        race_time = "15:00"
-
         # 1. Get Cached ML Engine (degradation engine output consumed as-is)
         deg_sim = get_engine(year)
         out_degradation = deg_sim.simulate(

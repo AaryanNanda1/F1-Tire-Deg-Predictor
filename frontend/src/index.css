@@ -159,7 +159,11 @@ h1, h2, h3, h4 {
   letter-spacing: 0.1em;
 }
 
-select, input[type="number"], input[type="text"] {
+select,
+input[type="number"],
+input[type="text"],
+input[type="date"],
+input[type="time"] {
   background: var(--surface-raised);
   border: 1px solid var(--surface-border);
   color: var(--text-primary);
@@ -173,6 +177,13 @@ select, input[type="number"], input[type="text"] {
 select:focus, input:focus {
   border-color: var(--f1-red);
   box-shadow: 0 0 0 1px var(--f1-red-muted);
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: invert(1) sepia(0.1) saturate(0) brightness(1.6);
+  opacity: 0.8;
 }
 
 /* Hide number input arrows (spin buttons) */

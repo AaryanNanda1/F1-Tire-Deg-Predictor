@@ -33,18 +33,17 @@ TRACK_COORDINATES = {
     'Autodromo Internazionale del Mugello (Italy)': {'lat': 43.9975, 'lon': 11.3719}
 }
 
-# Cache for weather results to avoid redundant API calls during a single session
+# Cache weather results to avoid redundant API calls. Forecasts expire quickly
+# because Open-Meteo refreshes them as new weather-model runs become available.
 _WEATHER_CACHE = {}
+FORECAST_CACHE_TTL = datetime.timedelta(hours=1)
+HISTORICAL_CACHE_TTL = datetime.timedelta(days=30)
 
 def get_track_weather(track_name: str, race_date: str, race_time: str = None) -> dict:
     """
     Fetches weather expected on the race_date using Open-Meteo API.
     Uses in-memory cache to ensure repeated simulations for the same race are instant.
     """
-    cache_key = (track_name, race_date, race_time)
-    if cache_key in _WEATHER_CACHE:
-        return _WEATHER_CACHE[cache_key]
-        
     if track_name not in TRACK_COORDINATES:
         print(f"Coordinates for {track_name} not found. Using defaults.")
         return {
@@ -54,19 +53,28 @@ def get_track_weather(track_name: str, race_date: str, race_time: str = None) ->
             "rainfall": False,
             "wind_speed": 2.0,
             "synopsis": "Unknown track coordinates; assuming dry, moderate conditions.",
-            "hourly_forecasts": []
+            "hourly_forecasts": [],
+            "source": "fallback",
+            "requested_date": race_date,
+            "source_date": race_date,
         }
 
     coords = TRACK_COORDINATES[track_name]
-    
-    # Determine which endpoint to use (archive vs forecast)
     input_date = datetime.date.fromisoformat(race_date)
     today = datetime.date.today()
-    
     days_diff = (input_date - today).days
-    
-    if days_diff > 14:
-        # Too far in the future for a forecast. Use historical data from exactly 1 year prior as an estimate.
+    cache_key = (track_name, race_date, race_time)
+    cached = _WEATHER_CACHE.get(cache_key)
+    if cached:
+        cached_at, cached_result = cached
+        cache_ttl = FORECAST_CACHE_TTL if -5 <= days_diff <= 16 else HISTORICAL_CACHE_TTL
+        if datetime.datetime.now() - cached_at < cache_ttl:
+            return cached_result
+
+    if days_diff > 16:
+        # Beyond Open-Meteo's forecast horizon, use the same date from a prior
+        # year as a seasonal estimate rather than presenting it as a forecast.
+        weather_source = "seasonal_estimate"
         target_date = input_date
         while target_date > today - datetime.timedelta(days=5):
             try:
@@ -87,6 +95,7 @@ def get_track_weather(track_name: str, race_date: str, race_time: str = None) ->
         }
     elif input_date < today - datetime.timedelta(days=5):
         # Historical Data
+        weather_source = "historical"
         url = "https://archive-api.open-meteo.com/v1/archive"
         params = {
             "latitude": coords['lat'],
@@ -98,6 +107,7 @@ def get_track_weather(track_name: str, race_date: str, race_time: str = None) ->
         }
     else:
         # Forecast / Current Data
+        weather_source = "forecast"
         url = "https://api.open-meteo.com/v1/forecast"
         params = {
             "latitude": coords['lat'],
@@ -105,7 +115,8 @@ def get_track_weather(track_name: str, race_date: str, race_time: str = None) ->
             "start_date": race_date,
             "end_date": race_date,
             "hourly": "temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m",
-            "timezone": "auto"
+            "timezone": "auto",
+            "forecast_days": 16,
         }
 
     try:
@@ -216,9 +227,12 @@ def get_track_weather(track_name: str, race_date: str, race_time: str = None) ->
             "rainfall": is_raining,
             "wind_speed": round(avg_wind, 1),
             "synopsis": synopsis,
-            "hourly_forecasts": hourly_forecasts
+            "hourly_forecasts": hourly_forecasts,
+            "source": weather_source,
+            "requested_date": input_date.isoformat(),
+            "source_date": race_date,
         }
-        _WEATHER_CACHE[cache_key] = result
+        _WEATHER_CACHE[cache_key] = (datetime.datetime.now(), result)
         return result
 
     except Exception as e:
@@ -230,5 +244,8 @@ def get_track_weather(track_name: str, race_date: str, race_time: str = None) ->
             "rainfall": False,
             "wind_speed": 2.0,
             "synopsis": "API fallback; default conditions assumed.",
-            "hourly_forecasts": []
+            "hourly_forecasts": [],
+            "source": "fallback",
+            "requested_date": input_date.isoformat(),
+            "source_date": race_date,
         }

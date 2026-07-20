@@ -18,6 +18,19 @@ const API_BASE_URL = (
 ).replace(/\/$/, '');
 const apiUrl = (path) => `${API_BASE_URL}${path}`;
 
+const getLocalDateValue = (value = new Date()) => {
+  const timezoneOffsetMs = value.getTimezoneOffset() * 60 * 1000;
+  return new Date(value.getTime() - timezoneOffsetMs).toISOString().slice(0, 10);
+};
+
+const updateDateYear = (dateValue, year) => {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateValue);
+  if (!match) return `${year}-01-01`;
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  return getLocalDateValue(new Date(year, month - 1, day));
+};
+
 const parseNumericInput = (value) => {
   const digits = String(value).replace(/\D/g, '');
   return digits === '' ? '' : parseInt(digits, 10);
@@ -157,7 +170,13 @@ const StrategyBar = ({ strategy, totalLaps }) => {
 
 const WeatherForecast = ({ forecast }) => {
   if (!forecast) return null;
-  const { air_temp, track_temp, humidity, rainfall, wind_speed, synopsis, hourly_forecasts } = forecast;
+  const { air_temp, track_temp, humidity, rainfall, wind_speed, synopsis, hourly_forecasts, source, requested_date: requestedDate, source_date: sourceDate } = forecast;
+  const sourceLabel = {
+    forecast: 'OPEN-METEO FORECAST',
+    historical: 'HISTORICAL WEATHER',
+    seasonal_estimate: 'SEASONAL ESTIMATE (PRIOR-YEAR DATA)',
+    fallback: 'DEFAULT WEATHER ESTIMATE',
+  }[source] || 'WEATHER ESTIMATE';
 
   return (
     <div className="panel weather-panel" style={{ marginBottom: '24px' }}>
@@ -167,6 +186,9 @@ const WeatherForecast = ({ forecast }) => {
                 <p style={{ margin: 0, fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>{synopsis.toUpperCase()}</p>
                 <p className="mono" style={{ margin: '4px 0 0 0', color: 'var(--text-secondary)' }}>
                     AIR: {air_temp}°C | TRACK: {track_temp}°C | HUMIDITY: {humidity}% | WIND: {wind_speed}km/h
+                </p>
+                <p className="mono" style={{ margin: '8px 0 0 0', color: 'var(--text-tertiary)', fontSize: '0.7rem' }}>
+                    {sourceLabel} · REQUESTED: {requestedDate}{sourceDate && sourceDate !== requestedDate ? ` · BASED ON: ${sourceDate}` : ''}
                 </p>
             </div>
             {rainfall && <div className="mono" style={{ color: 'var(--c-wet)', fontWeight: 'bold' }}>RAIN EXPECTED</div>}
@@ -245,6 +267,8 @@ function App() {
   const [options, setOptions] = useState({ tracks: [], teams: [], drivers: [], years: [], compounds: [] });
   const [form, setForm] = useState({
     year: new Date().getFullYear(),
+    race_date: getLocalDateValue(),
+    race_time: '15:00',
     track_name: 'Circuit Zandvoort (Netherlands)',
     team: 'Red Bull Racing',
     driver: 'VER',
@@ -267,6 +291,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState(null);
   const [error, setError] = useState('');
+  const [calendarRace, setCalendarRace] = useState(null);
 
   const updateForm = (updates) => {
     setForm(prev => normalizeRaceForm({ ...prev, ...updates }));
@@ -291,6 +316,32 @@ function App() {
       })
       .catch(err => console.error("API options error:", err));
   }, []);
+
+  useEffect(() => {
+    if (!form.year || !form.track_name) {
+      setCalendarRace(null);
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    fetch(apiUrl(`/api/race-default?year=${encodeURIComponent(form.year)}&track=${encodeURIComponent(form.track_name)}`), {
+      signal: controller.signal,
+    })
+      .then(res => (res.ok ? res.json() : { race: null }))
+      .then(data => {
+        if (!data.race) {
+          setCalendarRace(null);
+          return;
+        }
+        setCalendarRace(data.race);
+        setForm(prev => ({ ...prev, race_date: data.race.date, race_time: data.race.time }));
+      })
+      .catch(err => {
+        if (err.name !== 'AbortError') console.error('FastF1 calendar error:', err);
+      });
+
+    return () => controller.abort();
+  }, [form.year, form.track_name]);
 
   const handleSimulate = async (e) => {
     e.preventDefault();
@@ -465,7 +516,10 @@ function App() {
         <div className="form-row">
             <div className="form-group">
                 <label>SEASON (FASTF1 DATA)</label>
-                <select id="select-year" value={form.year} onChange={e => updateForm({ year: parseInt(e.target.value) })}>
+                <select id="select-year" value={form.year} onChange={e => {
+                    const year = parseInt(e.target.value);
+                    updateForm({ year, race_date: updateDateYear(form.race_date, year) });
+                }}>
                     {options.years.length === 0 ? <option>Loading...</option> : options.years.map(y => <option key={y} value={y}>{y}</option>)}
                 </select>
             </div>
@@ -520,6 +574,37 @@ function App() {
                 />
             </div>
         </div>
+
+        <div className="form-section-label" style={{marginTop: '32px'}}>Weather Timing</div>
+        <div className="form-row">
+            <div className="form-group">
+                <label>RACE DATE</label>
+                <input
+                    id="input-race-date"
+                    type="date"
+                    min={`${form.year}-01-01`}
+                    max={`${form.year}-12-31`}
+                    value={form.race_date}
+                    onChange={e => updateForm({ race_date: e.target.value })}
+                    required
+                />
+            </div>
+            <div className="form-group">
+                <label>LOCAL RACE START TIME</label>
+                <input
+                    id="input-race-time"
+                    type="time"
+                    value={form.race_time}
+                    onChange={e => updateForm({ race_time: e.target.value })}
+                    required
+                />
+            </div>
+        </div>
+        {calendarRace && (
+            <p className="mono" style={{ margin: '10px 0 0', color: 'var(--text-tertiary)', fontSize: '0.7rem' }}>
+                FASTF1 CALENDAR DEFAULT: {calendarRace.event_name.toUpperCase()} · {calendarRace.within_forecast_window ? 'WITHIN OPEN-METEO\'S 16-DAY FORECAST WINDOW' : 'HISTORICAL OR LONG-RANGE WEATHER DATA WILL BE USED'}
+            </p>
+        )}
 
         {/* === SECTION 2: Race State (Mid-race context) === */}
         <div className="form-section-label" style={{marginTop: '32px'}}>Race State</div>
