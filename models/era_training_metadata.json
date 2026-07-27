@@ -87,7 +87,7 @@
       "2026:British Grand Prix:S"
     ],
     "failed_events": [],
-    "last_retrain_attempt": "2026-07-20",
+    "last_retrain_attempt": "2026-07-27",
     "last_retrain_status": "no_data",
     "last_retrain_failed_events": [
       "2026:Australian Grand Prix:R:The data you are trying to access has not been loaded yet. See `Session.load`",
@@ -99,7 +99,8 @@
       "2026:Barcelona Grand Prix:R:The data you are trying to access has not been loaded yet. See `Session.load`",
       "2026:Austrian Grand Prix:R:The data you are trying to access has not been loaded yet. See `Session.load`",
       "2026:British Grand Prix:R:The data you are trying to access has not been loaded yet. See `Session.load`",
-      "2026:Belgian Grand Prix:R:The data you are trying to access has not been loaded yet. See `Session.load`"
+      "2026:Belgian Grand Prix:R:The data you are trying to access has not been loaded yet. See `Session.load`",
+      "2026:Hungarian Grand Prix:R:The data you are trying to access has not been loaded yet. See `Session.load`"
     ]
   }
 }
