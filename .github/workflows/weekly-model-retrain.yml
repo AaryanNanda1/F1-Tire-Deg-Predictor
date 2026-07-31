@@ -13,6 +13,10 @@ on:
         type: boolean
         default: false
 
+concurrency:
+  group: model-training-main
+  cancel-in-progress: false
+
 jobs:
   retrain:
     runs-on: ubuntu-latest
@@ -23,6 +27,17 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Restore FastF1 cache
+        id: fastf1-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            cache
+            ~/.cache/fastf1
+          key: fastf1-${{ runner.os }}-${{ github.ref_name }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            fastf1-${{ runner.os }}-${{ github.ref_name }}-
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -52,3 +67,12 @@ jobs:
         if: ${{ github.event.inputs.force_retrain != 'true' && steps.preflight.outputs.should_retrain != 'true' }}
         run: |
           echo "No Active Aero retraining required: ${{ steps.preflight.outputs.reason }}"
+
+      - name: Save updated FastF1 cache
+        if: ${{ always() && (github.event.inputs.force_retrain == 'true' || steps.preflight.outputs.should_retrain == 'true') }}
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            cache
+            ~/.cache/fastf1
+          key: fastf1-${{ runner.os }}-${{ github.ref_name }}-${{ github.run_id }}-${{ github.run_attempt }}
