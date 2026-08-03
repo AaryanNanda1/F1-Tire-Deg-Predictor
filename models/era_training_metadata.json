@@ -87,7 +87,7 @@
       "2026:British Grand Prix:S"
     ],
     "failed_events": [],
-    "last_retrain_attempt": "2026-07-27",
+    "last_retrain_attempt": "2026-08-03",
     "last_retrain_status": "no_data",
     "last_retrain_failed_events": [
       "2026:Australian Grand Prix:R:The data you are trying to access has not been loaded yet. See `Session.load`",
