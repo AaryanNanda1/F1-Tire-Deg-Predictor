@@ -6,6 +6,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "${REPO_ROOT}"
 
 PYTHON_BIN="${PYTHON_BIN:-python3}"
+PROCESSED_DATA_DIR="${PROCESSED_DATA_DIR:-training_data/active_aero}"
 if ! command -v "${PYTHON_BIN}" >/dev/null 2>&1; then
     PYTHON_BIN="python"
 fi
@@ -28,8 +29,40 @@ trap on_failure ERR
 
 echo "Starting Active Aero model retraining at $(date)..."
 
-# Weekly automation only retrains the Active Aero model for the 2026+ era.
-"${PYTHON_BIN}" train_era_models.py --mode active_aero
+# Append only newly completed sessions. Historical training rows come from the
+# repository dataset; the Actions cache remains a secondary raw-response cache.
+"${PYTHON_BIN}" scripts/update_active_aero_training_data.py \
+    --store-dir "${PROCESSED_DATA_DIR}" \
+    --json-output /tmp/active_aero_data_update.json
+
+# Retrain the original single Active Aero model from the persistent dataset.
+"${PYTHON_BIN}" train_era_models.py \
+    --mode active_aero \
+    --processed-data-dir "${PROCESSED_DATA_DIR}"
+
+"${PYTHON_BIN}" - <<'PY'
+import json
+from pathlib import Path
+
+metadata = json.loads(
+    Path("models/era_training_metadata.json").read_text(encoding="utf-8")
+)
+active = metadata.get("active_aero_2026_2030", {})
+if not str(active.get("status", "")).startswith("trained"):
+    raise SystemExit("Active Aero retraining did not produce a trained model.")
+if active.get("training_data_source") != "persistent_processed_sessions":
+    raise SystemExit("Active Aero retraining did not use the persistent dataset.")
+if active.get("mae_validation_scope") != "walk_forward_2026_plus_test_events":
+    raise SystemExit("Active Aero retraining used the wrong validation scope.")
+if not Path("models/active_aero_2026_2030_model.joblib").is_file():
+    raise SystemExit("The Active Aero model artifact is missing.")
+if not Path("models/active_aero_2026_2030_features.joblib").is_file():
+    raise SystemExit("The Active Aero feature manifest is missing.")
+print(
+    "Validated persistent-data single-model retraining from "
+    f"{active.get('active_session_count')} Active Aero sessions."
+)
+PY
 
 if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
     "${PYTHON_BIN}" - <<'PY' >> "${GITHUB_STEP_SUMMARY}"
@@ -60,19 +93,23 @@ else:
 PY
 fi
 
-# Check if there are changes in the models directory
-if git diff --quiet -- models/; then
-    echo "No changes in trained models. Nothing to commit."
-    append_summary "## Active Aero commit result\n- No changes in \`models/\`; nothing was committed."
+# Check if there are model or persistent-data changes.
+if [ -z "$(git status --porcelain -- models/ "${PROCESSED_DATA_DIR}/")" ]; then
+    echo "No changes in the model or persistent dataset. Nothing to commit."
+    append_summary "## Active Aero commit result\n- No model or persistent-data changes; nothing was committed."
 else
-    echo "New model files detected. Committing and pushing to GitHub..."
+    echo "New model or processed training data detected. Committing and pushing to GitHub..."
     if ! git config user.name >/dev/null; then
         git config user.name "github-actions[bot]"
     fi
     if ! git config user.email >/dev/null; then
         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
     fi
-    git add models/
+    git add \
+        models/active_aero_2026_2030_model.joblib \
+        models/active_aero_2026_2030_features.joblib \
+        models/era_training_metadata.json \
+        "${PROCESSED_DATA_DIR}/"
     git commit -m "Auto-retrain: update Active Aero model $(date +'%Y-%m-%d')"
     git push origin HEAD:${GITHUB_REF_NAME:-main}
     echo "GitHub repository updated successfully with the new model!"

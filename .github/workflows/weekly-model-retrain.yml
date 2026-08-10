@@ -49,6 +49,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Validate persistent training pipeline
+        run: python -m unittest discover -s tests -v
+
       - name: Check for new Active Aero race data
         id: preflight
         continue-on-error: ${{ github.event.inputs.force_retrain == 'true' }}

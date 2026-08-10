@@ -15,6 +15,25 @@ from sklearn.model_selection import train_test_split
 
 from data_loader import load_race_data
 from preprocessing import preprocess_laps
+from training_data_store import (
+    ACTIVE_AERO_ROLE,
+    GROUND_EFFECT_ROLE,
+    PHYSICS_PRIOR_ROLE,
+    ProcessedSessionStore,
+    TrainingDataStoreError,
+)
+
+
+TRAINING_METADATA_COLUMNS = [
+    "LapTimeDelta",
+    "SampleWeight",
+    "EventDate",
+    "EventName",
+    "SessionKey",
+    "SessionCode",
+    "TrainingRole",
+    "Season",
+]
 
 
 def _training_timestamp() -> str:
@@ -126,12 +145,114 @@ def collect_era_data(start_year: int, end_year: int, as_of: date) -> Tuple[pd.Da
     return final_df, {"loaded_events": loaded_events, "failed_events": failed_events}
 
 
+def _apply_soft_tire_age_weighting(data_df: pd.DataFrame) -> pd.DataFrame:
+    """Apply the original production soft-tire weighting to processed rows."""
+    weighted = data_df.copy()
+    if "SampleWeight" not in weighted.columns:
+        weighted["SampleWeight"] = 1.0
+    if "Compound_SOFT" in weighted.columns and "TyreLife" in weighted.columns:
+        soft_mask = weighted["Compound_SOFT"] == 1
+        weighted.loc[soft_mask, "SampleWeight"] *= (
+            1.0 + weighted.loc[soft_mask, "TyreLife"] / 10.0
+        )
+    return weighted
+
+
+def load_persistent_active_aero_data(
+    processed_data_dir: Path,
+) -> Tuple[pd.DataFrame, pd.DataFrame, Dict]:
+    """Load repository-versioned Active Aero and frozen prior sessions."""
+    store = ProcessedSessionStore(processed_data_dir)
+    store.validate(verify_hashes=True)
+    active_data = store.load_role(ACTIVE_AERO_ROLE)
+    prior_data = store.load_role(PHYSICS_PRIOR_ROLE)
+
+    if active_data.empty:
+        raise TrainingDataStoreError(
+            f"No Active Aero sessions are stored in {processed_data_dir}"
+        )
+    if prior_data.empty:
+        raise TrainingDataStoreError(
+            f"No physics-prior sessions are stored in {processed_data_dir}"
+        )
+
+    return active_data, prior_data, {
+        "loaded_events": store.session_keys(ACTIVE_AERO_ROLE),
+        "failed_events": [],
+        "training_data_source": "persistent_processed_sessions",
+        "processed_data_manifest": str(store.manifest_path),
+        "processed_data_manifest_sha256": store.manifest_sha256(),
+        "active_session_count": len(store.session_keys(ACTIVE_AERO_ROLE)),
+        "prior_session_count": len(store.session_keys(PHYSICS_PRIOR_ROLE)),
+    }
+
+
+def load_persistent_ground_effect_data(
+    processed_data_dir: Path,
+) -> Tuple[pd.DataFrame, Dict]:
+    """Load the complete repository-versioned 2022-2025 dataset."""
+    store = ProcessedSessionStore(processed_data_dir)
+    store.validate(verify_hashes=True)
+    coverage = store.get_metadata("coverage", {})
+    if not coverage.get("complete"):
+        raise TrainingDataStoreError(
+            "Ground Effect dataset coverage is incomplete: "
+            f"{coverage.get('missing_race_count', 'unknown')} races and "
+            f"{coverage.get('missing_session_count', 'unknown')} sessions remain"
+        )
+    data = store.load_role(GROUND_EFFECT_ROLE)
+    if data.empty:
+        raise TrainingDataStoreError(
+            f"No Ground Effect sessions are stored in {processed_data_dir}"
+        )
+
+    return _apply_soft_tire_age_weighting(data), {
+        "loaded_events": store.session_keys(GROUND_EFFECT_ROLE),
+        "failed_events": [],
+        "training_data_source": "persistent_processed_sessions",
+        "processed_data_manifest": str(store.manifest_path),
+        "processed_data_manifest_sha256": store.manifest_sha256(),
+        "session_count": len(store.session_keys(GROUND_EFFECT_ROLE)),
+        "race_count": int(coverage.get("expected_race_count", 0)),
+        "coverage_start_year": 2022,
+        "coverage_end_year": 2025,
+    }
+
+
+def build_active_aero_training_data(
+    active_data: pd.DataFrame,
+    prior_data: pd.DataFrame,
+) -> Tuple[pd.DataFrame, int]:
+    """Reproduce the original single-model Active Aero blending policy."""
+    if active_data.empty:
+        return pd.DataFrame(), 0
+
+    active_weighted = _apply_soft_tire_age_weighting(active_data)
+    frames = [active_weighted]
+    sampled_prior_rows = 0
+    if not prior_data.empty:
+        sampled_prior = prior_data.sample(frac=0.50, random_state=42).copy()
+        sampled_prior["SampleWeight"] = 1.0
+        sampled_prior_rows = len(sampled_prior)
+        frames.append(sampled_prior)
+
+    data_df = pd.concat(frames, ignore_index=True, sort=False).fillna(0)
+    if "IsWet" in data_df.columns:
+        wet_laps = data_df[data_df["IsWet"] == 1]
+        if not wet_laps.empty and len(wet_laps) < 500:
+            print(f"  Upsampling wet/inter conditions (found {len(wet_laps)} laps)...")
+            data_df = pd.concat([data_df, wet_laps, wet_laps], ignore_index=True)
+
+    return data_df, sampled_prior_rows
+
+
 def train_and_save(
     data_df: pd.DataFrame,
     model_path: Path,
     features_path: Path,
     prior_model_path: Path = None,
     prior_weight: float = 0.20,
+    validation_test_start_year: int = None,
 ) -> Dict:
     """
     Train and save a tire degradation model.
@@ -157,7 +278,10 @@ def train_and_save(
             prior_features = joblib.load(str(prior_model_path).replace('_model.joblib', '_features.joblib'))
             
             # Build prior synthetic rows from the current era data inputs
-            X_current = data_df.drop(columns=['LapTimeSeconds', 'SampleWeight'], errors='ignore')
+            X_current = data_df.drop(
+                columns=TRAINING_METADATA_COLUMNS,
+                errors="ignore",
+            )
             X_prior_aligned = X_current.reindex(columns=prior_features, fill_value=0)
             prior_preds = prior_model.predict(X_prior_aligned)
             
@@ -176,7 +300,10 @@ def train_and_save(
     sequential_mae = None
     if len(data_df) > 500: # Only worth doing if we have enough data
         try:
-            sequential_mae = perform_walk_forward_validation(data_df)
+            sequential_mae = perform_walk_forward_validation(
+                data_df,
+                test_start_year=validation_test_start_year,
+            )
         except Exception as e:
             print(f"  Warning: Sequential validation failed: {e}")
 
@@ -184,7 +311,7 @@ def train_and_save(
     sample_weights = data_df.get('SampleWeight', pd.Series(1.0, index=data_df.index))
     
     # Drop target and metadata columns so they aren't used as features
-    X = data_df.drop(columns=['LapTimeDelta', 'SampleWeight', 'EventDate', 'EventName'], errors='ignore')
+    X = data_df.drop(columns=TRAINING_METADATA_COLUMNS, errors="ignore")
     y = data_df['LapTimeDelta']
 
     model = HistGradientBoostingRegressor(
@@ -209,11 +336,25 @@ def train_and_save(
         "rows": int(len(data_df)),
         "features": int(X.shape[1]),
         "mae": round(float(final_mae), 3),
+        "mae_validation_scope": (
+            f"walk_forward_{validation_test_start_year}_plus_test_events"
+            if sequential_mae is not None
+            and validation_test_start_year is not None
+            else (
+                "walk_forward_all_test_events"
+                if sequential_mae is not None
+                else "in_sample_fallback"
+            )
+        ),
         "cold_start_prior_active": cold_start_active,
     }
 
 
-def perform_walk_forward_validation(df: pd.DataFrame) -> float:
+def perform_walk_forward_validation(
+    df: pd.DataFrame,
+    *,
+    test_start_year: int = None,
+) -> float:
     """
     Simulates "Next Race" prediction by iteratively training on past events 
     and testing on the very next one.
@@ -223,28 +364,45 @@ def perform_walk_forward_validation(df: pd.DataFrame) -> float:
         return 0.0
         
     # Group by EventDate and EventName to get unique race weekends in order
-    events = df[['EventDate', 'EventName']].drop_duplicates().sort_values('EventDate')
+    events = df[['EventDate', 'EventName']].drop_duplicates().copy()
+    events['EventDate'] = pd.to_datetime(events['EventDate'], errors='coerce')
+    events = events.dropna(subset=['EventDate']).sort_values(['EventDate', 'EventName'])
+    if test_start_year is not None:
+        scored_events = events[events['EventDate'].dt.year >= test_start_year]
+    else:
+        scored_events = events.iloc[2:]
     
     if len(events) < 2:
         return 0.0
         
-    print(f"\n  [Walk-Forward Validation] Evaluating across {len(events)} events...")
+    print(
+        "\n  [Walk-Forward Validation] "
+        f"Scoring {len(scored_events)} of {len(events)} chronological events..."
+    )
     
     maes = []
-    # We start after the first 2 events to have a baseline
-    for i in range(2, len(events)):
-        train_events = events.iloc[:i]
-        test_event = events.iloc[i]
-        
-        train_data = df[df['EventName'].isin(train_events['EventName'])]
-        test_data = df[df['EventName'] == test_event['EventName']]
+    event_dates = pd.to_datetime(df['EventDate'], errors='coerce')
+    for _, test_event in scored_events.iterrows():
+        train_data = df[event_dates < test_event['EventDate']]
+        test_data = df[
+            (event_dates == test_event['EventDate'])
+            & (df['EventName'] == test_event['EventName'])
+        ]
+        if train_data.empty or test_data.empty:
+            continue
         
         # Ensure we drop metadata columns during training
-        X_train = train_data.drop(columns=['LapTimeDelta', 'SampleWeight', 'EventDate', 'EventName'], errors='ignore')
+        X_train = train_data.drop(
+            columns=TRAINING_METADATA_COLUMNS,
+            errors="ignore",
+        )
         y_train = train_data['LapTimeDelta']
         w_train = train_data.get('SampleWeight', pd.Series(1.0, index=train_data.index))
         
-        X_test = test_data.drop(columns=['LapTimeDelta', 'SampleWeight', 'EventDate', 'EventName'], errors='ignore')
+        X_test = test_data.drop(
+            columns=TRAINING_METADATA_COLUMNS,
+            errors="ignore",
+        )
         y_test = test_data['LapTimeDelta']
         
         # We don't use early stopping here to speed up validation loops
@@ -318,7 +476,21 @@ def main():
         default="both",
         help="Which era model(s) to train",
     )
+    parser.add_argument(
+        "--processed-data-dir",
+        type=str,
+        default=None,
+        help=(
+            "Train the selected single era from a persistent processed-session "
+            "store instead of reloading historical FastF1 sessions"
+        ),
+    )
     args = parser.parse_args()
+
+    if args.processed_data_dir and args.mode == "both":
+        parser.error(
+            "--processed-data-dir requires --mode ground_effect or --mode active_aero"
+        )
 
     as_of = date.fromisoformat(args.as_of_date)
     out_dir = Path(args.output_dir)
@@ -336,9 +508,28 @@ def main():
     # Preserve metadata for eras that are not part of this invocation.
     results: Dict[str, Dict] = dict(existing_results)
     if args.mode in {"both", "ground_effect"}:
-        candidate = train_era(
-            2022, 2025, "ground_effect_2022_2025", as_of, out_dir
-        )
+        if args.processed_data_dir:
+            data_df, details = load_persistent_ground_effect_data(
+                Path(args.processed_data_dir)
+            )
+            model_path = out_dir / "ground_effect_2022_2025_model.joblib"
+            features_path = out_dir / "ground_effect_2022_2025_features.joblib"
+            metrics = train_and_save(data_df, model_path, features_path)
+            candidate = {
+                "status": "trained",
+                "start_year": 2022,
+                "end_year": 2025,
+                "as_of": as_of.isoformat(),
+                "trained_at": _training_timestamp(),
+                "model_path": str(model_path),
+                "features_path": str(features_path),
+                **metrics,
+                **details,
+            }
+        else:
+            candidate = train_era(
+                2022, 2025, "ground_effect_2022_2025", as_of, out_dir
+            )
         results["ground_effect_2022_2025"] = _merge_training_result(
             existing_results.get("ground_effect_2022_2025", {}),
             candidate,
@@ -347,30 +538,43 @@ def main():
         # PASSING 2024-2025 AS PRIOR FOR 2026+ (Hybrid Cold Start)
         print("\n--- Phase 2: Training Active Aero (2026-2030) with Heavy Physics Prior ---")
         
-        # 1. Collect standard 2026 data
-        data_2026, details_2026 = collect_era_data(2026, 2030, as_of)
-        
-        # 2. Collect 'Physics Prior' from 2024-2025 (50% sample)
-        print("  Collecting Heavy Physics Prior from 2024-2025...")
-        data_prior, _ = collect_era_data(2024, 2025, as_of)
-        if not data_prior.empty:
-            # Increase sample to 50% for stronger hierarchy enforcement
-            data_prior = data_prior.sample(frac=0.50, random_state=42)
-            data_prior['SampleWeight'] = 1.0  # Equal weight to ensure hierarchy is respected
-            
-            # Combine
-            data_df = pd.concat([data_2026, data_prior], ignore_index=True)
-            
-            # 3. Explicit Upsampling of Wet/Intermediate conditions
-            # If we don't have enough wet laps, the model ignores the IsWet flag.
-            wet_laps = data_df[data_df['IsWet'] == 1]
-            if not wet_laps.empty and len(wet_laps) < 500:
-                print(f"  Upsampling wet/inter conditions (found {len(wet_laps)} laps)...")
-                data_df = pd.concat([data_df, wet_laps, wet_laps], ignore_index=True)
-            
-            print(f"  Blended {len(data_prior)} prior laps into {len(data_2026)} real 2026 laps.")
+        if args.processed_data_dir:
+            data_2026, data_prior, details_2026 = (
+                load_persistent_active_aero_data(Path(args.processed_data_dir))
+            )
+            data_df, sampled_prior_rows = build_active_aero_training_data(
+                data_2026,
+                data_prior,
+            )
+            print(
+                f"  Blended {sampled_prior_rows} prior laps into "
+                f"{len(data_2026)} real 2026 laps from the persistent store."
+            )
         else:
-            data_df = data_2026
+            # 1. Collect standard 2026 data
+            data_2026, details_2026 = collect_era_data(2026, 2030, as_of)
+
+            # 2. Collect 'Physics Prior' from 2024-2025 (50% sample)
+            print("  Collecting Heavy Physics Prior from 2024-2025...")
+            data_prior, _ = collect_era_data(2024, 2025, as_of)
+            if not data_prior.empty:
+                # Increase sample to 50% for stronger hierarchy enforcement
+                data_prior = data_prior.sample(frac=0.50, random_state=42)
+                data_prior['SampleWeight'] = 1.0  # Equal weight to ensure hierarchy is respected
+
+                # Combine
+                data_df = pd.concat([data_2026, data_prior], ignore_index=True)
+
+                # 3. Explicit Upsampling of Wet/Intermediate conditions
+                # If we don't have enough wet laps, the model ignores the IsWet flag.
+                wet_laps = data_df[data_df['IsWet'] == 1]
+                if not wet_laps.empty and len(wet_laps) < 500:
+                    print(f"  Upsampling wet/inter conditions (found {len(wet_laps)} laps)...")
+                    data_df = pd.concat([data_df, wet_laps, wet_laps], ignore_index=True)
+
+                print(f"  Blended {len(data_prior)} prior laps into {len(data_2026)} real 2026 laps.")
+            else:
+                data_df = data_2026
             
         if data_df.empty:
             candidate = {
@@ -383,7 +587,12 @@ def main():
         else:
             model_path = out_dir / "active_aero_2026_2030_model.joblib"
             features_path = out_dir / "active_aero_2026_2030_features.joblib"
-            metrics = train_and_save(data_df, model_path, features_path)
+            metrics = train_and_save(
+                data_df,
+                model_path,
+                features_path,
+                validation_test_start_year=2026,
+            )
             candidate = {
                 "status": "trained_hybrid",
                 "start_year": 2026,
