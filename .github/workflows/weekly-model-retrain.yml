@@ -2,9 +2,14 @@ name: Weekly Active Aero model retraining
 
 on:
   schedule:
-    # Run every Monday at 03:00 AM EST (08:00 UTC).
-    # During daylight saving time, this is 04:00 AM EDT.
-    - cron: '0 8 * * 1'
+    # Primary attempt: Monday at 18:00 UTC (14:00 EDT / 13:00 EST).
+    # Running later on Monday gives FastF1 additional time to publish the
+    # completed race-session data while still allowing a prompt model update.
+    - cron: '0 18 * * 1'
+
+    # Fallback attempt: Wednesday at 12:00 UTC (08:00 EDT / 07:00 EST).
+    # The preflight check skips retraining when Monday already succeeded.
+    - cron: '0 12 * * 3'
   workflow_dispatch:
     inputs:
       force_retrain:
