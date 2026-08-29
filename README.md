@@ -56,9 +56,9 @@ Separate model artifacts isolate materially different aerodynamic and tire-regul
 
 Circuit behavior is represented through seven reproducible normalized features:
 
-- **Pirelli ratings**: Traction, Tyre Stress, Asphalt Grip, Braking, Asphalt Abrasion, and Lateral are transcribed from each event's official 2025 Track Characteristics graphic. A published rating `r` on the 1–5 scale is normalized as `(r - 1) / 4`.
+- **Pirelli ratings**: Traction, Tyre Stress, Asphalt Grip, Braking, Asphalt Abrasion, and Lateral are transcribed from each event's official Track Characteristics graphic. The catalogue uses 2025 by default and the latest Formula 1 event for circuits absent from that season. A published rating `r` on the 1–5 scale is normalized as `(r - 1) / 4`.
 - **Mercedes corner-speed energy**: Minimum speeds printed on the official track maps are transformed as the mean of `(min(speed, 300) / 300)²`, giving high-speed turns more influence without presenting the result as a physical force measurement.
-- **Auditable source data**: Every raw rating, turn speed, article URL, graphic URL, and Mercedes asset page is stored in [`data/track_characteristics_2025.csv`](data/track_characteristics_2025.csv). No source images are copied into the repository.
+- **Auditable source data**: Every raw rating, turn speed, source year, article URL, graphic URL, and Mercedes asset page is stored in [`data/track_characteristics.csv`](data/track_characteristics.csv). Supplemental observations, such as COTA Turn 1 from the 2024 map, are identified separately. No source images are copied into the repository.
 
 The previous uncited weighted composites and unsupported surface/temperature labels have been removed. See the complete [track-characteristic methodology](docs/track_characteristics_methodology.md), including missing-data rules and limitations.
 

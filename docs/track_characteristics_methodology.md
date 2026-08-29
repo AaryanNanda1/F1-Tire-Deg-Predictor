@@ -2,20 +2,23 @@
 
 ## Scope
 
-The circuit priors are a reproducible **2025 reference catalogue**, not
-hand-tuned estimates and not telemetry-derived tire forces. The raw inputs,
-source URLs, and every Mercedes corner-speed observation are stored in
-[`data/track_characteristics_2025.csv`](../data/track_characteristics_2025.csv).
+The circuit priors are a reproducible **latest-available official reference
+catalogue**, not hand-tuned estimates and not telemetry-derived tire forces.
+The 2025 season is the default reference; the most recent Formula 1 event data
+is used for configured circuits that were not on that calendar. The raw
+inputs, source URLs, and every Mercedes corner-speed observation are stored in
+[`data/track_characteristics.csv`](../data/track_characteristics.csv).
 The deterministic implementation is in
 [`track_characteristics.py`](../track_characteristics.py).
 
 The [Pirelli Formula 1 press archive](https://press.pirelli.com/?h=1&t=Formula%201)
 is the correct archive/discovery source for the Pirelli data. Each catalogue
-row links to the specific 2025 event-preview article and its Track
-Characteristics graphic; the archive page alone is not used as the citation
-for an individual rating. Corner-speed observations come from the
+row links to the specific event-preview article and its Track Characteristics
+graphic; the archive page alone is not used as the citation for an individual
+rating. Most corner-speed observations come from the
 [Mercedes-AMG F1 2025 Track Map search](https://media.mercedesamgf1.com/marsF1/searchresult/searchresult.xhtml?searchString=Track+Map+2025&searchType=detailed),
-with the exact asset page recorded per circuit.
+with the exact asset page and source year recorded per circuit. Historical
+rows and supplemental observations link to their exact Mercedes asset pages.
 
 ## Published inputs
 
@@ -77,13 +80,18 @@ dominate an entire circuit descriptor.
 - The 2025 Mercedes search does not contain separate Monaco or Spain maps.
   Their 2024 maps are used because the raced layouts were unchanged; both rows
   carry `mercedes_source_year=2024` and an explanatory note.
-- The Mercedes United States map does not print a minimum-speed value for Turn
-  1. Turn 1 is recorded in `mercedes_missing_turns`, excluded from \(N\), and
-  is not imputed.
-- Paul Ricard, Mugello, and Madrid do not have rows in this 2025 catalogue.
-  `get_track_features` returns the neutral value `0.5` for all seven features
-  rather than preserving unsupported estimates. The API returns no source
-  metadata for those fallbacks, and the dashboard labels them as neutral.
+- The 2025 Mercedes United States map does not print a minimum-speed value for
+  Turn 1. The unchanged-layout 2024 Mercedes map prints 85 km/h for that turn,
+  so only Turn 1 is supplemented from asset `M464050`. The primary and
+  supplemental years, asset IDs, URLs, and affected turns are stored
+  separately in the CSV.
+- Paul Ricard uses its most recent Formula 1 event data: Pirelli's 2022 French
+  Grand Prix ratings and Mercedes 2022 asset `M325101` for all 15 turn speeds.
+- Mugello uses its Formula 1 event data: Pirelli's 2020 Tuscan Grand Prix
+  ratings and Mercedes 2020 asset `M242537` for all 15 turn speeds.
+- Madrid has no previous Formula 1 event or prior official Pirelli and Mercedes
+  event maps for the planned circuit. It therefore remains an explicit neutral
+  `0.5` fallback, with no source metadata.
 - Unknown circuits use the same explicit neutral fallback.
 
 ## Training and serving
@@ -108,9 +116,10 @@ using the new features for evaluation or production decisions.
   variables. Linear normalization does not make the gaps physically exact.
 - The Mercedes speeds are map annotations and can reflect a representative car
   setup or simulation. They are not observations from every lap or driver.
-- A single 2025 reference value is currently applied to all model years. This
-  is useful as a stable circuit prior, but it does not capture annual
-  resurfacing, layout changes, weather, setup, or tire-construction changes.
+- A single reference row is applied to all model years for each circuit. Most
+  rows use 2025, while Paul Ricard and Mugello use their latest Formula 1 event
+  seasons. This is useful as a stable circuit prior, but it does not capture
+  annual resurfacing, setup, weather, or tire-construction changes.
 - These features provide context to the learned degradation model; they should
   not be interpreted as standalone tire-life predictions.
 
@@ -123,4 +132,5 @@ python -m unittest tests.test_track_characteristics
 ```
 
 The tests validate the normalization endpoints, Mercedes formula, source-row
-coverage, missing-turn policy, neutral fallback, aliases, and `[0, 1]` bounds.
+coverage, historical and supplemental source metadata, neutral fallbacks,
+aliases, and `[0, 1]` bounds.

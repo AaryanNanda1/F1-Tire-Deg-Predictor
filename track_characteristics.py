@@ -1,6 +1,6 @@
 """Source-backed circuit characteristic feature construction.
 
-The raw observations live in ``data/track_characteristics_2025.csv``.  Keeping
+The raw observations live in ``data/track_characteristics.csv``.  Keeping
 the published ratings and corner speeds outside the model code makes the
 normalization reproducible and gives each circuit an auditable source trail.
 """
@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Iterable
 
 
-DATA_PATH = Path(__file__).resolve().parent / "data" / "track_characteristics_2025.csv"
+DATA_PATH = Path(__file__).resolve().parent / "data" / "track_characteristics.csv"
 
 PIRELLI_RATING_MIN = 1
 PIRELLI_RATING_MAX = 5
@@ -96,8 +96,13 @@ def parse_turn_speed_pairs(value: str) -> dict[int, int]:
     return pairs
 
 
-def _parse_missing_turns(value: str) -> tuple[int, ...]:
-    return tuple(int(turn) for turn in value.split(";") if turn.strip())
+def _parse_turns(value: str | None) -> tuple[int, ...]:
+    return tuple(int(turn) for turn in (value or "").split(";") if turn.strip())
+
+
+def _parse_optional_int(value: str | None) -> int | None:
+    text = (value or "").strip()
+    return int(text) if text else None
 
 
 def load_track_characteristics(
@@ -136,10 +141,22 @@ def load_track_characteristics(
                 "mercedes_asset_id": row["mercedes_asset_id"],
                 "mercedes_page_url": row["mercedes_page_url"],
                 "mercedes_turn_speeds_kmh": turn_speeds,
-                "mercedes_missing_turns": _parse_missing_turns(
+                "mercedes_missing_turns": _parse_turns(
                     row["mercedes_missing_turns"]
                 ),
                 "notes": row["notes"],
+                "mercedes_supplemental_source_year": _parse_optional_int(
+                    row.get("mercedes_supplemental_source_year")
+                ),
+                "mercedes_supplemental_asset_id": (
+                    row.get("mercedes_supplemental_asset_id") or ""
+                ),
+                "mercedes_supplemental_page_url": (
+                    row.get("mercedes_supplemental_page_url") or ""
+                ),
+                "mercedes_supplemental_turns": _parse_turns(
+                    row.get("mercedes_supplemental_turns")
+                ),
             }
 
     for alias, canonical in _CIRCUIT_ALIASES.items():

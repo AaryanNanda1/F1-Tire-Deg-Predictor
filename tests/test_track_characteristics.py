@@ -42,9 +42,9 @@ class TrackCharacteristicDerivationTest(unittest.TestCase):
             {1: 95, 2: 120, 10: 280},
         )
 
-    def test_catalogue_has_24_event_rows_plus_barcelona_alias(self):
-        self.assertEqual(len(TRACK_CHARACTERISTIC_SOURCES), 25)
-        self.assertEqual(len(TRACK_CHARACTERISTICS), 25)
+    def test_catalogue_has_26_source_rows_plus_barcelona_alias(self):
+        self.assertEqual(len(TRACK_CHARACTERISTIC_SOURCES), 27)
+        self.assertEqual(len(TRACK_CHARACTERISTICS), 27)
         self.assertEqual(
             TRACK_CHARACTERISTICS["Circuit de Barcelona-Catalunya (Spain)"],
             TRACK_CHARACTERISTICS[
@@ -74,20 +74,36 @@ class TrackCharacteristicDerivationTest(unittest.TestCase):
                     self.assertGreaterEqual(value, 0.0)
                     self.assertLessEqual(value, 1.0)
 
-    def test_cota_missing_turn_is_recorded_and_not_imputed(self):
+    def test_cota_turn_one_uses_documented_2024_supplement(self):
         source = get_track_characteristic_source("United States Grand Prix")
-        self.assertEqual(source["mercedes_missing_turns"], (1,))
-        self.assertNotIn(1, source["mercedes_turn_speeds_kmh"])
-        self.assertEqual(len(source["mercedes_turn_speeds_kmh"]), 19)
+        self.assertEqual(source["mercedes_missing_turns"], ())
+        self.assertEqual(source["mercedes_turn_speeds_kmh"][1], 85)
+        self.assertEqual(len(source["mercedes_turn_speeds_kmh"]), 20)
+        self.assertEqual(source["mercedes_supplemental_source_year"], 2024)
+        self.assertEqual(source["mercedes_supplemental_asset_id"], "M464050")
+        self.assertEqual(source["mercedes_supplemental_turns"], (1,))
 
-    def test_unsupported_configured_tracks_use_neutral_fallback(self):
-        unsupported = {
-            "Circuit Paul Ricard (France)",
-            "Autodromo Internazionale del Mugello (Italy)",
-            "MADRING (Madrid, Spain)",
-        }
-        self.assertTrue(unsupported.issubset(TRACK_CONFIG))
-        for circuit in unsupported:
+    def test_historical_rows_replace_paul_ricard_and_mugello_fallbacks(self):
+        paul = get_track_features("French Grand Prix")
+        paul_source = get_track_characteristic_source("French Grand Prix")
+        self.assertEqual(paul_source["reference_season"], 2022)
+        self.assertEqual(paul_source["mercedes_asset_id"], "M325101")
+        self.assertEqual(paul["traction"], 0.75)
+        self.assertEqual(paul["braking_severity"], 0.25)
+        self.assertAlmostEqual(paul["corner_speed_energy"], 0.293518518519)
+
+        mugello = get_track_features("Tuscan Grand Prix")
+        mugello_source = get_track_characteristic_source("Tuscan Grand Prix")
+        self.assertEqual(mugello_source["reference_season"], 2020)
+        self.assertEqual(mugello_source["mercedes_asset_id"], "M242537")
+        self.assertEqual(mugello["traction"], 0.0)
+        self.assertEqual(mugello["lateral_load"], 1.0)
+        self.assertAlmostEqual(mugello["corner_speed_energy"], 0.509814814815)
+
+    def test_madrid_and_unknown_circuits_use_neutral_fallback(self):
+        madrid = "MADRING (Madrid, Spain)"
+        self.assertIn(madrid, TRACK_CONFIG)
+        for circuit in (madrid, "Unknown Test Circuit"):
             with self.subTest(circuit=circuit):
                 self.assertEqual(
                     get_track_features(circuit),
