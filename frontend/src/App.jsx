@@ -203,17 +203,17 @@ const WeatherForecast = ({ forecast }) => {
   );
 };
 
-const TrackMetricsChart = ({ features }) => {
+const TrackMetricsChart = ({ features, source }) => {
   if (!features) return null;
   
   const data = [
-    { subject: 'TRACTION', A: (features.traction || 0.5) * 100 },
-    { subject: 'LOAD (HS)', A: (features.high_speed_load || 0.5) * 100 },
-    { subject: 'ABRASIVE', A: (features.abrasiveness || 0.5) * 100 },
-    { subject: 'ROUGHNESS', A: (features.surface_roughness || 0.5) * 100 },
-    { subject: 'BRAKING', A: (features.braking_severity || 0.5) * 100 },
-    { subject: 'LATERAL', A: (features.lateral_load || 0.5) * 100 },
-    { subject: 'TEMP SENS', A: (features.track_temp_sensitivity || 0.5) * 100 },
+    { subject: 'TRACTION', A: (features.traction ?? 0.5) * 100 },
+    { subject: 'SPEED ENERGY', A: (features.corner_speed_energy ?? 0.5) * 100 },
+    { subject: 'ABRASION', A: (features.abrasiveness ?? 0.5) * 100 },
+    { subject: 'ASPHALT GRIP', A: (features.asphalt_grip ?? 0.5) * 100 },
+    { subject: 'BRAKING', A: (features.braking_severity ?? 0.5) * 100 },
+    { subject: 'LATERAL', A: (features.lateral_load ?? 0.5) * 100 },
+    { subject: 'TYRE STRESS', A: (features.tyre_stress ?? 0.5) * 100 },
   ];
 
   return (
@@ -235,20 +235,18 @@ const TrackMetricsChart = ({ features }) => {
           </RadarChart>
         </ResponsiveContainer>
       </div>
-      <div className="track-stress-metrics">
-          <div className="stress-item">
-              <span className="label">THERMAL STRESS</span>
-              <div className="bar-bg"><div className="bar-fill" style={{ width: `${(features.thermal_stress || 0.5) * 100}%` }}></div></div>
-          </div>
-          <div className="stress-item">
-              <span className="label">SURFACE WEAR</span>
-              <div className="bar-bg"><div className="bar-fill" style={{ width: `${(features.surface_wear || 0.5) * 100}%` }}></div></div>
-          </div>
-          <div className="stress-item">
-              <span className="label">ENERGY LOAD</span>
-              <div className="bar-bg"><div className="bar-fill" style={{ width: `${(features.energy_load || 0.5) * 100}%` }}></div></div>
-          </div>
-      </div>
+      <p style={{ color: 'var(--text-tertiary)', fontSize: '0.72rem', lineHeight: 1.5 }}>
+        {source ? (
+          <>
+            {source.reference_season} reference: {' '}
+            <a href={source.pirelli_article_url} target="_blank" rel="noreferrer">Pirelli ratings</a>
+            {' '}and{' '}
+            <a href={source.mercedes_page_url} target="_blank" rel="noreferrer">Mercedes corner speeds</a>.
+          </>
+        ) : (
+          <>No official catalogue row is available; neutral 50% values are shown.</>
+        )}
+      </p>
     </div>
   );
 };
@@ -751,7 +749,10 @@ function App() {
                     </div>
                 </div>
                 
-                <TrackMetricsChart features={results.input_context?.track_features} />
+                <TrackMetricsChart
+                  features={results.input_context?.track_features}
+                  source={results.input_context?.track_feature_source}
+                />
             </div>
 
             <div className="metrics-cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>

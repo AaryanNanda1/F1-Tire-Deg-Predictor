@@ -21,7 +21,7 @@ The inference engine generates full-race degradation curves for Soft, Medium, Ha
 - Circuit type, length, surface, and stress characteristics
 - Tire age and normalized tire life
 - Air temperature, estimated track temperature, humidity, rainfall, and wind
-- Compound-specific interactions with abrasion, traction, thermal stress, and tire age
+- Compound-specific interactions with sourced abrasion, traction, tyre stress, and tire age
 
 ### 2. Race-State-Aware Strategy Optimization
 
@@ -52,13 +52,15 @@ Separate model artifacts isolate materially different aerodynamic and tire-regul
 - **Active Aero Era (2026–2030)**: Uses a separate model for the new technical regulations.
 - **Hybrid Cold Start Methodology**: Stabilizes sparse new-era training by blending available 2026 telemetry with weighted prior-era observations or synthetic prior-model predictions.
 
-### 5. Advanced Track Feature Engineering
+### 5. Source-Backed Track Feature Engineering
 
-Circuit behavior is represented through a normalized 10-dimensional relational feature system:
+Circuit behavior is represented through seven reproducible normalized features:
 
-- **Raw Characteristics**: Traction intensity, High-speed load, Abrasiveness (surface texture), Surface roughness (micro-profile), Braking severity, Lateral load, and Track temperature sensitivity.
-- **Derived Stress Metrics**: Weighted blends for **Thermal Stress**, **Surface Wear**, and **Total Energy Load**.
-- **Cross-Era Normalization**: Features are normalized to `[0, 1]`, enabling transferable interaction learning between circuit stress, compound choice, and tire age.
+- **Pirelli ratings**: Traction, Tyre Stress, Asphalt Grip, Braking, Asphalt Abrasion, and Lateral are transcribed from each event's official 2025 Track Characteristics graphic. A published rating `r` on the 1–5 scale is normalized as `(r - 1) / 4`.
+- **Mercedes corner-speed energy**: Minimum speeds printed on the official track maps are transformed as the mean of `(min(speed, 300) / 300)²`, giving high-speed turns more influence without presenting the result as a physical force measurement.
+- **Auditable source data**: Every raw rating, turn speed, article URL, graphic URL, and Mercedes asset page is stored in [`data/track_characteristics_2025.csv`](data/track_characteristics_2025.csv). No source images are copied into the repository.
+
+The previous uncited weighted composites and unsupported surface/temperature labels have been removed. See the complete [track-characteristic methodology](docs/track_characteristics_methodology.md), including missing-data rules and limitations.
 
 ### 6. Date-Aware Weather Context
 
@@ -117,8 +119,8 @@ The training pipeline combines:
 - Fuel-load and race-distance context
 - Driver, team, compound, track type, and event categorical features
 - Weather conditions, including air and track temperature, humidity, rainfall, and wind
-- Ten normalized circuit characteristics
-- Interaction features such as tire age × abrasiveness, tire age × traction, tire age × lateral load, and temperature × track sensitivity
+- Seven source-backed circuit characteristics
+- Interaction features such as tire age × abrasiveness, tire age × traction, tire age × lateral load, temperature × tyre stress, and normalized tire life × tyre stress
 - Compound-specific age and circuit interactions
 
 Categorical values are one-hot encoded with fixed category domains. Each model persists its training feature schema, and inference matrices are explicitly reindexed against that schema to prevent training-serving skew.
@@ -147,7 +149,7 @@ The machine-learning layer is deliberately isolated from strategy policy. It pro
 - **Core**: Python 3.10+
 - **Analysis**: NumPy, Pandas, SciPy, Scikit-Learn
 - **API**: Flask + Flask-CORS
-- **Data**: FastF1 event schedules and telemetry; Open-Meteo weather API
+- **Data**: FastF1 event schedules and telemetry; Open-Meteo weather API; Pirelli Track Characteristics ratings; Mercedes-AMG F1 track maps
 - **Deployment**: Render with Gunicorn (`gunicorn --timeout 120 app:app`)
 
 ### Frontend

@@ -1,5 +1,13 @@
 # Mappings for F1 Tire Degradation Model
 
+from copy import deepcopy
+
+from track_characteristics import (
+    TRACK_CHARACTERISTICS,
+    TRACK_CHARACTERISTIC_SOURCES,
+    TRACK_FEATURE_NAMES,
+)
+
 # Normalization for Constructor/Team Names
 # keys: raw names from FastF1/Official sources
 # values: canonical name for the model
@@ -129,160 +137,12 @@ TRACK_CONFIG = {
 
 
 # ============================================================
-# TRACK CHARACTERISTICS — normalized 0.0–1.0 feature priors
-# These are relational/contextual features that help the ML model
-# understand how degradation differs between circuits. The model
-# still relies primarily on observed data (lap times, tire age, etc.)
+# TRACK CHARACTERISTICS — source-backed normalized 0.0–1.0 priors
+# Raw Pirelli ratings, Mercedes corner speeds, source URLs, and the
+# deterministic derivation live in track_characteristics.py and data/.
 # ============================================================
-TRACK_CHARACTERISTICS = {
-    'Bahrain International Circuit (Bahrain)': {
-        'traction': 0.78, 'high_speed_load': 0.58, 'abrasiveness': 0.92,
-        'surface_roughness': 0.74, 'braking_severity': 0.82,
-        'lateral_load': 0.71, 'track_temp_sensitivity': 0.88
-    },
-    'Jeddah Corniche Circuit (Saudi Arabia)': {
-        'traction': 0.42, 'high_speed_load': 0.96, 'abrasiveness': 0.48,
-        'surface_roughness': 0.37, 'braking_severity': 0.51,
-        'lateral_load': 0.93, 'track_temp_sensitivity': 0.54
-    },
-    'Albert Park Grand Prix Circuit (Australia)': {
-        'traction': 0.63, 'high_speed_load': 0.67, 'abrasiveness': 0.46,
-        'surface_roughness': 0.43, 'braking_severity': 0.66,
-        'lateral_load': 0.64, 'track_temp_sensitivity': 0.58
-    },
-    'Autodromo Internazionale Enzo e Dino Ferrari (Emilia-Romagna, Italy)': {
-        'traction': 0.69, 'high_speed_load': 0.73, 'abrasiveness': 0.63,
-        'surface_roughness': 0.58, 'braking_severity': 0.71,
-        'lateral_load': 0.76, 'track_temp_sensitivity': 0.69
-    },
-    'Miami International Autodrome (Miami, USA)': {
-        'traction': 0.74, 'high_speed_load': 0.54, 'abrasiveness': 0.39,
-        'surface_roughness': 0.61, 'braking_severity': 0.72,
-        'lateral_load': 0.49, 'track_temp_sensitivity': 0.81
-    },
-    'Circuit de Barcelona-Catalunya (Spain)': {
-        'traction': 0.58, 'high_speed_load': 0.91, 'abrasiveness': 0.88,
-        'surface_roughness': 0.52, 'braking_severity': 0.59,
-        'lateral_load': 0.95, 'track_temp_sensitivity': 0.84
-    },
-    'Circuit de Barcelona-Catalunya (Barcelona, Spain)': {
-        'traction': 0.58, 'high_speed_load': 0.91, 'abrasiveness': 0.88,
-        'surface_roughness': 0.52, 'braking_severity': 0.59,
-        'lateral_load': 0.95, 'track_temp_sensitivity': 0.84
-    },
-    'Circuit de Monaco (Monaco)': {
-        'traction': 0.97, 'high_speed_load': 0.18, 'abrasiveness': 0.21,
-        'surface_roughness': 0.79, 'braking_severity': 0.58,
-        'lateral_load': 0.29, 'track_temp_sensitivity': 0.52
-    },
-    'Baku City Circuit (Azerbaijan)': {
-        'traction': 0.84, 'high_speed_load': 0.56, 'abrasiveness': 0.32,
-        'surface_roughness': 0.67, 'braking_severity': 0.89,
-        'lateral_load': 0.46, 'track_temp_sensitivity': 0.57
-    },
-    'Circuit Gilles Villeneuve (Canada)': {
-        'traction': 0.79, 'high_speed_load': 0.62, 'abrasiveness': 0.41,
-        'surface_roughness': 0.56, 'braking_severity': 0.91,
-        'lateral_load': 0.53, 'track_temp_sensitivity': 0.49
-    },
-    'Silverstone Circuit (Great Britain)': {
-        'traction': 0.38, 'high_speed_load': 0.99, 'abrasiveness': 0.76,
-        'surface_roughness': 0.47, 'braking_severity': 0.44,
-        'lateral_load': 1.00, 'track_temp_sensitivity': 0.83
-    },
-    'Red Bull Ring (Austria)': {
-        'traction': 0.76, 'high_speed_load': 0.63, 'abrasiveness': 0.59,
-        'surface_roughness': 0.42, 'braking_severity': 0.94,
-        'lateral_load': 0.57, 'track_temp_sensitivity': 0.74
-    },
-    'Circuit Paul Ricard (France)': {
-        'traction': 0.52, 'high_speed_load': 0.81, 'abrasiveness': 0.67,
-        'surface_roughness': 0.34, 'braking_severity': 0.63,
-        'lateral_load': 0.84, 'track_temp_sensitivity': 0.77
-    },
-    'Hungaroring (Hungary)': {
-        'traction': 0.91, 'high_speed_load': 0.33, 'abrasiveness': 0.61,
-        'surface_roughness': 0.53, 'braking_severity': 0.52,
-        'lateral_load': 0.73, 'track_temp_sensitivity': 0.89
-    },
-    'Circuit de Spa-Francorchamps (Belgium)': {
-        'traction': 0.49, 'high_speed_load': 0.97, 'abrasiveness': 0.71,
-        'surface_roughness': 0.64, 'braking_severity': 0.55,
-        'lateral_load': 0.94, 'track_temp_sensitivity': 0.62
-    },
-    'Circuit Zandvoort (Netherlands)': {
-        'traction': 0.74, 'high_speed_load': 0.76, 'abrasiveness': 0.68,
-        'surface_roughness': 0.48, 'braking_severity': 0.41,
-        'lateral_load': 0.88, 'track_temp_sensitivity': 0.79
-    },
-    'Autodromo Nazionale Monza (Monza, Italy)': {
-        'traction': 0.43, 'high_speed_load': 0.92, 'abrasiveness': 0.39,
-        'surface_roughness': 0.31, 'braking_severity': 0.96,
-        'lateral_load': 0.46, 'track_temp_sensitivity': 0.41
-    },
-    'Marina Bay Street Circuit (Singapore)': {
-        'traction': 0.95, 'high_speed_load': 0.22, 'abrasiveness': 0.44,
-        'surface_roughness': 0.83, 'braking_severity': 0.73,
-        'lateral_load': 0.58, 'track_temp_sensitivity': 0.97
-    },
-    'Suzuka Circuit (Japan)': {
-        'traction': 0.51, 'high_speed_load': 0.94, 'abrasiveness': 0.73,
-        'surface_roughness': 0.49, 'braking_severity': 0.46,
-        'lateral_load': 0.97, 'track_temp_sensitivity': 0.81
-    },
-    'Lusail International Circuit (Qatar)': {
-        'traction': 0.46, 'high_speed_load': 0.93, 'abrasiveness': 0.66,
-        'surface_roughness': 0.29, 'braking_severity': 0.37,
-        'lateral_load': 0.96, 'track_temp_sensitivity': 0.98
-    },
-    'Circuit of The Americas (Austin, USA)': {
-        'traction': 0.71, 'high_speed_load': 0.78, 'abrasiveness': 0.72,
-        'surface_roughness': 0.88, 'braking_severity': 0.81,
-        'lateral_load': 0.79, 'track_temp_sensitivity': 0.76
-    },
-    'Autódromo Hermanos Rodríguez (Mexico)': {
-        'traction': 0.82, 'high_speed_load': 0.44, 'abrasiveness': 0.36,
-        'surface_roughness': 0.47, 'braking_severity': 0.74,
-        'lateral_load': 0.42, 'track_temp_sensitivity': 0.72
-    },
-    'Autódromo José Carlos Pace (Brazil)': {
-        'traction': 0.67, 'high_speed_load': 0.81, 'abrasiveness': 0.57,
-        'surface_roughness': 0.73, 'braking_severity': 0.66,
-        'lateral_load': 0.83, 'track_temp_sensitivity': 0.71
-    },
-    'Las Vegas Strip Circuit (Las Vegas, USA)': {
-        'traction': 0.57, 'high_speed_load': 0.87, 'abrasiveness': 0.18,
-        'surface_roughness': 0.26, 'braking_severity': 0.78,
-        'lateral_load': 0.39, 'track_temp_sensitivity': 0.93
-    },
-    'Yas Marina Circuit (UAE)': {
-        'traction': 0.72, 'high_speed_load': 0.52, 'abrasiveness': 0.43,
-        'surface_roughness': 0.36, 'braking_severity': 0.69,
-        'lateral_load': 0.51, 'track_temp_sensitivity': 0.73
-    },
-    'Shanghai International Circuit (China)': {
-        'traction': 0.66, 'high_speed_load': 0.84, 'abrasiveness': 0.69,
-        'surface_roughness': 0.51, 'braking_severity': 0.71,
-        'lateral_load': 0.86, 'track_temp_sensitivity': 0.74
-    },
-    'Autodromo Internazionale del Mugello (Italy)': {
-        'traction': 0.36, 'high_speed_load': 1.00, 'abrasiveness': 0.74,
-        'surface_roughness': 0.57, 'braking_severity': 0.41,
-        'lateral_load': 0.99, 'track_temp_sensitivity': 0.78
-    },
-    'MADRING (Madrid, Spain)': {
-        'traction': 0.83, 'high_speed_load': 0.41, 'abrasiveness': 0.48,
-        'surface_roughness': 0.62, 'braking_severity': 0.77,
-        'lateral_load': 0.44, 'track_temp_sensitivity': 0.79
-    },
-}
-
 # Default characteristics for unknown tracks
-_DEFAULT_CHARACTERISTICS = {
-    'traction': 0.50, 'high_speed_load': 0.50, 'abrasiveness': 0.50,
-    'surface_roughness': 0.50, 'braking_severity': 0.50,
-    'lateral_load': 0.50, 'track_temp_sensitivity': 0.50
-}
+_DEFAULT_CHARACTERISTICS = {feature: 0.50 for feature in TRACK_FEATURE_NAMES}
 
 # ============================================================
 # EVENT NAME → CIRCUIT KEY BRIDGE
@@ -343,48 +203,39 @@ def resolve_circuit_key(name):
     return name
 
 
-# ============================================================
-# DERIVED FEATURE FUNCTIONS
-# ============================================================
-
-def compute_thermal_stress(features):
-    """Weighted blend of temperature-related tire stress factors."""
-    return (
-        0.35 * features['track_temp_sensitivity'] +
-        0.30 * features['lateral_load'] +
-        0.20 * features['abrasiveness'] +
-        0.15 * features['traction']
-    )
-
-def compute_surface_wear(features):
-    """Weighted blend of surface-induced tire wear factors."""
-    return (
-        0.50 * features['abrasiveness'] +
-        0.30 * features['surface_roughness'] +
-        0.20 * features['braking_severity']
-    )
-
-def compute_energy_load(features):
-    """Weighted blend of total tire energy load from cornering and speed."""
-    return (
-        0.45 * features['lateral_load'] +
-        0.35 * features['high_speed_load'] +
-        0.20 * features['traction']
-    )
-
-
 def get_track_features(track_name):
     """
-    Returns the full 10-dimensional feature vector for a track:
-    7 raw characteristics + 3 derived composites.
-    Falls back to neutral defaults for unknown tracks.
+    Return the seven source-backed normalized features for a circuit.
+
+    Circuits without an official catalogue row use the documented neutral
+    fallback rather than hand-estimated values.
     """
     key = resolve_circuit_key(track_name)
-    raw = TRACK_CHARACTERISTICS.get(key, _DEFAULT_CHARACTERISTICS).copy()
-    raw['thermal_stress'] = compute_thermal_stress(raw)
-    raw['surface_wear'] = compute_surface_wear(raw)
-    raw['energy_load'] = compute_energy_load(raw)
-    return raw
+    return TRACK_CHARACTERISTICS.get(key, _DEFAULT_CHARACTERISTICS).copy()
+
+
+def get_track_characteristic_source(track_name):
+    """Return source metadata for a circuit, or ``None`` for neutral fallback."""
+    key = resolve_circuit_key(track_name)
+    source = TRACK_CHARACTERISTIC_SOURCES.get(key)
+    return deepcopy(source) if source else None
+
+
+def get_legacy_track_feature_aliases(features):
+    """Project sourced features onto the schema used by committed old models.
+
+    This exists only so a deployment remains operational until its model is
+    retrained.  New training runs use the source-native names directly and do
+    not include the former uncited weighted composites.
+    """
+    return {
+        'high_speed_load': features['corner_speed_energy'],
+        'surface_roughness': features['asphalt_grip'],
+        'track_temp_sensitivity': features['tyre_stress'],
+        'thermal_stress': features['tyre_stress'],
+        'surface_wear': features['abrasiveness'],
+        'energy_load': features['corner_speed_energy'],
+    }
 
 
 def get_track_info(circuit_name):

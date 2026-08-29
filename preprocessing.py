@@ -9,7 +9,7 @@ def preprocess_laps(session):
     Features include:
     - Core tire metrics (TyreLife, NormalizedTyreLife, TyreLifeSquared, etc.)
     - Weather data (AirTemp, TrackTemp, Humidity, Rainfall, WindSpeed)
-    - 10 track characteristic features (7 raw + 3 derived)
+    - 7 source-backed track characteristic features
     - 3 race-distance normalization features
     - 5 interaction features for cross-domain learning
     
@@ -48,7 +48,7 @@ def preprocess_laps(session):
     track_length_km = track_info.get('length_km', 5.0)
     race_laps = track_info.get('race_laps', 57)
     
-    # 5b. Track Characteristics — 10 numeric features (7 raw + 3 derived)
+    # 5b. Track Characteristics — 7 source-backed numeric features
     track_feats = get_track_features(circuit_name)
     for feat_name, feat_val in track_feats.items():
         laps[feat_name] = feat_val
@@ -125,18 +125,18 @@ def preprocess_laps(session):
     # 10. Interaction Features
     # These help the model learn cross-domain relationships:
     # - tire_age × abrasiveness: tire age costs more at abrasive tracks
-    # - TrackTemp × track_temp_sensitivity: temperature matters more at sensitive circuits
+    # - TrackTemp × tyre_stress: temperature matters more at high-stress circuits
     # - TyreLife × traction: rear-limited degradation at traction-heavy circuits
     # - TyreLife × lateral_load: sustained cornering wears tires differently
-    # - NormalizedTyreLife × thermal_stress: thermal degradation accelerates with tire age
+    # - NormalizedTyreLife × tyre_stress: stress compounds as the tire ages
     laps['tire_age_x_abrasiveness'] = laps['TyreLife'] * laps['abrasiveness']
     if 'TrackTemp' in laps.columns:
-        laps['track_temp_x_sensitivity'] = laps['TrackTemp'] * laps['track_temp_sensitivity']
+        laps['track_temp_x_tyre_stress'] = laps['TrackTemp'] * laps['tyre_stress']
     else:
-        laps['track_temp_x_sensitivity'] = 0.0
+        laps['track_temp_x_tyre_stress'] = 0.0
     laps['tire_age_x_traction'] = laps['TyreLife'] * laps['traction']
     laps['tire_age_x_lateral_load'] = laps['TyreLife'] * laps['lateral_load']
-    laps['normalized_life_x_thermal'] = laps['NormalizedTyreLife'] * laps['thermal_stress']
+    laps['normalized_life_x_tyre_stress'] = laps['NormalizedTyreLife'] * laps['tyre_stress']
     
     # --- New Compound-Specific Interactions ---
     # These help the model learn that different compounds have different degradation slopes
@@ -180,27 +180,24 @@ def preprocess_laps(session):
         'TeamBaselinePace',
         'FieldBaselinePace',
         'RelativePace',
-        # Track characteristic features (10)
+        # Source-backed track characteristic features (7)
         'traction',
-        'high_speed_load',
+        'tyre_stress',
+        'asphalt_grip',
+        'corner_speed_energy',
         'abrasiveness',
-        'surface_roughness',
         'braking_severity',
         'lateral_load',
-        'track_temp_sensitivity',
-        'thermal_stress',
-        'surface_wear',
-        'energy_load',
         # Race-distance normalization (3)
         'NormalizedLap',
         'LapsRemaining',
         'TireAgeRatio',
         # Interaction features (5)
         'tire_age_x_abrasiveness',
-        'track_temp_x_sensitivity',
+        'track_temp_x_tyre_stress',
         'tire_age_x_traction',
         'tire_age_x_lateral_load',
-        'normalized_life_x_thermal',
+        'normalized_life_x_tyre_stress',
         'soft_age_interaction',
         'medium_age_interaction',
         'hard_age_interaction',
@@ -246,4 +243,3 @@ if __name__ == "__main__":
     print(data.head())
     print("\nColumns:", data.columns.tolist())
     print("\nShape:", data.shape)
-
