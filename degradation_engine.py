@@ -2,7 +2,16 @@ import os
 import joblib
 import numpy as np
 import pandas as pd
-from mappings import normalize_team_name, get_track_info, TRACK_PIT_LOSS, get_track_features, TRACK_BASE_PACE, EVENT_NAME_TO_CIRCUIT
+from mappings import (
+    EVENT_NAME_TO_CIRCUIT,
+    TRACK_BASE_PACE,
+    TRACK_PIT_LOSS,
+    get_legacy_track_feature_aliases,
+    get_track_characteristic_source,
+    get_track_features,
+    get_track_info,
+    normalize_team_name,
+)
 from weather_api import get_track_weather
 from tire_life_analysis import analyze_tire_life
 
@@ -101,7 +110,7 @@ class TireDegradationSimulator:
         """Simulates lap times for a single compound from lap 1 to max_laps.
         
         Args:
-            track_features: dict with 10 track characteristic values
+            track_features: dict with 7 source-backed track characteristic values
             race_laps: int, official race lap count for this circuit
         
         Returns:
@@ -149,16 +158,25 @@ class TireDegradationSimulator:
                 'TireAgeRatio': tire_age_ratio,
             }
             
-            # Add 10 track characteristic features
+            # Add the seven source-backed track characteristic features.
             for feat_name, feat_val in track_features.items():
                 row[feat_name] = feat_val
+
+            # Keep committed pre-migration model artifacts usable.  A newly
+            # trained model ignores these aliases because they are not in its
+            # persisted feature schema.
+            row.update(get_legacy_track_feature_aliases(track_features))
             
             # Add interaction features
             row['tire_age_x_abrasiveness'] = age * track_features.get('abrasiveness', 0.5)
-            row['track_temp_x_sensitivity'] = weather_data['track_temp'] * track_features.get('track_temp_sensitivity', 0.5)
+            row['track_temp_x_tyre_stress'] = weather_data['track_temp'] * track_features.get('tyre_stress', 0.5)
             row['tire_age_x_traction'] = age * track_features.get('traction', 0.5)
             row['tire_age_x_lateral_load'] = age * track_features.get('lateral_load', 0.5)
-            row['normalized_life_x_thermal'] = normalized_life * track_features.get('thermal_stress', 0.5)
+            row['normalized_life_x_tyre_stress'] = normalized_life * track_features.get('tyre_stress', 0.5)
+
+            # Interaction aliases for pre-migration model artifacts.
+            row['track_temp_x_sensitivity'] = row['track_temp_x_tyre_stress']
+            row['normalized_life_x_thermal'] = row['normalized_life_x_tyre_stress']
             
             # --- New Compound-Specific Interactions ---
             row['soft_age_interaction'] = age if compound == 'SOFT' else 0
@@ -270,6 +288,7 @@ class TireDegradationSimulator:
         track_length_km = track_info.get('length_km', 5.0)
         race_laps = track_info.get('race_laps', 57)
         track_features = get_track_features(track_name)
+        track_feature_source = get_track_characteristic_source(track_name)
         
         # 1. Fetch live or historical weather based on date and exact time (B)
         weather_data = get_track_weather(track_name, race_date, race_time)
@@ -282,6 +301,7 @@ class TireDegradationSimulator:
                 "track": track_name,
                 "track_category": track_type,
                 "track_features": track_features,
+                "track_feature_source": track_feature_source,
                 "race_time": race_time,
                 "weather": weather_data
             },
