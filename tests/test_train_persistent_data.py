@@ -85,7 +85,7 @@ class PersistentTrainingDataTest(unittest.TestCase):
         self.assertEqual(len(combined), 9)
         self.assertEqual(
             set(combined.iloc[4:]["SampleWeight"].unique().tolist()),
-            {1.0},
+            {0.2},
         )
 
     def test_blends_complete_prior_sessions_when_provenance_exists(self):

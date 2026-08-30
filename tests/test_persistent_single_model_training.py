@@ -40,8 +40,12 @@ class PersistentSingleModelTrainingTest(unittest.TestCase):
                 "TyreLife": list(range(1, rows + 1)),
                 "LapTimeDelta": [value / 100 for value in range(rows)],
                 "EventDate": [f"{year}-03-01"] * rows,
-                f"EventName_{event}": [1] * rows,
-                "Compound_SOFT": [int(soft)] * rows,
+                "EventName": [event] * rows,
+                "Driver": ["VER"] * rows,
+                "Team": ["Red Bull Racing"] * rows,
+                "Compound": ["SOFT" if soft else "MEDIUM"] * rows,
+                "TrackType": ["Medium"] * rows,
+                "SessionCode": ["R"] * rows,
                 "IsWet": [0] * rows,
             }
         )
@@ -83,7 +87,7 @@ class PersistentSingleModelTrainingTest(unittest.TestCase):
         self.assertEqual(combined.iloc[3]["SampleWeight"], 1.4)
         self.assertEqual(
             set(combined.iloc[4:]["SampleWeight"].unique().tolist()),
-            {1.0},
+            {0.2},
         )
 
     def test_ground_store_must_declare_complete_coverage(self):
@@ -143,13 +147,13 @@ class PersistentSingleModelTrainingTest(unittest.TestCase):
             "EventDate",
             "EventName",
             "SessionKey",
-            "SessionCode",
             "TrainingRole",
             "Season",
         ):
             self.assertNotIn(column, features)
+        self.assertIn("SessionCode", features)
 
-    @patch("train_era_models.HistGradientBoostingRegressor")
+    @patch("train_era_models._make_model_pipeline")
     def test_active_validation_scores_only_current_era_events(self, regressor):
         model = regressor.return_value
         model.predict.side_effect = lambda frame: [0.0] * len(frame)

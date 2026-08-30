@@ -15,6 +15,17 @@ from mappings import (
 from weather_api import get_track_weather
 from tire_life_analysis import analyze_tire_life
 
+FUTURE_INFORMATION_FEATURES = {
+    "StintLength",
+    "NormalizedTyreLife",
+    "normalized_life_x_tyre_stress",
+}
+SESSION_DERIVED_BASELINE_FEATURES = {
+    "TeamBaselinePace",
+    "FieldBaselinePace",
+    "RelativePace",
+}
+
 REVERSE_EVENT_NAME_MAP = {v: k for k, v in EVENT_NAME_TO_CIRCUIT.items()}
 
 class TireDegradationSimulator:
@@ -92,18 +103,16 @@ class TireDegradationSimulator:
             
         self.model = joblib.load(model_path)
         self.feature_names = joblib.load(features_path)
+        legacy_leakage_features = (
+            FUTURE_INFORMATION_FEATURES | SESSION_DERIVED_BASELINE_FEATURES
+        ).intersection(self.feature_names)
+        if legacy_leakage_features:
+            raise RuntimeError(
+                "The loaded model still expects leakage-prone features: "
+                f"{sorted(legacy_leakage_features)}. Rebuild the processed "
+                "datasets and retrain the era models before using this engine."
+            )
         self.valid_compounds = ["SOFT", "MEDIUM", "HARD", "INTERMEDIATE", "WET"]
-        
-        # Realistic typical stint lengths per compound used as simulation inputs only.
-        # These set the NormalizedTyreLife context so the model knows how far into its
-        # life the tire is.  The model learned actual physics; these are what-if parameters.
-        self.compound_sim_stints = {
-            "SOFT":         15,
-            "MEDIUM":       28,
-            "HARD":         42,
-            "INTERMEDIATE": 20,
-            "WET":          25,
-        }
 
     def _simulate_compound(self, driver, norm_team, track_name, track_type, track_length_km,
                            compound, weather_data, track_features, race_laps, max_laps=50):
@@ -119,13 +128,10 @@ class TireDegradationSimulator:
         """
         is_wet = 1 if compound in ["INTERMEDIATE", "WET"] or weather_data["rainfall"] else 0
         
-        # Compound-specific simulation context
-        sim_stint_length = self.compound_sim_stints.get(compound, max_laps)
         fuel_load = max(0.0, 1.0 - (15 / max_laps))  # LapNumber=15 held constant
 
         rows = []
         for age in range(1, max_laps + 1):
-            normalized_life = min(1.0, age / sim_stint_length)
             normalized_lap = min(1.0, 15 / race_laps)  # LapNumber held at 15
             laps_remaining = max(0, race_laps - 15)
             tire_age_ratio = min(1.0, age / race_laps)
@@ -136,12 +142,12 @@ class TireDegradationSimulator:
                 'LapNumber': 15,  # Held constant to isolate pure tire degradation from fuel burn
                 'TyreLife': age,
                 'TyreLifeKM': age * track_length_km,
-                'StintLength': sim_stint_length,
-                'NormalizedTyreLife': normalized_life,
                 'TyreLifeSquared': age ** 2,
                 'FuelLoad': fuel_load,
+                'FuelLoadMissing': 0,
                 'Compound': compound,
                 'Stint': 1,
+                'SessionCode': 'R',
                 'TrackType': track_type,
                 'IsWet': is_wet,
                 'AirTemp': weather_data['air_temp'],
@@ -149,9 +155,6 @@ class TireDegradationSimulator:
                 'Humidity': weather_data['humidity'],
                 'Rainfall': int(weather_data['rainfall']),
                 'WindSpeed': weather_data.get('wind_speed', 10.0),
-                'TeamBaselinePace': 100.0,
-                'FieldBaselinePace': 100.0,
-                'RelativePace': 0.0,
                 # Race-distance normalization
                 'NormalizedLap': normalized_lap,
                 'LapsRemaining': laps_remaining,
@@ -162,9 +165,9 @@ class TireDegradationSimulator:
             for feat_name, feat_val in track_features.items():
                 row[feat_name] = feat_val
 
-            # Keep committed pre-migration model artifacts usable.  A newly
-            # trained model ignores these aliases because they are not in its
-            # persisted feature schema.
+            # Keep track-feature aliases only as migration scaffolding. Legacy
+            # model artifacts are rejected above; retrained artifacts will
+            # simply ignore these extra columns during schema reindexing.
             row.update(get_legacy_track_feature_aliases(track_features))
             
             # Add interaction features
@@ -172,11 +175,8 @@ class TireDegradationSimulator:
             row['track_temp_x_tyre_stress'] = weather_data['track_temp'] * track_features.get('tyre_stress', 0.5)
             row['tire_age_x_traction'] = age * track_features.get('traction', 0.5)
             row['tire_age_x_lateral_load'] = age * track_features.get('lateral_load', 0.5)
-            row['normalized_life_x_tyre_stress'] = normalized_life * track_features.get('tyre_stress', 0.5)
-
             # Interaction aliases for pre-migration model artifacts.
             row['track_temp_x_sensitivity'] = row['track_temp_x_tyre_stress']
-            row['normalized_life_x_thermal'] = row['normalized_life_x_tyre_stress']
             
             # --- New Compound-Specific Interactions ---
             row['soft_age_interaction'] = age if compound == 'SOFT' else 0
@@ -194,17 +194,10 @@ class TireDegradationSimulator:
             
         df = pd.DataFrame(rows)
         
-        # Handle categoricals: Enforce fixed categories to ensure feature alignment with models
-        ALL_COMPOUNDS = ['SOFT', 'MEDIUM', 'HARD', 'INTERMEDIATE', 'WET']
-        ALL_TRACK_TYPES = ['Slow', 'Medium', 'Fast']
-        
-        df['Compound'] = pd.Categorical(df['Compound'], categories=ALL_COMPOUNDS)
-        df['TrackType'] = pd.Categorical(df['TrackType'], categories=ALL_TRACK_TYPES)
-        
-        # Dummy variables matching training
-        categorical_cols = ['Driver', 'Team', 'Compound', 'TrackType', 'EventName']
-        df_dummies = pd.get_dummies(df, columns=categorical_cols, drop_first=False)
-        final_input = df_dummies.reindex(columns=self.feature_names, fill_value=0)
+        # Keep inference inputs canonical/raw. The persisted model is a
+        # Pipeline whose fitted ColumnTransformer owns one-hot encoding and
+        # ignores categories that were not present in its training fold.
+        final_input = df.reindex(columns=self.feature_names)
         
         raw_predictions = self.model.predict(final_input)
         

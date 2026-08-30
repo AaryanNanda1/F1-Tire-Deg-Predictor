@@ -10,8 +10,12 @@ import joblib
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingRegressor
+from sklearn.compose import ColumnTransformer
+from sklearn.impute import SimpleImputer
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder
 
 from data_loader import load_race_data
 from preprocessing import preprocess_laps
@@ -30,10 +34,71 @@ TRAINING_METADATA_COLUMNS = [
     "EventDate",
     "EventName",
     "SessionKey",
-    "SessionCode",
     "TrainingRole",
     "Season",
 ]
+
+# These are intentionally raw categorical columns. The fitted transformer is
+# stored inside the model pipeline and is refit within every walk-forward fold.
+CATEGORICAL_FEATURES = ["Driver", "Team", "Compound", "TrackType", "SessionCode"]
+ACTIVE_AERO_PRIOR_SAMPLE_FRACTION = 0.50
+ACTIVE_AERO_PRIOR_WEIGHT_CANDIDATES = (0.10, 0.20, 0.30)
+
+
+def _model_input_columns(data_df: pd.DataFrame) -> List[str]:
+    """Return canonical model inputs without provenance or target columns."""
+    return [
+        column for column in data_df.columns
+        if column not in TRAINING_METADATA_COLUMNS
+        and column not in {"LapTimeSeconds", "CompoundWeight"}
+        and not column.startswith("EventName_")
+    ]
+
+
+def _make_model_pipeline(X: pd.DataFrame) -> Pipeline:
+    categorical = [column for column in CATEGORICAL_FEATURES if column in X.columns]
+    numeric = [column for column in X.columns if column not in categorical]
+
+    # Dense output is required by HistGradientBoostingRegressor. Unknown
+    # drivers/teams/compounds in a held-out event are ignored safely.
+    encoder_kwargs = {"handle_unknown": "ignore"}
+    try:
+        encoder = OneHotEncoder(sparse_output=False, **encoder_kwargs)
+    except TypeError:  # scikit-learn < 1.2
+        encoder = OneHotEncoder(sparse=False, **encoder_kwargs)
+
+    transformers = []
+    if numeric:
+        transformers.append(
+            (
+                "numeric",
+                Pipeline([("imputer", SimpleImputer(strategy="median"))]),
+                numeric,
+            )
+        )
+    if categorical:
+        transformers.append(
+            (
+                "categorical",
+                Pipeline(
+                    [
+                        ("imputer", SimpleImputer(strategy="most_frequent")),
+                        ("onehot", encoder),
+                    ]
+                ),
+                categorical,
+            )
+        )
+
+    preprocessor = ColumnTransformer(transformers, remainder="drop")
+    estimator = HistGradientBoostingRegressor(
+        loss="absolute_error",
+        early_stopping=True,
+        validation_fraction=0.1,
+        n_iter_no_change=10,
+        random_state=42,
+    )
+    return Pipeline([("preprocessor", preprocessor), ("regressor", estimator)])
 
 
 def _training_timestamp() -> str:
@@ -132,9 +197,8 @@ def collect_era_data(start_year: int, end_year: int, as_of: date) -> Tuple[pd.Da
     # Exponentially increase the weight of soft tires as they age to force the model
     # to pay attention to the degradation "cliff" (Recommendation 2)
     final_df['CompoundWeight'] = 1.0
-    # preprocessing.py uses pd.get_dummies, so 'Compound' is removed and 'Compound_SOFT' is created
-    if 'Compound_SOFT' in final_df.columns:
-        soft_mask = (final_df['Compound_SOFT'] == 1)
+    if 'Compound' in final_df.columns:
+        soft_mask = final_df['Compound'].astype(str).eq('SOFT')
         # Formula: 1.0 base + 0.1 per lap of age. A 20-lap old soft gets 3.0x weight.
         final_df.loc[soft_mask, 'CompoundWeight'] = 1.0 + (final_df.loc[soft_mask, 'TyreLife'] / 10.0)
         
@@ -150,8 +214,8 @@ def _apply_soft_tire_age_weighting(data_df: pd.DataFrame) -> pd.DataFrame:
     weighted = data_df.copy()
     if "SampleWeight" not in weighted.columns:
         weighted["SampleWeight"] = 1.0
-    if "Compound_SOFT" in weighted.columns and "TyreLife" in weighted.columns:
-        soft_mask = weighted["Compound_SOFT"] == 1
+    if "Compound" in weighted.columns and "TyreLife" in weighted.columns:
+        soft_mask = weighted["Compound"].astype(str).eq("SOFT")
         weighted.loc[soft_mask, "SampleWeight"] *= (
             1.0 + weighted.loc[soft_mask, "TyreLife"] / 10.0
         )
@@ -222,8 +286,11 @@ def load_persistent_ground_effect_data(
 def build_active_aero_training_data(
     active_data: pd.DataFrame,
     prior_data: pd.DataFrame,
+    prior_weight: float = 0.20,
 ) -> Tuple[pd.DataFrame, int]:
-    """Reproduce the original single-model Active Aero blending policy."""
+    """Build the Active Aero blend with an explicit physics-prior weight."""
+    if not 0.0 <= prior_weight <= 1.0:
+        raise ValueError("prior_weight must be between 0.0 and 1.0")
     if active_data.empty:
         return pd.DataFrame(), 0
 
@@ -231,12 +298,18 @@ def build_active_aero_training_data(
     frames = [active_weighted]
     sampled_prior_rows = 0
     if not prior_data.empty:
-        sampled_prior = prior_data.sample(frac=0.50, random_state=42).copy()
-        sampled_prior["SampleWeight"] = 1.0
+        sampled_prior = prior_data.sample(
+            frac=ACTIVE_AERO_PRIOR_SAMPLE_FRACTION,
+            random_state=42,
+        ).copy()
+        sampled_prior["SampleWeight"] = prior_weight
         sampled_prior_rows = len(sampled_prior)
         frames.append(sampled_prior)
 
-    data_df = pd.concat(frames, ignore_index=True, sort=False).fillna(0)
+    # Do not globally coerce raw categorical values to numeric sentinels. The
+    # fitted preprocessing pipeline handles numeric imputation and categorical
+    # unknowns separately.
+    data_df = pd.concat(frames, ignore_index=True, sort=False)
     if "IsWet" in data_df.columns:
         wet_laps = data_df[data_df["IsWet"] == 1]
         if not wet_laps.empty and len(wet_laps) < 500:
@@ -244,6 +317,95 @@ def build_active_aero_training_data(
             data_df = pd.concat([data_df, wet_laps, wet_laps], ignore_index=True)
 
     return data_df, sampled_prior_rows
+
+
+def evaluate_active_aero_prior_weights(
+    active_data: pd.DataFrame,
+    prior_data: pd.DataFrame,
+    prior_weights=ACTIVE_AERO_PRIOR_WEIGHT_CANDIDATES,
+) -> Dict[str, Dict]:
+    """Compare prior weights using chronological 2026-only event holdouts.
+
+    Each scored event is held out from the real Active Aero rows. The model is
+    fitted on earlier 2026 events plus the same sampled physics-prior rows,
+    and the prior rows receive only the candidate weight being evaluated.
+    """
+    if active_data.empty or "EventDate" not in active_data.columns:
+        return {}
+
+    events = active_data[["EventDate", "EventName"]].drop_duplicates().copy()
+    events["EventDate"] = pd.to_datetime(events["EventDate"], errors="coerce")
+    events = events.dropna(subset=["EventDate"]).sort_values(
+        ["EventDate", "EventName"]
+    )
+    if len(events) < 2:
+        return {
+            f"{float(weight):.2f}": {
+                "status": "insufficient_events",
+                "holdout_events": 0,
+            }
+            for weight in prior_weights
+        }
+
+    event_dates = pd.to_datetime(active_data["EventDate"], errors="coerce")
+    results: Dict[str, Dict] = {}
+    for candidate_weight in prior_weights:
+        candidate_weight = float(candidate_weight)
+        fold_maes = []
+        scored_events = 0
+        for _, event in events.iloc[1:].iterrows():
+            train_active = active_data[event_dates < event["EventDate"]]
+            test_active = active_data[
+                (event_dates == event["EventDate"])
+                & (active_data["EventName"] == event["EventName"])
+            ]
+            if train_active.empty or test_active.empty:
+                continue
+
+            train_data, _ = build_active_aero_training_data(
+                train_active,
+                prior_data,
+                prior_weight=candidate_weight,
+            )
+            train_columns = _model_input_columns(train_data)
+            X_train = train_data.reindex(columns=train_columns)
+            X_test = test_active.reindex(columns=train_columns)
+            model = _make_model_pipeline(X_train)
+            model.set_params(regressor__max_iter=50)
+            model.fit(
+                X_train,
+                train_data["LapTimeDelta"],
+                regressor__sample_weight=train_data.get(
+                    "SampleWeight",
+                    pd.Series(1.0, index=train_data.index),
+                ),
+            )
+            fold_maes.append(
+                float(
+                    mean_absolute_error(
+                        test_active["LapTimeDelta"],
+                        model.predict(X_test),
+                    )
+                )
+            )
+            scored_events += 1
+
+        key = f"{candidate_weight:.2f}"
+        results[key] = {
+            "status": "evaluated" if fold_maes else "no_scored_events",
+            "holdout_events": scored_events,
+            "mae": round(float(np.mean(fold_maes)), 3) if fold_maes else None,
+            "prior_sample_fraction": ACTIVE_AERO_PRIOR_SAMPLE_FRACTION,
+        }
+
+    evaluated = [
+        (metrics["mae"], weight)
+        for weight, metrics in results.items()
+        if metrics.get("mae") is not None
+    ]
+    if evaluated:
+        results[min(evaluated)[1]]["selected"] = True
+    return results
 
 
 def train_and_save(
@@ -278,12 +440,9 @@ def train_and_save(
             prior_features = joblib.load(str(prior_model_path).replace('_model.joblib', '_features.joblib'))
             
             # Build prior synthetic rows from the current era data inputs
-            X_current = data_df.drop(
-                columns=TRAINING_METADATA_COLUMNS,
-                errors="ignore",
-            )
-            X_prior_aligned = X_current.reindex(columns=prior_features, fill_value=0)
-            prior_preds = prior_model.predict(X_prior_aligned)
+            X_current = data_df.drop(columns=TRAINING_METADATA_COLUMNS, errors="ignore")
+            X_current = X_current.reindex(columns=prior_features, fill_value=np.nan)
+            prior_preds = prior_model.predict(X_current)
             
             prior_df = data_df.copy()
             prior_df['LapTimeSeconds'] = prior_preds
@@ -310,27 +469,23 @@ def train_and_save(
     # Extract sample weights for final training
     sample_weights = data_df.get('SampleWeight', pd.Series(1.0, index=data_df.index))
     
-    # Drop target and metadata columns so they aren't used as features
-    X = data_df.drop(columns=TRAINING_METADATA_COLUMNS, errors="ignore")
+    # Keep one canonical raw schema across all sessions. The fitted pipeline
+    # owns categorical encoding and is persisted with the estimator.
+    feature_columns = _model_input_columns(data_df)
+    X = data_df.reindex(columns=feature_columns)
     y = data_df['LapTimeDelta']
 
-    model = HistGradientBoostingRegressor(
-        loss="absolute_error",
-        early_stopping=True,
-        validation_fraction=0.1,
-        n_iter_no_change=10,
-        random_state=42
-    )
+    model = _make_model_pipeline(X)
     
     # Fit the FINAL production model on ALL data
-    model.fit(X, y, sample_weight=sample_weights)
+    model.fit(X, y, regressor__sample_weight=sample_weights)
     
     # Use the sequential_mae if available, otherwise fallback to simple training MAE
     final_mae = sequential_mae if sequential_mae is not None else float(mean_absolute_error(y, model.predict(X)))
 
     model_path.parent.mkdir(parents=True, exist_ok=True)
     joblib.dump(model, model_path)
-    joblib.dump(X.columns.tolist(), features_path)
+    joblib.dump(feature_columns, features_path)
 
     return {
         "rows": int(len(data_df)),
@@ -392,22 +547,19 @@ def perform_walk_forward_validation(
             continue
         
         # Ensure we drop metadata columns during training
-        X_train = train_data.drop(
-            columns=TRAINING_METADATA_COLUMNS,
-            errors="ignore",
-        )
+        train_columns = _model_input_columns(train_data)
+        X_train = train_data.reindex(columns=train_columns)
         y_train = train_data['LapTimeDelta']
         w_train = train_data.get('SampleWeight', pd.Series(1.0, index=train_data.index))
         
-        X_test = test_data.drop(
-            columns=TRAINING_METADATA_COLUMNS,
-            errors="ignore",
-        )
+        X_test = test_data.reindex(columns=train_columns)
         y_test = test_data['LapTimeDelta']
         
-        # We don't use early stopping here to speed up validation loops
-        model = HistGradientBoostingRegressor(loss="absolute_error", max_iter=50, random_state=42)
-        model.fit(X_train, y_train, sample_weight=w_train)
+        # Fit the encoder only on the historical fold. The held-out event is
+        # transformed by this fitted pipeline and unknown categories ignored.
+        model = _make_model_pipeline(X_train)
+        model.set_params(regressor__max_iter=50)
+        model.fit(X_train, y_train, regressor__sample_weight=w_train)
         
         preds = model.predict(X_test)
         mae = mean_absolute_error(y_test, preds)
@@ -481,15 +633,44 @@ def main():
         type=str,
         default=None,
         help=(
-            "Train the selected single era from a persistent processed-session "
-            "store instead of reloading historical FastF1 sessions"
+            "Persistent Active Aero store; used for the active_aero model"
+        ),
+    )
+    parser.add_argument(
+        "--ground-effect-processed-data-dir",
+        type=str,
+        default=None,
+        help=(
+            "Persistent Ground Effect store; used for the ground_effect model"
+        ),
+    )
+    parser.add_argument(
+        "--active-aero-prior-weight",
+        type=float,
+        default=0.20,
+        help=(
+            "Relative sample weight for sampled 2024-2025 prior rows in the "
+            "Active Aero blend (default: 0.20)"
         ),
     )
     args = parser.parse_args()
 
-    if args.processed_data_dir and args.mode == "both":
+    if not 0.0 <= args.active_aero_prior_weight <= 1.0:
+        parser.error("--active-aero-prior-weight must be between 0.0 and 1.0")
+
+    if args.processed_data_dir and args.mode == "ground_effect":
         parser.error(
-            "--processed-data-dir requires --mode ground_effect or --mode active_aero"
+            "--processed-data-dir is for the active_aero model"
+        )
+    if args.ground_effect_processed_data_dir and args.mode == "active_aero":
+        parser.error(
+            "--ground-effect-processed-data-dir is for the ground_effect model"
+        )
+    if args.mode == "both" and bool(args.processed_data_dir) != bool(
+        args.ground_effect_processed_data_dir
+    ):
+        parser.error(
+            "Training both eras from persistent data requires both persistent store paths"
         )
 
     as_of = date.fromisoformat(args.as_of_date)
@@ -508,9 +689,9 @@ def main():
     # Preserve metadata for eras that are not part of this invocation.
     results: Dict[str, Dict] = dict(existing_results)
     if args.mode in {"both", "ground_effect"}:
-        if args.processed_data_dir:
+        if args.ground_effect_processed_data_dir:
             data_df, details = load_persistent_ground_effect_data(
-                Path(args.processed_data_dir)
+                Path(args.ground_effect_processed_data_dir)
             )
             model_path = out_dir / "ground_effect_2022_2025_model.joblib"
             features_path = out_dir / "ground_effect_2022_2025_features.joblib"
@@ -536,7 +717,7 @@ def main():
         )
     if args.mode in {"both", "active_aero"}:
         # PASSING 2024-2025 AS PRIOR FOR 2026+ (Hybrid Cold Start)
-        print("\n--- Phase 2: Training Active Aero (2026-2030) with Heavy Physics Prior ---")
+        print("\n--- Phase 2: Training Active Aero (2026-2030) with Weighted Physics Prior ---")
         
         if args.processed_data_dir:
             data_2026, data_prior, details_2026 = (
@@ -545,10 +726,16 @@ def main():
             data_df, sampled_prior_rows = build_active_aero_training_data(
                 data_2026,
                 data_prior,
+                prior_weight=args.active_aero_prior_weight,
+            )
+            prior_weight_metrics = evaluate_active_aero_prior_weights(
+                data_2026,
+                data_prior,
             )
             print(
                 f"  Blended {sampled_prior_rows} prior laps into "
-                f"{len(data_2026)} real 2026 laps from the persistent store."
+                f"{len(data_2026)} real 2026 laps from the persistent store "
+                f"(prior weight={args.active_aero_prior_weight:.2f})."
             )
         else:
             # 1. Collect standard 2026 data
@@ -558,9 +745,16 @@ def main():
             print("  Collecting Heavy Physics Prior from 2024-2025...")
             data_prior, _ = collect_era_data(2024, 2025, as_of)
             if not data_prior.empty:
+                prior_weight_metrics = evaluate_active_aero_prior_weights(
+                    data_2026,
+                    data_prior,
+                )
                 # Increase sample to 50% for stronger hierarchy enforcement
-                data_prior = data_prior.sample(frac=0.50, random_state=42)
-                data_prior['SampleWeight'] = 1.0  # Equal weight to ensure hierarchy is respected
+                data_prior = data_prior.sample(
+                    frac=ACTIVE_AERO_PRIOR_SAMPLE_FRACTION,
+                    random_state=42,
+                )
+                data_prior['SampleWeight'] = args.active_aero_prior_weight
 
                 # Combine
                 data_df = pd.concat([data_2026, data_prior], ignore_index=True)
@@ -572,9 +766,14 @@ def main():
                     print(f"  Upsampling wet/inter conditions (found {len(wet_laps)} laps)...")
                     data_df = pd.concat([data_df, wet_laps, wet_laps], ignore_index=True)
 
-                print(f"  Blended {len(data_prior)} prior laps into {len(data_2026)} real 2026 laps.")
+                print(
+                    f"  Blended {len(data_prior)} prior laps into "
+                    f"{len(data_2026)} real 2026 laps "
+                    f"(prior weight={args.active_aero_prior_weight:.2f})."
+                )
             else:
                 data_df = data_2026
+                prior_weight_metrics = {}
             
         if data_df.empty:
             candidate = {
@@ -593,6 +792,8 @@ def main():
                 features_path,
                 validation_test_start_year=2026,
             )
+            metrics["active_aero_prior_weight"] = args.active_aero_prior_weight
+            metrics["active_aero_prior_weight_candidates"] = prior_weight_metrics
             candidate = {
                 "status": "trained_hybrid",
                 "start_year": 2026,

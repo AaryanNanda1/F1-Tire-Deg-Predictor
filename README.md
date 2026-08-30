@@ -215,6 +215,69 @@ To train era-specific models (Ground Effect & Active Aero):
 python train_era_models.py --mode both --as-of-date 2026-02-20 --output-dir models
 ```
 
+Persistent stores include a preprocessing schema version and source revision.
+The current schema excludes the eventual stint length, normalized stint age,
+and complete-session pace baselines from model inputs. Lap-time deltas use the
+known circuit baseline shared with inference, while the session team baseline
+is retained only for outlier filtering. When this feature-generation contract
+changes, existing session keys are treated as stale rather than silently
+reused. Rebuild each store into a new directory, validate it, and only then
+retrain the corresponding single era model:
+
+Preprocessing also removes explicit pit-in/pit-out laps and applies a symmetric
+median/MAD filter within each session, team, and wet/dry regime. Every stored
+session records input rows, removal counts, baseline-group counts, and final
+rows in its manifest for post-rebuild auditing.
+
+Fuel-load handling is session-aware. Race and Sprint sessions retain the
+lap-number fuel proxy, while FP2 sets the proxy to a neutral numeric sentinel
+and supplies `FuelLoadMissing=1`, because FP2 lap number does not reveal the
+driver's starting fuel. `SessionCode` (`R`, `S`, or `FP2`) is included as a
+categorical model feature so the estimator can learn the different target
+distributions. At inference, simulations use the race context (`R`) and never
+infer FP2 fuel from the maximum lap number.
+
+Active Aero training treats 2024–2025 observations as a physics prior rather
+than as equal evidence to 2026. A deterministic 50% prior sample is assigned
+an explicit relative weight (default `0.20`, configurable with
+`--active-aero-prior-weight`). Training metadata records a 2026-only
+walk-forward comparison for prior weights `0.10`, `0.20`, and `0.30`, allowing
+the prior strength to be selected using current-era holdout MAE. This keeps
+future Active Aero updates anchored by historical tire physics without letting
+the much larger prior dataset dominate the current-era signal.
+
+Stored session CSVs use one canonical raw schema: `Driver`, `Team`, `Compound`,
+`TrackType`, and `SessionCode` remain categorical strings, and `EventName` is
+retained only as chronological/evaluation metadata. Each training fold fits a
+`ColumnTransformer` with `OneHotEncoder(handle_unknown="ignore")`; the fitted
+transformer is persisted inside the model artifact and applied to the held-out
+event and production inference inputs. This prevents per-session dummy-column
+drift and prevents the model from memorizing circuits through event-name
+features.
+
+```bash
+python scripts/rebuild_processed_training_data.py \
+  --source-dir training_data/ground_effect \
+  --output-dir /tmp/ground_effect_rebuilt
+
+python scripts/rebuild_processed_training_data.py \
+  --source-dir training_data/active_aero \
+  --output-dir /tmp/active_aero_rebuilt
+
+python train_era_models.py \
+  --mode both \
+  --ground-effect-processed-data-dir /tmp/ground_effect_rebuilt \
+  --processed-data-dir /tmp/active_aero_rebuilt \
+  --as-of-date 2026-08-30 \
+  --output-dir /tmp/retrained_models
+```
+
+The rebuild command reprocesses every session already recorded in the source
+manifest and can use `--offline-cache-only` for a cache-only rehearsal. It
+does not replace `training_data/` or `models/`; review the manifest coverage,
+column fingerprints, and training metrics before promoting the rebuilt stores
+and model artifacts.
+
 ---
 
 ## 📊 Usage

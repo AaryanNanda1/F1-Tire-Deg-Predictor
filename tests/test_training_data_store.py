@@ -15,6 +15,7 @@ from training_data_store import (
     refresh_sessions,
     session_specs_from_schedule,
 )
+from preprocessing import PREPROCESSING_VERSION
 
 
 class TrainingDataStoreTest(unittest.TestCase):
@@ -41,7 +42,7 @@ class TrainingDataStoreTest(unittest.TestCase):
             "TyreLife": [1.0, 2.0],
             "LapTimeDelta": [0.1, 0.2],
             "EventDate": ["2026-03-08", "2026-03-08"],
-            "EventName_Australian Grand Prix": [True, True],
+            "EventName": ["Australian Grand Prix", "Australian Grand Prix"],
             **extra_columns,
         }
         return pd.DataFrame(payload)
@@ -63,15 +64,17 @@ class TrainingDataStoreTest(unittest.TestCase):
             manifest = json.loads(
                 (Path(temporary) / "manifest.json").read_text(encoding="utf-8")
             )
-            self.assertEqual(manifest["schema_version"], 1)
+            self.assertEqual(manifest["schema_version"], 2)
+            self.assertEqual(manifest["preprocessing_version"], PREPROCESSING_VERSION)
+            self.assertIn("preprocessing_git_commit", manifest)
             self.assertEqual(len(manifest["sessions"]), 2)
 
             combined = store.load_role(ACTIVE_AERO_ROLE)
             self.assertEqual(len(combined), 4)
             self.assertIn("Driver_VER", combined.columns)
             self.assertIn("Driver_NOR", combined.columns)
-            self.assertEqual(int(combined["Driver_VER"].isna().sum()), 0)
-            self.assertEqual(int(combined["Driver_NOR"].isna().sum()), 0)
+            self.assertEqual(int(combined["Driver_VER"].isna().sum()), 2)
+            self.assertEqual(int(combined["Driver_NOR"].isna().sum()), 2)
             self.assertEqual(
                 sorted(combined["SampleWeight"].unique().tolist()),
                 [0.75, 1.0],
@@ -176,6 +179,63 @@ class TrainingDataStoreTest(unittest.TestCase):
 
             self.assertEqual(store.session_keys(ACTIVE_AERO_ROLE), [active.key])
             self.assertEqual(store.session_keys(PHYSICS_PRIOR_ROLE), [prior.key])
+
+    def test_reprocess_existing_replaces_immutable_session_row_when_requested(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            store = ProcessedSessionStore(temporary)
+            spec = self._spec()
+            store.save_session(spec, self._frame(OldFeature=[1, 1]))
+
+            loader = Mock(return_value=object())
+            result = refresh_sessions(
+                store,
+                [spec],
+                loader=loader,
+                preprocessor=Mock(return_value=self._frame(NewFeature=[2, 2])),
+                reprocess_existing=True,
+            )
+
+            self.assertEqual(result["reprocessed"], [spec.key])
+            self.assertEqual(result["added"], [])
+            loaded = store.load_role(ACTIVE_AERO_ROLE)
+            self.assertIn("NewFeature", loaded.columns)
+            self.assertNotIn("OldFeature", loaded.columns)
+
+    def test_persists_preprocessing_filter_audit_in_manifest(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            store = ProcessedSessionStore(temporary)
+            frame = self._frame()
+            frame.attrs["filter_audit"] = {
+                "pit_in_out_removed": 2,
+                "robust_outlier_removed": 3,
+                "final_rows": 2,
+            }
+            store.save_session(self._spec(), frame)
+            manifest = json.loads(
+                (Path(temporary) / "manifest.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(
+                manifest["sessions"][self._spec().key]["filter_audit"][
+                    "robust_outlier_removed"
+                ],
+                3,
+            )
+
+    def test_legacy_manifest_is_explicitly_stale(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            store = ProcessedSessionStore(temporary)
+            store.save_session(self._spec(), self._frame())
+            manifest_path = Path(temporary) / "manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["schema_version"] = 1
+            manifest.pop("preprocessing_version", None)
+            manifest.pop("preprocessing_git_commit", None)
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+            legacy = ProcessedSessionStore(temporary)
+            self.assertTrue(legacy.requires_rebuild)
+            with self.assertRaisesRegex(Exception, "run scripts/rebuild_processed_training_data.py"):
+                legacy.load_role(ACTIVE_AERO_ROLE)
 
 
 if __name__ == "__main__":

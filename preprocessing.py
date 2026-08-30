@@ -1,13 +1,63 @@
 import pandas as pd
 import numpy as np
-from mappings import TEAM_MAPPING, get_track_info, normalize_team_name, get_track_features, TRACK_CONFIG
+from mappings import (
+    TEAM_MAPPING,
+    TRACK_BASE_PACE,
+    TRACK_CONFIG,
+    get_track_info,
+    get_track_features,
+    normalize_team_name,
+    resolve_circuit_key,
+)
+
+
+# Increment this whenever the persisted processed-session feature schema or
+# feature-generation logic changes.  The training-data store records it in
+# each manifest so immutable session keys do not hide stale preprocessing.
+PREPROCESSING_VERSION = "track-features-v7-canonical-categoricals"
+ROBUST_FILTER_MAD_MULTIPLIER = 6.0
+ROBUST_FILTER_MIN_THRESHOLD_SEC = 3.0
+FUTURE_INFORMATION_FEATURES = frozenset(
+    {
+        "StintLength",
+        "NormalizedTyreLife",
+        "normalized_life_x_tyre_stress",
+    }
+)
+SESSION_DERIVED_BASELINE_FEATURES = frozenset(
+    {
+        "TeamBaselinePace",
+        "FieldBaselinePace",
+        "RelativePace",
+    }
+)
+
+
+def infer_session_code(session) -> str:
+    """Map a FastF1 session object to the training session categories."""
+    candidates = [
+        getattr(session, "name", None),
+        getattr(session, "session_name", None),
+    ]
+    session_info = getattr(session, "session_info", None)
+    if hasattr(session_info, "get"):
+        candidates.extend(
+            session_info.get(key)
+            for key in ("Name", "name", "Type", "type")
+        )
+    label = " ".join(str(value) for value in candidates if value).lower()
+    if "practice 2" in label or "fp2" in label:
+        return "FP2"
+    if "sprint" in label:
+        return "S"
+    return "R"
 
 def preprocess_laps(session):
     """
     Cleans and processes lap data for tire degradation modeling with advanced features.
     
     Features include:
-    - Core tire metrics (TyreLife, NormalizedTyreLife, TyreLifeSquared, etc.)
+    - Core tire metrics (TyreLife, TyreLifeSquared, and tire-age interactions)
     - Weather data (AirTemp, TrackTemp, Humidity, Rainfall, WindSpeed)
     - 7 source-backed track characteristic features
     - 3 race-distance normalization features
@@ -19,6 +69,15 @@ def preprocess_laps(session):
     Returns:
         pd.DataFrame: Processed DataFrame ready for training.
     """
+    audit = {
+        "input_rows": int(len(session.laps)),
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 0,
+        "final_rows": 0,
+        "baseline_groups": 0,
+    }
+
     # 1. Filter for accurate laps and Green flag conditions
     # We remove laps with Safety Car (SC), VSC, or yellow flags as they don't represent true tire perf.
     laps = session.laps.pick_accurate().pick_track_status('1')
@@ -29,6 +88,18 @@ def preprocess_laps(session):
     # However, the user explicitly asked for "is_wet" feature, so we KEEP them and mark them.
     valid_compounds = ['SOFT', 'MEDIUM', 'HARD', 'INTERMEDIATE', 'WET']
     laps = laps[laps['Compound'].isin(valid_compounds)].copy()
+
+    # Explicitly remove pit-in and pit-out laps. These can pass the green-flag
+    # filter but are not representative of tire performance.
+    pit_columns = [
+        column
+        for column in ('PitInTime', 'PitOutTime')
+        if column in laps.columns
+    ]
+    if pit_columns:
+        pit_lap_mask = laps[pit_columns].notna().any(axis=1)
+        audit["pit_in_out_removed"] = int(pit_lap_mask.sum())
+        laps = laps.loc[~pit_lap_mask].copy()
     
     # 3. Basic Lap Features
     laps['LapTimeSeconds'] = laps['LapTime'].dt.total_seconds()
@@ -58,22 +129,27 @@ def preprocess_laps(session):
     
     # 6b. Filter out very short stints (< 3 laps): removes installation laps, in/out laps, SC anomalies
     stint_len_map = laps.groupby(['Driver', 'Stint'])['TyreLife'].transform('max')
-    laps['StintLength'] = stint_len_map.clip(lower=1)
-    laps = laps[laps['StintLength'] >= 3].copy()
-    
-    # 7a. NormalizedTyreLife: Where is this tire in its life? (0 = fresh, 1 = end of stint)
-    # Soft at TyreLife=10/StintLength=12 -> 0.83 (nearly done)
-    # Hard at TyreLife=10/StintLength=38 -> 0.26 (still early)
-    # This single feature gives the model the compound-differentiation signal without hardcoding.
-    laps['NormalizedTyreLife'] = (laps['TyreLife'] / laps['StintLength']).clip(0, 1)
+    # Keep the eventual stint length as a filtering-only quantity. It must not
+    # enter the model because it is unknown at the time a strategy is chosen.
+    stint_length_for_filter = stint_len_map.clip(lower=1)
+    audit["short_stint_removed"] = int((stint_length_for_filter < 3).sum())
+    laps = laps[stint_length_for_filter >= 3].copy()
     
     # 7b. TyreLifeSquared: Captures exponential/non-linear late-stint degradation cliffs
     laps['TyreLifeSquared'] = laps['TyreLife'] ** 2
     
-    # 7c. FuelLoad proxy: 1.0 = full tank (lap 1), 0.0 = empty (last lap)
-    # Standard F1 estimate: 0.07s per lap of fuel burn removes ~0.07s of lap time per lap
+    # 7c. FuelLoad proxy for race and Sprint sessions only. FP2 lap number
+    # does not identify starting fuel, so it receives a neutral sentinel plus
+    # an explicit missingness indicator.
+    session_code = infer_session_code(session)
+    laps['SessionCode'] = session_code
     total_laps = laps['LapNumber'].max()
-    laps['FuelLoad'] = (1.0 - (laps['LapNumber'] / total_laps)).clip(0, 1)
+    if session_code == "FP2":
+        laps['FuelLoad'] = np.nan
+        laps['FuelLoadMissing'] = 1
+    else:
+        laps['FuelLoad'] = (1.0 - (laps['LapNumber'] / total_laps)).clip(0, 1)
+        laps['FuelLoadMissing'] = 0
     
     # 7d. Race-distance normalization features
     # These help the model understand that lap 20 at Monaco is different from lap 20 at Spa
@@ -104,23 +180,40 @@ def preprocess_laps(session):
     # Note: 'Rainfall' in fastf1 is a boolean flag (True/False) or binary
     laps['IsWet'] = (laps['Compound'].isin(['INTERMEDIATE', 'WET'])) | (laps['Rainfall'] == True)
     
-    # 9. Pace Features (Team & Field Baseline)
-    # Calculate baseline pace for this session to contextulize performance.
-    # We'll take the median of the top 50% accurate laps as 'FieldBaseline'
-    field_baseline = laps['LapTimeSeconds'].median()
-    laps['FieldBaselinePace'] = field_baseline
-    
-    # Team Baseline: Median pace per team
-    team_baselines = laps.groupby('Team')['LapTimeSeconds'].median().to_dict()
-    laps['TeamBaselinePace'] = laps['Team'].map(team_baselines)
-    
-    # Filter out extreme pace outliers (SC/VSC remnants, spins, yellow flag sectors, pit lane errors)
-    # Any lap > 6.0 seconds slower than the team's base pace is not representative of pure tire wear.
-    laps = laps[laps['LapTimeSeconds'] <= laps['TeamBaselinePace'] + 6.0].copy()
-    
-    # Relative Pace: How much faster/slower is the team compared to field?
-    # Negative = Faster, Positive = Slower
-    laps['RelativePace'] = laps['TeamBaselinePace'] - laps['FieldBaselinePace']
+    # 9. Session-local robust pace filtering
+    # The session itself is the outer baseline scope; splitting by team and
+    # wet/dry regime prevents a wet lap or a slower team from contaminating the
+    # baseline used to audit another group. The baseline is filtering-only.
+    baseline_groups = laps.groupby(
+        ['Team', 'IsWet'],
+        observed=True,
+    )['LapTimeSeconds']
+    group_medians = baseline_groups.transform('median')
+    group_mads = baseline_groups.transform(
+        lambda values: float(np.median(np.abs(values - np.median(values))))
+    )
+    thresholds = np.maximum(
+        ROBUST_FILTER_MIN_THRESHOLD_SEC,
+        ROBUST_FILTER_MAD_MULTIPLIER * group_mads,
+    )
+    robust_keep = (
+        (laps['LapTimeSeconds'] >= group_medians - thresholds)
+        & (laps['LapTimeSeconds'] <= group_medians + thresholds)
+    )
+    audit["robust_outlier_removed"] = int((~robust_keep).sum())
+    audit["baseline_groups"] = int(
+        laps.loc[robust_keep, ['Team', 'IsWet']].drop_duplicates().shape[0]
+    )
+    laps = laps.loc[robust_keep].copy()
+
+    # Recalculate clean baselines after filtering for auditability and future
+    # filtering extensions. They are deliberately not persisted as predictors.
+    clean_baselines = (
+        laps.groupby(['Team', 'IsWet'], observed=True)['LapTimeSeconds']
+        .median()
+        .to_dict()
+    )
+    audit["clean_baseline_count"] = len(clean_baselines)
     
     # 10. Interaction Features
     # These help the model learn cross-domain relationships:
@@ -128,7 +221,6 @@ def preprocess_laps(session):
     # - TrackTemp × tyre_stress: temperature matters more at high-stress circuits
     # - TyreLife × traction: rear-limited degradation at traction-heavy circuits
     # - TyreLife × lateral_load: sustained cornering wears tires differently
-    # - NormalizedTyreLife × tyre_stress: stress compounds as the tire ages
     laps['tire_age_x_abrasiveness'] = laps['TyreLife'] * laps['abrasiveness']
     if 'TrackTemp' in laps.columns:
         laps['track_temp_x_tyre_stress'] = laps['TrackTemp'] * laps['tyre_stress']
@@ -136,7 +228,6 @@ def preprocess_laps(session):
         laps['track_temp_x_tyre_stress'] = 0.0
     laps['tire_age_x_traction'] = laps['TyreLife'] * laps['traction']
     laps['tire_age_x_lateral_load'] = laps['TyreLife'] * laps['lateral_load']
-    laps['normalized_life_x_tyre_stress'] = laps['NormalizedTyreLife'] * laps['tyre_stress']
     
     # --- New Compound-Specific Interactions ---
     # These help the model learn that different compounds have different degradation slopes
@@ -153,9 +244,11 @@ def preprocess_laps(session):
     laps['soft_traction_interaction'] = laps['is_soft'] * laps['traction']
     
     # 11. Final Target Creation
-    # Instead of predicting absolute LapTimeSeconds, we predict the delta from the team's baseline.
-    # This prevents track features from being used as proxy "track IDs" to guess base lap times.
-    laps['LapTimeDelta'] = laps['LapTimeSeconds'] - laps['TeamBaselinePace']
+    # Use a known circuit baseline shared with inference. This avoids using
+    # the held-out session's complete lap history to construct either X or y.
+    circuit_key = resolve_circuit_key(circuit_name)
+    target_baseline = TRACK_BASE_PACE.get(circuit_key, 90.0)
+    laps['LapTimeDelta'] = laps['LapTimeSeconds'] - target_baseline
     
     # 12. Final Feature Selection
     features = [
@@ -164,12 +257,12 @@ def preprocess_laps(session):
         'LapNumber',
         'TyreLife',
         'TyreLifeKM',
-        'StintLength',
-        'NormalizedTyreLife',
         'TyreLifeSquared',
         'FuelLoad',
+        'FuelLoadMissing',
         'Compound',
         'Stint',
+        'SessionCode',
         'TrackType',
         'IsWet',
         'AirTemp',
@@ -177,9 +270,6 @@ def preprocess_laps(session):
         'Humidity',
         'Rainfall',
         'WindSpeed',
-        'TeamBaselinePace',
-        'FieldBaselinePace',
-        'RelativePace',
         # Source-backed track characteristic features (7)
         'traction',
         'tyre_stress',
@@ -197,7 +287,6 @@ def preprocess_laps(session):
         'track_temp_x_tyre_stress',
         'tire_age_x_traction',
         'tire_age_x_lateral_load',
-        'normalized_life_x_tyre_stress',
         'soft_age_interaction',
         'medium_age_interaction',
         'hard_age_interaction',
@@ -208,28 +297,35 @@ def preprocess_laps(session):
         'EventName',
         'LapTimeDelta'  # Target
     ]
+
+    if FUTURE_INFORMATION_FEATURES.intersection(features):
+        raise RuntimeError("Future-information features leaked into the training schema")
     
     # Filter standard numerical/categorical columns
     # We might have missing values from the merge or calculations
     df = laps[features].copy()
     
-    # Handle categoricals: Enforce fixed categories to ensure feature alignment across models
-    # This prevents 'Medium' only models from failing on 'Slow' speed track simulations.
-    ALL_COMPOUNDS = ['SOFT', 'MEDIUM', 'HARD', 'INTERMEDIATE', 'WET']
-    ALL_TRACK_TYPES = ['Slow', 'Medium', 'Fast']
-    
-    df['Compound'] = pd.Categorical(df['Compound'], categories=ALL_COMPOUNDS)
-    df['TrackType'] = pd.Categorical(df['TrackType'], categories=ALL_TRACK_TYPES)
-    
-    categorical_cols = ['Driver', 'Team', 'Compound', 'TrackType', 'EventName']
-    df = pd.get_dummies(df, columns=categorical_cols, drop_first=False)
-    
-    # Boolean to Int
+    # Preserve categorical values in their canonical raw form. Encoding is
+    # fitted later inside each chronological training fold so held-out events
+    # cannot alter the feature schema and unknown categories are safe.
+    categorical_cols = ['Driver', 'Team', 'Compound', 'TrackType', 'SessionCode']
+    for column in categorical_cols:
+        df[column] = df[column].astype(str)
+
+    # Boolean to Int. Categorical columns remain strings for the fitted
+    # ColumnTransformer/OneHotEncoder.
     df['IsWet'] = df['IsWet'].astype(int)
     if 'Rainfall' in df.columns:
         df['Rainfall'] = df['Rainfall'].astype(int)
+
+    # Keep the FP2 missing-fuel state explicit while giving estimators a
+    # finite numeric value. FuelLoadMissing tells the model that zero is not
+    # an observed empty tank.
+    df['FuelLoad'] = df['FuelLoad'].fillna(0.0)
         
     df.dropna(inplace=True)
+    audit["final_rows"] = int(len(df))
+    df.attrs["filter_audit"] = audit
     
     return df
 
