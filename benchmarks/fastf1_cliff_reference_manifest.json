@@ -1,0 +1,118 @@
+{
+  "schema_version": 1,
+  "suite_name": "FastF1 tire cliff reference dataset",
+  "description": "Dry-race calibration and untouched holdout events for constructing manually reviewed tire-cliff references.",
+  "cleaning_config": {
+    "minimum_clean_laps": 8,
+    "maximum_removed_fraction": 0.4,
+    "fuel_burn_sec_per_race_lap": 0.07,
+    "outlier_minimum_slow_sec": 6.0,
+    "outlier_minimum_fast_sec": 3.0,
+    "outlier_mad_multiplier": 4.0
+  },
+  "reference_config": {
+    "minimum_segment_laps": 5,
+    "minimum_pre_cliff_slope_sec_per_lap": -0.05,
+    "minimum_post_cliff_slope_sec_per_lap": 0.08,
+    "minimum_slope_increase_sec_per_lap": 0.08,
+    "minimum_fit_improvement_ratio": 0.2
+  },
+  "races": [
+    {
+      "id": "calibration-2023-bahrain",
+      "split": "calibration",
+      "season": 2023,
+      "event_name": "Bahrain Grand Prix",
+      "session": "R",
+      "tags": ["high_degradation", "hot", "traction"]
+    },
+    {
+      "id": "calibration-2023-monaco",
+      "split": "calibration",
+      "season": 2023,
+      "event_name": "Monaco Grand Prix",
+      "session": "R",
+      "tags": ["street", "low_degradation"]
+    },
+    {
+      "id": "calibration-2023-british",
+      "split": "calibration",
+      "season": 2023,
+      "event_name": "British Grand Prix",
+      "session": "R",
+      "tags": ["high_speed", "cool"]
+    },
+    {
+      "id": "calibration-2023-hungarian",
+      "split": "calibration",
+      "season": 2023,
+      "event_name": "Hungarian Grand Prix",
+      "session": "R",
+      "tags": ["hot", "thermal", "high_downforce"]
+    },
+    {
+      "id": "calibration-2023-italian",
+      "split": "calibration",
+      "season": 2023,
+      "event_name": "Italian Grand Prix",
+      "session": "R",
+      "tags": ["low_degradation", "high_speed"]
+    },
+    {
+      "id": "calibration-2023-qatar",
+      "split": "calibration",
+      "season": 2023,
+      "event_name": "Qatar Grand Prix",
+      "session": "R",
+      "tags": ["hot", "high_lateral_load"]
+    },
+    {
+      "id": "holdout-2024-australian",
+      "split": "holdout",
+      "season": 2024,
+      "event_name": "Australian Grand Prix",
+      "session": "R",
+      "tags": ["street", "medium_degradation"]
+    },
+    {
+      "id": "holdout-2024-japanese",
+      "split": "holdout",
+      "season": 2024,
+      "event_name": "Japanese Grand Prix",
+      "session": "R",
+      "tags": ["high_speed", "cool", "high_lateral_load"]
+    },
+    {
+      "id": "holdout-2024-canadian",
+      "split": "holdout",
+      "season": 2024,
+      "event_name": "Canadian Grand Prix",
+      "session": "R",
+      "tags": ["street", "low_degradation", "braking"]
+    },
+    {
+      "id": "holdout-2024-spanish",
+      "split": "holdout",
+      "season": 2024,
+      "event_name": "Spanish Grand Prix",
+      "session": "R",
+      "tags": ["hot", "high_lateral_load"]
+    },
+    {
+      "id": "holdout-2024-belgian",
+      "split": "holdout",
+      "season": 2024,
+      "event_name": "Belgian Grand Prix",
+      "session": "R",
+      "tags": ["high_speed", "cool"]
+    },
+    {
+      "id": "holdout-2024-singapore",
+      "split": "holdout",
+      "season": 2024,
+      "event_name": "Singapore Grand Prix",
+      "session": "R",
+      "tags": ["street", "hot", "high_downforce"]
+    }
+  ]
+}

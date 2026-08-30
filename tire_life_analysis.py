@@ -38,6 +38,17 @@ DEFAULT_CONFIG = {
     "cliff_baseline_delta": 0.3,      # Lap time must be this much worse than baseline (s) (was 0.5)
     "cliff_persistence_laps": 2,      # Consecutive laps the rule must hold (was 3)
     "cliff_min_lap": 5,               # Earliest lap a cliff can be reported
+    "cliff_detection_method": "sustained",  # "sustained", "piecewise", or "hybrid"
+
+    # --- Rolling-Trend Sustained Cliff Detection ---
+    "rolling_trend_window": 4,
+    "rolling_min_slope_increase": 0.05,
+    "rolling_min_fit_improvement_ratio": 0.20,
+
+    # --- Piecewise / Hybrid Cliff Detection ---
+    "piecewise_min_segment_laps": 4,
+    "piecewise_min_slope_increase": 0.08,
+    "piecewise_min_improvement_ratio": 0.20,
 
     # --- Strategy Useful Life ---
     "pit_loss_sec": 22.0,             # Fallback pit loss if track-specific unavailable
@@ -143,6 +154,7 @@ def detect_performance_cliff(
         return {
             "performance_cliff_lap": None,
             "cliff_confidence": None,
+            "cliff_method": "sustained",
             "cliff_reason": "insufficient data (fewer than 10 laps)",
         }
 
@@ -187,6 +199,7 @@ def detect_performance_cliff(
                 return {
                     "performance_cliff_lap": int(cliff_lap),
                     "cliff_confidence": "high" if consecutive >= persist + 1 else "medium",
+                    "cliff_method": "sustained",
                     "cliff_reason": (
                         f"sustained acceleration detected: slope>{slope_thresh:.2f}s/lap, "
                         f"curvature>{curve_thresh:.2f}, for {consecutive} consecutive laps"
@@ -200,7 +213,325 @@ def detect_performance_cliff(
     return {
         "performance_cliff_lap": None,
         "cliff_confidence": None,
+        "cliff_method": "sustained",
         "cliff_reason": "no clear performance cliff detected",
+    }
+
+
+# --------------------------------------------------------------------------- #
+#  2B. ROLLING-TREND SUSTAINED CLIFF DETECTION                                 #
+# --------------------------------------------------------------------------- #
+def _linear_trend(values: np.ndarray) -> tuple[float, float]:
+    """Return the fitted slope and residual sum of squares for one window."""
+    arr = np.asarray(values, dtype=float)
+    x = np.arange(len(arr), dtype=float)
+    x_centered = x - float(np.mean(x))
+    y_mean = float(np.mean(arr))
+    denominator = float(np.dot(x_centered, x_centered))
+    slope = (
+        0.0
+        if denominator <= 1e-12
+        else float(np.dot(x_centered, arr - y_mean) / denominator)
+    )
+    intercept = y_mean - slope * float(np.mean(x))
+    residuals = arr - (intercept + slope * x)
+    return slope, float(np.dot(residuals, residuals))
+
+
+def _rolling_sustained_candidate(
+    arr: np.ndarray,
+    breakpoint: int,
+    cfg: dict,
+    baseline: float,
+) -> dict:
+    """Measure the local trend change around one zero-indexed breakpoint."""
+    window = int(cfg["rolling_trend_window"])
+    pre = arr[breakpoint - window:breakpoint]
+    post = arr[breakpoint:breakpoint + window]
+    local = arr[breakpoint - window:breakpoint + window]
+
+    pre_slope, pre_sse = _linear_trend(pre)
+    post_slope, post_sse = _linear_trend(post)
+    _, single_sse = _linear_trend(local)
+    split_sse = pre_sse + post_sse
+    fit_improvement = (
+        0.0
+        if single_sse <= 1e-12
+        else max(0.0, min(1.0, 1.0 - split_sse / single_sse))
+    )
+    slope_increase = post_slope - pre_slope
+    post_step_median = float(np.median(np.diff(post)))
+    supported_delta = float(post[-1] - baseline)
+
+    qualifies = (
+        post_slope >= float(cfg["cliff_slope_threshold"])
+        and post_step_median >= float(cfg["cliff_slope_threshold"])
+        and slope_increase >= float(cfg["rolling_min_slope_increase"])
+        and supported_delta >= float(cfg["cliff_baseline_delta"])
+        and fit_improvement
+        >= float(cfg["rolling_min_fit_improvement_ratio"])
+    )
+    return {
+        "breakpoint": breakpoint,
+        "pre_slope": pre_slope,
+        "post_slope": post_slope,
+        "post_step_median": post_step_median,
+        "slope_increase": slope_increase,
+        "supported_delta": supported_delta,
+        "fit_improvement_ratio": fit_improvement,
+        "qualifies": qualifies,
+    }
+
+
+def detect_rolling_sustained_performance_cliff(
+    smoothed_times: np.ndarray,
+    config: dict = None,
+) -> dict:
+    """Detect a persistent local increase in the tire degradation trend.
+
+    Unlike the legacy sustained detector, this candidate does not threshold
+    noisy pointwise curvature. It compares short linear trends before and
+    after each possible cliff, requires the split to improve the local fit,
+    and confirms the signal at consecutive candidate laps.
+    """
+    cfg = {**DEFAULT_CONFIG, **(config or {})}
+    arr = np.asarray(smoothed_times, dtype=float)
+    n = len(arr)
+    window = int(cfg["rolling_trend_window"])
+    persistence = int(cfg["cliff_persistence_laps"])
+    min_lap = int(cfg["cliff_min_lap"])
+
+    if window < 2:
+        raise ValueError("rolling_trend_window must be at least 2")
+    if persistence < 1:
+        raise ValueError("cliff_persistence_laps must be at least 1")
+
+    first_breakpoint = max(window, min_lap - 1)
+    last_breakpoint = n - window - persistence + 1
+    if last_breakpoint < first_breakpoint:
+        return {
+            "performance_cliff_lap": None,
+            "cliff_confidence": None,
+            "cliff_method": "rolling_sustained",
+            "cliff_reason": (
+                "insufficient data for rolling pre- and post-cliff trends"
+            ),
+        }
+
+    baseline_window = min(int(cfg["cliff_baseline_window"]), n)
+    baseline = float(np.mean(arr[:baseline_window]))
+    qualifying_run = []
+
+    for breakpoint in range(first_breakpoint, last_breakpoint + 1):
+        candidate = _rolling_sustained_candidate(
+            arr,
+            breakpoint,
+            cfg,
+            baseline,
+        )
+        if candidate["qualifies"]:
+            qualifying_run.append(candidate)
+        else:
+            qualifying_run = []
+
+        if len(qualifying_run) < persistence:
+            continue
+
+        first = qualifying_run[-persistence]
+        strong_slope_change = (
+            first["slope_increase"]
+            >= 2 * float(cfg["rolling_min_slope_increase"])
+        )
+        strong_fit_improvement = (
+            first["fit_improvement_ratio"]
+            >= min(
+                1.0,
+                2 * float(cfg["rolling_min_fit_improvement_ratio"]),
+            )
+        )
+        confidence = (
+            "high"
+            if strong_slope_change and strong_fit_improvement
+            else "medium"
+        )
+        return {
+            "performance_cliff_lap": int(first["breakpoint"] + 1),
+            "cliff_confidence": confidence,
+            "cliff_method": "rolling_sustained",
+            "cliff_reason": (
+                "persistent rolling trend increase detected: "
+                f"{first['pre_slope']:.3f}s/lap to "
+                f"{first['post_slope']:.3f}s/lap; "
+                f"median supported step "
+                f"{first['post_step_median']:.3f}s; "
+                f"slope increase {first['slope_increase']:.3f}s/lap; "
+                f"local fit improvement "
+                f"{first['fit_improvement_ratio']:.1%}; "
+                f"{persistence} consecutive candidate laps"
+            ),
+        }
+
+    return {
+        "performance_cliff_lap": None,
+        "cliff_confidence": None,
+        "cliff_method": "rolling_sustained",
+        "cliff_reason": "no persistent rolling degradation increase detected",
+    }
+
+
+# --------------------------------------------------------------------------- #
+#  2C. PIECEWISE-LINEAR CLIFF DETECTION                                        #
+# --------------------------------------------------------------------------- #
+def detect_piecewise_performance_cliff(
+    smoothed_times: np.ndarray,
+    config: dict = None,
+) -> dict:
+    """Detect a cliff as a statistically useful change in degradation slope."""
+    cfg = {**DEFAULT_CONFIG, **(config or {})}
+    arr = np.asarray(smoothed_times, dtype=float)
+    n = len(arr)
+    min_segment = int(cfg["piecewise_min_segment_laps"])
+
+    if n < max(10, min_segment * 2):
+        return {
+            "performance_cliff_lap": None,
+            "cliff_confidence": None,
+            "cliff_method": "piecewise",
+            "cliff_reason": "insufficient data for two piecewise segments",
+        }
+
+    x = np.arange(n, dtype=float)
+    single_fit = np.polyfit(x, arr, 1)
+    single_residuals = arr - np.polyval(single_fit, x)
+    single_sse = float(np.sum(single_residuals ** 2))
+
+    best = None
+    for breakpoint in range(min_segment, n - min_segment + 1):
+        pre_x = x[:breakpoint]
+        post_x = x[breakpoint:]
+        pre_fit = np.polyfit(pre_x, arr[:breakpoint], 1)
+        post_fit = np.polyfit(post_x, arr[breakpoint:], 1)
+        pre_slope = float(pre_fit[0])
+        post_slope = float(post_fit[0])
+        slope_increase = post_slope - pre_slope
+
+        if post_slope < cfg["cliff_slope_threshold"]:
+            continue
+        if slope_increase < cfg["piecewise_min_slope_increase"]:
+            continue
+
+        pre_sse = float(
+            np.sum((arr[:breakpoint] - np.polyval(pre_fit, pre_x)) ** 2)
+        )
+        post_sse = float(
+            np.sum((arr[breakpoint:] - np.polyval(post_fit, post_x)) ** 2)
+        )
+        combined_sse = pre_sse + post_sse
+        if best is None or combined_sse < best["combined_sse"]:
+            best = {
+                "breakpoint": breakpoint,
+                "pre_slope": pre_slope,
+                "post_slope": post_slope,
+                "slope_increase": slope_increase,
+                "combined_sse": combined_sse,
+            }
+
+    if best is None:
+        return {
+            "performance_cliff_lap": None,
+            "cliff_confidence": None,
+            "cliff_method": "piecewise",
+            "cliff_reason": "no material piecewise slope increase detected",
+        }
+
+    if single_sse <= 1e-12:
+        improvement_ratio = 0.0
+    else:
+        improvement_ratio = max(
+            0.0, min(1.0, 1.0 - best["combined_sse"] / single_sse)
+        )
+    minimum_improvement = cfg["piecewise_min_improvement_ratio"]
+    if improvement_ratio < minimum_improvement:
+        return {
+            "performance_cliff_lap": None,
+            "cliff_confidence": None,
+            "cliff_method": "piecewise",
+            "cliff_reason": (
+                "piecewise fit did not improve enough over a single degradation trend"
+            ),
+        }
+
+    strong_slope_change = (
+        best["slope_increase"] >= 2 * cfg["piecewise_min_slope_increase"]
+    )
+    strong_fit_improvement = improvement_ratio >= min(
+        1.0, 2 * minimum_improvement
+    )
+    confidence = (
+        "high" if strong_slope_change and strong_fit_improvement else "medium"
+    )
+    return {
+        "performance_cliff_lap": int(best["breakpoint"] + 1),
+        "cliff_confidence": confidence,
+        "cliff_method": "piecewise",
+        "cliff_reason": (
+            "piecewise slope change detected: "
+            f"{best['pre_slope']:.3f}s/lap to "
+            f"{best['post_slope']:.3f}s/lap; "
+            f"fit improvement {improvement_ratio:.1%}"
+        ),
+    }
+
+
+def detect_hybrid_performance_cliff(
+    smoothed_times: np.ndarray,
+    config: dict = None,
+) -> dict:
+    """Confirm a piecewise breakpoint with sustained post-break degradation."""
+    cfg = {**DEFAULT_CONFIG, **(config or {})}
+    piecewise = detect_piecewise_performance_cliff(smoothed_times, cfg)
+    cliff_lap = piecewise["performance_cliff_lap"]
+    if cliff_lap is None:
+        return {
+            **piecewise,
+            "cliff_method": "hybrid",
+            "cliff_reason": f"hybrid rejected: {piecewise['cliff_reason']}",
+        }
+
+    arr = np.asarray(smoothed_times, dtype=float)
+    slope = np.gradient(arr)
+    baseline_window = min(cfg["cliff_baseline_window"], len(arr))
+    baseline = float(np.mean(arr[:baseline_window]))
+    start_index = cliff_lap - 1
+    persistence = int(cfg["cliff_persistence_laps"])
+    end_index = start_index + persistence
+
+    if end_index > len(arr):
+        confirmed = False
+    else:
+        confirmed = all(
+            slope[index] > cfg["cliff_slope_threshold"]
+            and arr[index] - baseline > cfg["cliff_baseline_delta"]
+            for index in range(start_index, end_index)
+        )
+
+    if not confirmed:
+        return {
+            "performance_cliff_lap": None,
+            "cliff_confidence": None,
+            "cliff_method": "hybrid",
+            "cliff_reason": (
+                "hybrid rejected: piecewise breakpoint lacked sustained "
+                "post-break degradation"
+            ),
+        }
+
+    return {
+        **piecewise,
+        "cliff_method": "hybrid",
+        "cliff_reason": (
+            f"hybrid confirmed at lap {cliff_lap}: {piecewise['cliff_reason']}"
+        ),
     }
 
 
@@ -256,6 +587,7 @@ def recommend_strategy_useful_life(
     smoothed_times: np.ndarray,
     pit_loss: float = None,
     config: dict = None,
+    fuel_correction: bool = True,
 ) -> dict:
     """
     Determines the last lap where staying out is still a better strategic
@@ -269,6 +601,9 @@ def recommend_strategy_useful_life(
         Track-specific pit-stop time loss. Falls back to config default.
     config : dict, optional
         Override pit_loss_sec, fuel_burn_sec_per_lap, etc.
+    fuel_correction : bool
+        Add back the fuel-mass benefit when raw observed lap times contain it.
+        Set False for model curves generated at a fixed lap and fuel load.
 
     Returns
     -------
@@ -284,7 +619,11 @@ def recommend_strategy_useful_life(
     n = len(arr)
 
     # --- Cumulative degradation cost ---
-    cum_cost = estimate_degradation_cost(arr, fuel_correction=True, config=cfg)
+    cum_cost = estimate_degradation_cost(
+        arr,
+        fuel_correction=fuel_correction,
+        config=cfg,
+    )
 
     # --- Find the lap where cumulative cost exceeds pit loss ---
     crossover_lap = None
@@ -322,6 +661,7 @@ def analyze_tire_life(
     raw_times: list | np.ndarray,
     pit_loss: float = None,
     config: dict = None,
+    fuel_correction: bool = True,
 ) -> dict:
     """
     Master function: runs smoothing, performance cliff detection, and
@@ -335,6 +675,9 @@ def analyze_tire_life(
         Track-specific pit-stop time loss.
     config : dict, optional
         Override any DEFAULT_CONFIG value.
+    fuel_correction : bool
+        Whether to add a fuel-burn correction to strategic degradation cost.
+        Model curves simulated at fixed fuel load must set this to False.
 
     Returns
     -------
@@ -352,10 +695,27 @@ def analyze_tire_life(
     smoothed = smooth_lap_times(raw, cfg)
 
     # ---- Step 2: Performance cliff (tire physics) ----
-    cliff_result = detect_performance_cliff(smoothed, cfg)
+    cliff_method = cfg["cliff_detection_method"]
+    detectors = {
+        "sustained": detect_performance_cliff,
+        "rolling_sustained": detect_rolling_sustained_performance_cliff,
+        "piecewise": detect_piecewise_performance_cliff,
+        "hybrid": detect_hybrid_performance_cliff,
+    }
+    if cliff_method not in detectors:
+        raise ValueError(
+            "cliff_detection_method must be sustained, rolling_sustained, "
+            "piecewise, or hybrid"
+        )
+    cliff_result = detectors[cliff_method](smoothed, cfg)
 
     # ---- Step 3: Strategy useful life (race strategy) ----
-    strategy_result = recommend_strategy_useful_life(smoothed, pit_loss, cfg)
+    strategy_result = recommend_strategy_useful_life(
+        smoothed,
+        pit_loss,
+        cfg,
+        fuel_correction=fuel_correction,
+    )
 
     # ---- Step 4: Baseline degradation rate ----
     eval_start = min(2, n - 1)
@@ -374,6 +734,7 @@ def analyze_tire_life(
         # Performance cliff (tire physics)
         "performance_cliff_lap": cliff_result["performance_cliff_lap"],
         "cliff_confidence": cliff_result["cliff_confidence"],
+        "cliff_method": cliff_result["cliff_method"],
         "cliff_reason": cliff_result["cliff_reason"],
 
         # Strategy useful life (race strategy)

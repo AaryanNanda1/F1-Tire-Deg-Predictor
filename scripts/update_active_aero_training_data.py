@@ -140,8 +140,8 @@ def main() -> int:
         store.validate(verify_hashes=True)
         payload = {
             "status": "failed"
-            if active_result["failures"]
-            or prior_result["failures"]
+            if active_result["mandatory_failures"]
+            or prior_result["mandatory_failures"]
             else "ok",
             "as_of": as_of.isoformat(),
             "store_dir": str(args.store_dir),

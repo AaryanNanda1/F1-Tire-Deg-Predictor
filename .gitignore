@@ -43,6 +43,8 @@ MANIFEST
 # Local model artifacts
 models/*
 cache/
+calibration_work/
+training_data/ground_effect/
 *.log
 *.joblib
 !models/*.joblib

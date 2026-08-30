@@ -154,6 +154,80 @@ class StrategySimulatorWetToDryTest(unittest.TestCase):
 
         self.assertAlmostEqual(heavy_wet_delta - light_wet_delta, 5.0)
 
+    def test_strategy_cost_components_sum_to_expected_total(self):
+        profiles = self._build_profiles()
+        for profile in profiles["compounds"].values():
+            profile["performance_cliff_lap"] = 2
+            profile["cliff_confidence"] = "high"
+            profile["strategy_confidence"] = "high"
+        simulator = StrategySimulator(profiles)
+
+        strategy = simulator._eval_strategy(
+            ["SOFT", "MEDIUM"],
+            [5, 5],
+            position=1,
+            laps_to_complete=10,
+            weather_condition="dry",
+        )
+
+        component_total = sum(
+            strategy[field]
+            for field in (
+                "base_lap_time_cost_sec",
+                "degradation_cost_sec",
+                "weather_mismatch_cost_sec",
+                "pit_loss_cost_sec",
+                "traffic_cost_sec",
+                "cliff_risk_cost_sec",
+            )
+        )
+        self.assertAlmostEqual(component_total, strategy["total_delta"])
+        self.assertEqual(
+            strategy["expected_total_time_sec"],
+            strategy["risk_adjusted_total_time_sec"],
+        )
+        self.assertGreater(
+            strategy["max_performance_cliff_overshoot_laps"], 0
+        )
+        self.assertGreater(strategy["max_useful_life_overshoot_laps"], 0)
+
+    def test_formatted_strategy_exposes_stint_diagnostics(self):
+        profiles = self._build_ranked_profiles()
+        for profile in profiles["compounds"].values():
+            profile["performance_cliff_lap"] = 6
+            profile["cliff_confidence"] = "medium"
+            profile["strategy_confidence"] = "high"
+        simulator = StrategySimulator(profiles)
+
+        result = simulator.generate_strategies(
+            total_laps=10,
+            grid_pos=1,
+            weather_condition="dry",
+            include_candidate_diagnostics=True,
+        )
+
+        best = result["best_strategy"]
+        self.assertEqual(best["strategy_role"], "mathematical_fastest")
+        self.assertEqual(best["score_rank"], 1)
+        self.assertIn("cost_breakdown", best)
+        self.assertIn("performance_cliff_lap", best["stints_data"][0])
+        self.assertEqual(len(result["candidate_diagnostics"]), 5)
+
+    def test_missing_performance_cliff_is_reported_as_unknown(self):
+        simulator = StrategySimulator(self._build_profiles())
+
+        strategy = simulator._eval_strategy(
+            ["SOFT", "MEDIUM"],
+            [5, 5],
+            position=1,
+            laps_to_complete=10,
+            weather_condition="dry",
+        )
+
+        self.assertIsNone(
+            strategy["max_performance_cliff_overshoot_laps"]
+        )
+
     def test_allows_switch_from_wet_to_single_dry_compound_in_dry_conditions(self):
         profiles = {
             "compounds": {

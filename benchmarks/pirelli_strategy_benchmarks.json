@@ -1,0 +1,525 @@
+{
+  "schema_version": 1,
+  "suite_name": "Pirelli strategy calibration benchmark",
+  "description": "Official Pirelli strategy and tire-life evidence used as an external evaluation benchmark. Missing fields are intentionally null rather than inferred.",
+  "longest_stint_semantics": "A reported longest stint is contextual evidence of demonstrated capability, not an exact useful-life or performance-cliff label.",
+  "races": [
+    {
+      "id": "2022-bahrain-grand-prix",
+      "split": "calibration",
+      "season": 2022,
+      "event_name": "Bahrain Grand Prix",
+      "track_name": "Bahrain International Circuit (Bahrain)",
+      "race_laps": 57,
+      "simulation_input": {
+        "driver": "LEC",
+        "team": "Ferrari",
+        "grid_pos": 1,
+        "race_date": "2022-03-20",
+        "race_time": "18:00"
+      },
+      "pirelli": {
+        "compound_mapping": {
+          "HARD": "C1",
+          "MEDIUM": "C2",
+          "SOFT": "C3"
+        },
+        "recommended_strategies": [
+          {
+            "label": "fastest",
+            "stop_count": 2,
+            "compounds": [
+              "SOFT",
+              "SOFT",
+              "MEDIUM"
+            ],
+            "stint_laps": null,
+            "pit_windows": null
+          }
+        ],
+        "source_url": "https://press.pirelli.com/2022-bahrain-grand-prix---saturday/",
+        "evidence": "Pirelli expected a two-stop race and identified two Soft sets plus one Medium set as the fastest option."
+      },
+      "observed": {
+        "reference_strategies": [
+          {
+            "driver": "LEC",
+            "stop_count": 3,
+            "compounds": [
+              "SOFT",
+              "SOFT",
+              "MEDIUM",
+              "SOFT"
+            ],
+            "stint_laps": null,
+            "pit_windows": null
+          }
+        ],
+        "longest_stints": {},
+        "race_interruptions": [
+          "late_safety_car"
+        ],
+        "source_url": "https://press.pirelli.com/2022-bahrain-grand-prix---sunday/",
+        "evidence": "Leclerc used Soft-Soft-Medium before a late Safety Car prompted a third stop for Soft."
+      }
+    },
+    {
+      "id": "2025-austrian-grand-prix",
+      "split": "calibration",
+      "season": 2025,
+      "event_name": "Austrian Grand Prix",
+      "track_name": "Red Bull Ring (Austria)",
+      "race_laps": 70,
+      "simulation_input": {
+        "driver": "NOR",
+        "team": "McLaren",
+        "grid_pos": 1,
+        "race_date": "2025-06-29",
+        "race_time": "15:00"
+      },
+      "pirelli": {
+        "compound_mapping": {
+          "HARD": "C3",
+          "MEDIUM": "C4",
+          "SOFT": "C5"
+        },
+        "recommended_strategies": [
+          {
+            "label": "predicted_fastest_stop_count",
+            "stop_count": 2,
+            "compounds": null,
+            "stint_laps": null,
+            "pit_windows": null
+          }
+        ],
+        "source_url": "https://press.pirelli.com/a-super-spielberg-saturday-for-norris/",
+        "compound_source_url": "https://press.pirelli.com/both-new-and-familiar-for-spielberg-to-budapest/",
+        "evidence": "The Saturday strategy material identified the expected race approaches; Pirelli's post-race analysis states that the predicted two-stop strategy was fastest."
+      },
+      "observed": {
+        "reference_strategies": [],
+        "longest_stints": {
+          "HARD": {
+            "laps": 41,
+            "driver": "HAD"
+          },
+          "MEDIUM": {
+            "laps": 33,
+            "driver": "ALO"
+          }
+        },
+        "race_interruptions": [],
+        "source_url": "https://press.pirelli.com/mclaren-majestic-in-austria/",
+        "evidence": "Pirelli reported Hadjar's 41-lap Hard stint and Alonso's 33-lap Medium stint as the longest for those compounds."
+      }
+    },
+    {
+      "id": "2023-bahrain-grand-prix",
+      "split": "calibration",
+      "season": 2023,
+      "event_name": "Bahrain Grand Prix",
+      "track_name": "Bahrain International Circuit (Bahrain)",
+      "race_laps": 57,
+      "simulation_input": {
+        "driver": "VER",
+        "team": "Red Bull Racing",
+        "grid_pos": 1,
+        "race_date": "2023-03-05",
+        "race_time": "18:00"
+      },
+      "pirelli": {
+        "compound_mapping": {
+          "HARD": "C1",
+          "MEDIUM": "C2",
+          "SOFT": "C3"
+        },
+        "recommended_strategies": [
+          {
+            "label": "fastest",
+            "stop_count": 2,
+            "compounds": [
+              "SOFT",
+              "HARD",
+              "SOFT"
+            ],
+            "stint_laps": null,
+            "pit_windows": null
+          },
+          {
+            "label": "hard-finish-alternative",
+            "stop_count": 2,
+            "compounds": [
+              "SOFT",
+              "HARD",
+              "HARD"
+            ],
+            "stint_laps": null,
+            "pit_windows": null
+          }
+        ],
+        "source_url": "https://press.pirelli.com/2023-bahrain-grand-prix---saturday/",
+        "evidence": "Pirelli forecast a two-stop race, with Soft-Hard-Soft theoretically fastest and Soft-Hard-Hard also available."
+      },
+      "observed": {
+        "reference_strategies": [
+          {
+            "driver": "VER",
+            "stop_count": 2,
+            "compounds": [
+              "SOFT",
+              "SOFT",
+              "HARD"
+            ],
+            "stint_laps": null,
+            "pit_windows": null
+          }
+        ],
+        "longest_stints": {},
+        "race_interruptions": [],
+        "source_url": "https://press.pirelli.com/2023-bahrain-grand-prix---sunday/",
+        "evidence": "Red Bull used the alternative Soft-Soft-Hard sequence, while all teams made at least two stops."
+      }
+    },
+    {
+      "id": "2023-monaco-grand-prix",
+      "split": "calibration",
+      "season": 2023,
+      "event_name": "Monaco Grand Prix",
+      "track_name": "Circuit de Monaco (Monaco)",
+      "race_laps": 78,
+      "simulation_input": {
+        "driver": "VER",
+        "team": "Red Bull Racing",
+        "grid_pos": 1,
+        "race_date": "2023-05-28",
+        "race_time": "15:00"
+      },
+      "pirelli": {
+        "compound_mapping": {
+          "HARD": "C3",
+          "MEDIUM": "C4",
+          "SOFT": "C5"
+        },
+        "recommended_strategies": [
+          {
+            "label": "fastest-dry",
+            "stop_count": 1,
+            "compounds": [
+              "MEDIUM",
+              "HARD"
+            ],
+            "stint_laps": null,
+            "pit_windows": [
+              [
+                20,
+                25
+              ]
+            ]
+          },
+          {
+            "label": "soft-start-alternative",
+            "stop_count": 1,
+            "compounds": [
+              "SOFT",
+              "HARD"
+            ],
+            "stint_laps": null,
+            "pit_windows": [
+              [
+                15,
+                20
+              ]
+            ]
+          }
+        ],
+        "source_url": "https://press.pirelli.com/2023-monaco-grand-prix--saturday-0/",
+        "evidence": "Pirelli expected a one-stop dry race, primarily Medium-Hard with a lap-20-to-25 window, or Soft-Hard between laps 15 and 20."
+      },
+      "observed": {
+        "reference_strategies": [
+          {
+            "driver": "VER",
+            "stop_count": 1,
+            "compounds": [
+              "MEDIUM",
+              "INTERMEDIATE"
+            ],
+            "stint_laps": [
+              55,
+              23
+            ],
+            "pit_windows": null
+          }
+        ],
+        "longest_stints": {
+          "MEDIUM": {
+            "laps": 55,
+            "driver": "VER"
+          },
+          "HARD": {
+            "laps": 56,
+            "driver": "MAG"
+          }
+        },
+        "race_interruptions": [
+          "late_rain"
+        ],
+        "source_url": "https://press.pirelli.com/2023-monaco-grand-prix--sunday-0/",
+        "evidence": "Rain replaced the planned dry second stint. Verstappen completed 55 laps on Medium before switching to Intermediate, while Magnussen reached 56 laps on Hard."
+      }
+    },
+    {
+      "id": "2023-british-grand-prix",
+      "split": "calibration",
+      "season": 2023,
+      "event_name": "British Grand Prix",
+      "track_name": "Silverstone Circuit (Great Britain)",
+      "race_laps": 52,
+      "simulation_input": {
+        "driver": "VER",
+        "team": "Red Bull Racing",
+        "grid_pos": 1,
+        "race_date": "2023-07-09",
+        "race_time": "15:00"
+      },
+      "pirelli": {
+        "compound_mapping": {
+          "HARD": "C1",
+          "MEDIUM": "C2",
+          "SOFT": "C3"
+        },
+        "recommended_strategies": [
+          {
+            "label": "predicted-fastest-stop-count",
+            "stop_count": 2,
+            "compounds": null,
+            "stint_laps": null,
+            "pit_windows": null
+          }
+        ],
+        "source_url": "https://press.pirelli.com/orange-and-papaya-party-in-silverstone-qualifying/",
+        "evidence": "Pirelli considered a two-stop strategy probably quickest and identified the Soft as a viable race compound."
+      },
+      "observed": {
+        "reference_strategies": [
+          {
+            "driver": "VER",
+            "stop_count": 1,
+            "compounds": [
+              "MEDIUM",
+              "SOFT"
+            ],
+            "stint_laps": null,
+            "pit_windows": null
+          }
+        ],
+        "longest_stints": {
+          "SOFT": {
+            "laps": 28,
+            "driver": "RUS"
+          },
+          "MEDIUM": {
+            "laps": 33,
+            "driver": "VER,HAM,NOR,ALO"
+          },
+          "HARD": {
+            "laps": 32,
+            "driver": "BOT"
+          }
+        },
+        "race_interruptions": [
+          "late_safety_car"
+        ],
+        "source_url": "https://press.pirelli.com/verstappen-wins-ahead-of-two-brits/",
+        "evidence": "Lower-than-expected degradation and a late Safety Car made one stop most common. Pirelli reported longest stints of 28 Soft, 33 Medium, and 32 Hard laps."
+      }
+    },
+    {
+      "id": "2023-hungarian-grand-prix",
+      "split": "calibration",
+      "season": 2023,
+      "event_name": "Hungarian Grand Prix",
+      "track_name": "Hungaroring (Hungary)",
+      "race_laps": 70,
+      "simulation_input": {
+        "driver": "VER",
+        "team": "Red Bull Racing",
+        "grid_pos": 2,
+        "race_date": "2023-07-23",
+        "race_time": "15:00"
+      },
+      "pirelli": {
+        "compound_mapping": {
+          "HARD": "C3",
+          "MEDIUM": "C4",
+          "SOFT": "C5"
+        },
+        "recommended_strategies": [
+          {
+            "label": "most-likely",
+            "stop_count": 2,
+            "compounds": [
+              "MEDIUM",
+              "HARD",
+              "HARD"
+            ],
+            "stint_laps": null,
+            "pit_windows": null
+          },
+          {
+            "label": "one-stop-at-limit",
+            "stop_count": 1,
+            "compounds": [
+              "HARD",
+              "MEDIUM"
+            ],
+            "stint_laps": null,
+            "pit_windows": null
+          }
+        ],
+        "source_url": "https://press.pirelli.com/maestro-lewis-plays-his-ninth-budapest-symphony/",
+        "evidence": "Pirelli expected Medium-Hard-Hard to be most likely. Hard-Medium was possible but considered at the limit for drop-off and tread life."
+      },
+      "observed": {
+        "reference_strategies": [
+          {
+            "driver": "VER",
+            "stop_count": 2,
+            "compounds": [
+              "MEDIUM",
+              "HARD",
+              "MEDIUM"
+            ],
+            "stint_laps": null,
+            "pit_windows": null
+          }
+        ],
+        "longest_stints": {
+          "HARD": {
+            "laps": 38,
+            "driver": "ALB"
+          },
+          "MEDIUM": {
+            "laps": 40,
+            "driver": "RIC"
+          },
+          "SOFT": {
+            "laps": 15,
+            "driver": "SAI"
+          }
+        },
+        "race_interruptions": [],
+        "source_url": "https://press.pirelli.com/verstappen-takes-red-bull-to-a-new-record/",
+        "evidence": "Every driver made two stops. Verstappen used Medium-Hard-Medium; Pirelli reported longest stints of 38 Hard, 40 Medium, and 15 Soft laps."
+      }
+    },
+    {
+      "id": "2023-italian-grand-prix",
+      "split": "calibration",
+      "season": 2023,
+      "event_name": "Italian Grand Prix",
+      "track_name": "Autodromo Nazionale Monza (Monza, Italy)",
+      "race_laps": 51,
+      "simulation_input": {
+        "driver": "VER",
+        "team": "Red Bull Racing",
+        "grid_pos": 2,
+        "race_date": "2023-09-03",
+        "race_time": "15:00"
+      },
+      "pirelli": {
+        "compound_mapping": {
+          "HARD": "C3",
+          "MEDIUM": "C4",
+          "SOFT": "C5"
+        },
+        "recommended_strategies": [
+          {
+            "label": "medium-start",
+            "stop_count": 1,
+            "compounds": [
+              "MEDIUM",
+              "HARD"
+            ],
+            "stint_laps": null,
+            "pit_windows": null
+          },
+          {
+            "label": "soft-start",
+            "stop_count": 1,
+            "compounds": [
+              "SOFT",
+              "HARD"
+            ],
+            "stint_laps": null,
+            "pit_windows": null
+          }
+        ],
+        "source_url": "https://press.pirelli.com/ferrari-fans-ecstatic-at-monza-as-sainz-takes-pole/",
+        "evidence": "Pirelli identified one stop as quickest, with Hard as the key second compound and either Medium or Soft possible at the start."
+      },
+      "observed": {
+        "reference_strategies": [
+          {
+            "driver": "VER",
+            "stop_count": 1,
+            "compounds": [
+              "MEDIUM",
+              "HARD"
+            ],
+            "stint_laps": null,
+            "pit_windows": null
+          }
+        ],
+        "longest_stints": {},
+        "race_interruptions": [
+          "aborted_start_reduced_race_distance"
+        ],
+        "source_url": "https://press.pirelli.com/ten-out-of-ten-for-verstappen-as-he-wins-again-in-monza-0/",
+        "evidence": "The one-stop prediction was confirmed. Medium and Hard dominated, Soft was unused, and early stoppers generally required a second stop."
+      }
+    },
+    {
+      "id": "2023-qatar-grand-prix",
+      "split": "calibration",
+      "season": 2023,
+      "event_name": "Qatar Grand Prix",
+      "track_name": "Lusail International Circuit (Qatar)",
+      "race_laps": 57,
+      "simulation_input": {
+        "driver": "VER",
+        "team": "Red Bull Racing",
+        "grid_pos": 1,
+        "race_date": "2023-10-08",
+        "race_time": "20:00"
+      },
+      "pirelli": {
+        "compound_mapping": {
+          "HARD": "C1",
+          "MEDIUM": "C2",
+          "SOFT": "C3"
+        },
+        "recommended_strategies": [
+          {
+            "label": "safety-rule-constrained",
+            "stop_count": 3,
+            "compounds": null,
+            "stint_laps": null,
+            "pit_windows": null
+          }
+        ],
+        "source_url": "https://press.pirelli.com/piastri-wins-the-sprint-verstappen-wins-the-championship/",
+        "evidence": "Post-Sprint inspection found sidewall micro-lacerations associated with kerb impacts, making the normal strategy forecast inapplicable."
+      },
+      "observed": {
+        "reference_strategies": [],
+        "longest_stints": {},
+        "race_interruptions": [
+          "fia_maximum_18_laps_per_tyre_set"
+        ],
+        "source_url": "https://press.pirelli.com/verstappen-celebrates-his-title-in-the-best-possible-way/",
+        "evidence": "The FIA imposed an 18-lap maximum per tyre set, forcing at least three stops. This is a safety constraint and is intentionally excluded from useful-life calibration."
+      }
+    }
+  ]
+}

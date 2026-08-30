@@ -126,11 +126,11 @@ class StrategySimulator:
         age_penalty = WET_TIRE_DRY_AGE_PENALTY_SEC[compound] * max(0.0, age - 1.0)
         return base_penalty + age_penalty
 
-    def _eval_stint(self, compound: str, length: int, position: int,
-                    start_age: float = 0.0, sc_laps: int = 0,
-                    sc_currently_out: bool = False,
-                    weather_condition: str = "dry"):
-        """Evaluate one stint, reusing identical stints across candidate strategies."""
+    def _eval_stint_components(self, compound: str, length: int, position: int,
+                               start_age: float = 0.0, sc_laps: int = 0,
+                               sc_currently_out: bool = False,
+                               weather_condition: str = "dry"):
+        """Evaluate a stint and return an auditable cost/overshoot breakdown."""
         cache_key = (
             compound,
             int(length),
@@ -148,28 +148,86 @@ class StrategySimulator:
             effective_age -= sc_laps * (1.0 - SC_WEAR_MULTIPLIER)
             effective_age = max(0.0, effective_age)
 
-        total_deg_delta = 0.0
+        effective_start_age = effective_age
+        fresh_lap_time = self._graphs[compound][1]
+        base_lap_time_cost = 0.0
+        degradation_cost = 0.0
+        weather_mismatch_cost = 0.0
         for lap_in_stint in range(length):
             wear_factor = DIRTY_AIR_WEAR_MULTIPLIER if position > 1 else 1.0
             if sc_currently_out and lap_in_stint < 3:
                 wear_factor *= SC_WEAR_MULTIPLIER
 
             effective_age += wear_factor
-            total_deg_delta += (
-                self._get_deg_time(compound, effective_age)
-                + self._wrong_condition_penalty(compound, effective_age, weather_condition)
+            predicted_lap_time = self._get_deg_time(compound, effective_age)
+            base_lap_time_cost += fresh_lap_time
+            degradation_cost += predicted_lap_time - fresh_lap_time
+            weather_mismatch_cost += self._wrong_condition_penalty(
+                compound, effective_age, weather_condition
             )
 
         useful_life = self._get_useful_life(compound)
-        result = (total_deg_delta, max(0, effective_age - useful_life))
+        performance_cliff = self._get_performance_cliff(compound)
+        useful_life_overshoot = max(0.0, effective_age - useful_life)
+        performance_cliff_overshoot = (
+            None
+            if performance_cliff is None
+            else max(0.0, effective_age - performance_cliff)
+        )
+        expected_lap_time_cost = (
+            base_lap_time_cost + degradation_cost + weather_mismatch_cost
+        )
+        result = {
+            "compound": compound,
+            "length_laps": int(length),
+            "effective_start_age_laps": effective_start_age,
+            "effective_end_age_laps": effective_age,
+            "base_lap_time_cost_sec": base_lap_time_cost,
+            "degradation_cost_sec": degradation_cost,
+            "weather_mismatch_cost_sec": weather_mismatch_cost,
+            "expected_lap_time_cost_sec": expected_lap_time_cost,
+            "performance_cliff_lap": performance_cliff,
+            "performance_cliff_confidence": self.profiles[compound].get(
+                "cliff_confidence"
+            ),
+            "performance_cliff_overshoot_laps": performance_cliff_overshoot,
+            "strategy_useful_life_lap": useful_life,
+            "strategy_useful_life_confidence": self.profiles[compound].get(
+                "strategy_confidence"
+            ),
+            "useful_life_overshoot_laps": useful_life_overshoot,
+        }
         self._stint_cache[cache_key] = result
         return result
+
+    def _eval_stint(self, compound: str, length: int, position: int,
+                    start_age: float = 0.0, sc_laps: int = 0,
+                    sc_currently_out: bool = False,
+                    weather_condition: str = "dry"):
+        """Backward-compatible compact stint result used by existing callers."""
+        components = self._eval_stint_components(
+            compound,
+            length,
+            position,
+            start_age=start_age,
+            sc_laps=sc_laps,
+            sc_currently_out=sc_currently_out,
+            weather_condition=weather_condition,
+        )
+        return (
+            components["expected_lap_time_cost_sec"],
+            components["useful_life_overshoot_laps"],
+        )
 
     def _get_useful_life(self, compound: str):
         """Returns the strategy useful life lap for a compound from degradation engine output."""
         return self.profiles[compound].get("strategy_useful_life_lap",
                     self.profiles[compound].get("recommended_max_life",
                     self.profiles[compound]["cliff_point_lap"]))
+
+    def _get_performance_cliff(self, compound: str):
+        """Return the physical performance cliff, if the detector found one."""
+        return self.profiles[compound].get("performance_cliff_lap")
 
     def _get_stint_cap(self, compound: str, mode: str = "optimal"):
         """
@@ -195,12 +253,17 @@ class StrategySimulator:
                        sc_currently_out: bool = False,
                        weather_condition: str = "dry"):
         """Evaluates total race delta time for a specific combination of stints."""
-        total_deg_delta = 0.0
-        max_cliff_overshoot = 0
-        max_future_cliff_overshoot = 0  # Overshoot on stints AFTER the inherited tire
+        base_lap_time_cost = 0.0
+        degradation_cost = 0.0
+        weather_mismatch_cost = 0.0
+        max_useful_life_overshoot = 0.0
+        max_future_useful_life_overshoot = 0.0
+        performance_cliff_overshoots = []
+        future_performance_cliff_overshoots = []
+        stint_diagnostics = []
         
         for idx, (compound, length) in enumerate(zip(compounds, stint_lengths)):
-            stint_delta, overshoot = self._eval_stint(
+            stint = self._eval_stint_components(
                 compound,
                 length,
                 position,
@@ -209,13 +272,29 @@ class StrategySimulator:
                 sc_currently_out=sc_currently_out if idx == 0 else False,
                 weather_condition=weather_condition,
             )
-            total_deg_delta += stint_delta
+            stint_diagnostics.append(stint)
+            base_lap_time_cost += stint["base_lap_time_cost_sec"]
+            degradation_cost += stint["degradation_cost_sec"]
+            weather_mismatch_cost += stint["weather_mismatch_cost_sec"]
 
-            if overshoot > max_cliff_overshoot:
-                max_cliff_overshoot = overshoot
-            # Track overshoot on fresh tire stints only (idx > 0 = after a pit stop)
-            if idx > 0 and overshoot > max_future_cliff_overshoot:
-                max_future_cliff_overshoot = overshoot
+            useful_overshoot = stint["useful_life_overshoot_laps"]
+            max_useful_life_overshoot = max(
+                max_useful_life_overshoot, useful_overshoot
+            )
+            performance_overshoot = stint[
+                "performance_cliff_overshoot_laps"
+            ]
+            if performance_overshoot is not None:
+                performance_cliff_overshoots.append(performance_overshoot)
+            # Track overshoot on future fresh-tire stints separately.
+            if idx > 0:
+                max_future_useful_life_overshoot = max(
+                    max_future_useful_life_overshoot, useful_overshoot
+                )
+                if performance_overshoot is not None:
+                    future_performance_cliff_overshoots.append(
+                        performance_overshoot
+                    )
                 
         # Total optimization time = Deg + Pit losses + Overtaking/Traffic penalty
         num_stops = len(compounds) - 1
@@ -235,16 +314,49 @@ class StrategySimulator:
         # But additional stops drop you back into traffic and require overtaking.
         traffic_penalty = max(0, num_stops - 1) * overtaking_penalty_per_extra_stop
         
-        total_time_delta = total_deg_delta + total_pit_loss + traffic_penalty
-
+        expected_lap_time_cost = (
+            base_lap_time_cost + degradation_cost + weather_mismatch_cost
+        )
+        total_time_delta = (
+            expected_lap_time_cost + total_pit_loss + traffic_penalty
+        )
+        # Risk scoring is intentionally disabled in this first instrumentation
+        # phase. Keeping it separate prevents diagnostics from changing rankings.
+        cliff_risk_cost = 0.0
+        risk_adjusted_total = total_time_delta + cliff_risk_cost
         
         return {
             "compounds": compounds,
             "stints": stint_lengths,
             "stops": num_stops,
             "total_delta": total_time_delta,
-            "max_cliff_overshoot": max_cliff_overshoot,
-            "max_future_cliff_overshoot": max_future_cliff_overshoot
+            "base_lap_time_cost_sec": base_lap_time_cost,
+            "degradation_cost_sec": degradation_cost,
+            "weather_mismatch_cost_sec": weather_mismatch_cost,
+            "pit_loss_cost_sec": total_pit_loss,
+            "traffic_cost_sec": traffic_penalty,
+            "cliff_risk_cost_sec": cliff_risk_cost,
+            "expected_total_time_sec": total_time_delta,
+            "risk_adjusted_total_time_sec": risk_adjusted_total,
+            "stint_diagnostics": stint_diagnostics,
+            "max_performance_cliff_overshoot_laps": (
+                max(performance_cliff_overshoots)
+                if performance_cliff_overshoots
+                else None
+            ),
+            "max_future_performance_cliff_overshoot_laps": (
+                max(future_performance_cliff_overshoots)
+                if future_performance_cliff_overshoots
+                else None
+            ),
+            "max_useful_life_overshoot_laps": max_useful_life_overshoot,
+            "max_future_useful_life_overshoot_laps": (
+                max_future_useful_life_overshoot
+            ),
+            # Backward-compatible aliases. Historically "cliff" referred to
+            # strategic useful life in this strategy engine.
+            "max_cliff_overshoot": max_useful_life_overshoot,
+            "max_future_cliff_overshoot": max_future_useful_life_overshoot,
         }
 
     def _apply_weather_adjustments(self, strategy: dict, weather_condition: str, mode: str):
@@ -342,7 +454,8 @@ class StrategySimulator:
                             track_position: int = 1, grid_pos: int = 1,
                             weather_condition: str = "dry",
                             compounds_used: list = None,
-                            compounds_used_count: int = 0):
+                            compounds_used_count: int = 0,
+                            include_candidate_diagnostics: bool = False):
         """
         Brute forces 1, 2, and 3 stop strategies to find the mathematical optimum.
         Categorizes them into Optimal, Safe, and Risky.
@@ -531,10 +644,13 @@ class StrategySimulator:
             
         # Sort all by total race time delta (fastest first)
         all_evaluations.sort(key=lambda x: x["total_delta"])
+        for rank, strategy in enumerate(all_evaluations, start=1):
+            strategy["score_rank"] = rank
         
         # === OPTIMAL STRATEGY ===
         # Pure mathematical optimum — fastest total time
         best_strategy = all_evaluations[0]
+        best_strategy["selection_basis"] = "lowest_expected_total_time"
         optimal_delta = best_strategy["total_delta"]
         optimal_stops = best_strategy["stops"]
         
@@ -548,10 +664,12 @@ class StrategySimulator:
             if self._stint_respects_cap(s["compounds"], s["stints"], "safe", start_age)
             and s["stops"] <= 2
         ]
+        safe_selection_basis = "useful_life_constrained"
         
         # Fallback: If no perfectly safe 2-stop exists, find the 2-stops with the least cliff overshoot
         if not safe_candidates:
             safe_candidates = [s for s in all_evaluations if s["stops"] <= 2]
+            safe_selection_basis = "minimum_useful_life_overshoot_fallback"
             # Sort by cliff overshoot first, then by total time
             safe_candidates.sort(key=lambda s: (s["max_cliff_overshoot"], s["total_delta"]))
 
@@ -559,6 +677,7 @@ class StrategySimulator:
         if safe_candidates:
             safe_candidates.sort(key=lambda s: (s["max_cliff_overshoot"], self._apply_weather_adjustments(s, weather_condition, "safe")))
             safe_strategy = safe_candidates[0]
+            safe_strategy["selection_basis"] = safe_selection_basis
         else:
             safe_strategy = None
             
@@ -587,6 +706,7 @@ class StrategySimulator:
         if risky_candidates:
             risky_candidates.sort(key=lambda s: self._apply_weather_adjustments(s, weather_condition, "risky"))
             risky_strategy = risky_candidates[0]
+            risky_strategy["selection_basis"] = "extended_stint_candidate"
         else:
             risky_strategy = None
             
@@ -619,36 +739,130 @@ class StrategySimulator:
                     if diff < threshold:
                         risky_strategy = None  # Too similar to optimal in both sequence and time
 
-        return {
-            "best_strategy": self._format_output(best_strategy, current_lap),
-            "safe_strategy": self._format_output(safe_strategy, current_lap),
-            "risky_strategy": self._format_output(risky_strategy, current_lap)
+        if safe_strategy:
+            safe_strategy["selection_basis"] = safe_selection_basis
+        if risky_strategy:
+            risky_strategy["selection_basis"] = "extended_stint_candidate"
+
+        output = {
+            "best_strategy": self._format_output(
+                best_strategy, current_lap, "mathematical_fastest"
+            ),
+            "safe_strategy": self._format_output(
+                safe_strategy, current_lap, "safe"
+            ),
+            "risky_strategy": self._format_output(
+                risky_strategy, current_lap, "risky"
+            ),
         }
+        if include_candidate_diagnostics:
+            output["candidate_diagnostics"] = [
+                self._format_output(candidate, current_lap, "candidate")
+                for candidate in all_evaluations[:5]
+            ]
+        return output
         
-    def _format_output(self, strat, start_lap=0):
+    def _format_output(self, strat, start_lap=0, strategy_role="candidate"):
         if not strat:
             return None
             
         sequence_labels = []
         stints_data = []
         current_lap = start_lap + 1 if start_lap > 0 else 1
-        for comp, length in zip(strat["compounds"], strat["stints"]):
+        for comp, length, diagnostics in zip(
+            strat["compounds"],
+            strat["stints"],
+            strat["stint_diagnostics"],
+        ):
             end_lap = current_lap + length - 1
             sequence_labels.append(f"{comp} [L{current_lap} - L{end_lap}]")
             stints_data.append({
                 "compound": comp,
                 "laps": length,
                 "start": current_lap,
-                "end": end_lap
+                "end": end_lap,
+                "effective_start_age_laps": round(
+                    diagnostics["effective_start_age_laps"], 2
+                ),
+                "effective_end_age_laps": round(
+                    diagnostics["effective_end_age_laps"], 2
+                ),
+                "performance_cliff_lap": diagnostics["performance_cliff_lap"],
+                "performance_cliff_confidence": diagnostics[
+                    "performance_cliff_confidence"
+                ],
+                "performance_cliff_overshoot_laps": (
+                    None
+                    if diagnostics["performance_cliff_overshoot_laps"] is None
+                    else round(
+                        diagnostics["performance_cliff_overshoot_laps"], 2
+                    )
+                ),
+                "strategy_useful_life_lap": diagnostics[
+                    "strategy_useful_life_lap"
+                ],
+                "strategy_useful_life_confidence": diagnostics[
+                    "strategy_useful_life_confidence"
+                ],
+                "useful_life_overshoot_laps": round(
+                    diagnostics["useful_life_overshoot_laps"], 2
+                ),
+                "base_lap_time_cost_sec": round(
+                    diagnostics["base_lap_time_cost_sec"], 3
+                ),
+                "degradation_cost_sec": round(
+                    diagnostics["degradation_cost_sec"], 3
+                ),
+                "weather_mismatch_cost_sec": round(
+                    diagnostics["weather_mismatch_cost_sec"], 3
+                ),
+                "expected_lap_time_cost_sec": round(
+                    diagnostics["expected_lap_time_cost_sec"], 3
+                ),
             })
             current_lap = end_lap + 1
             
         return {
             "stops": strat["stops"],
+            "strategy_role": strategy_role,
+            "selection_basis": strat.get("selection_basis"),
+            "score_rank": strat.get("score_rank"),
             "sequence": " -> ".join(sequence_labels),
             "stints_data": stints_data,
             "total_optimal_delta": round(strat["total_delta"], 2),
-            "risk_cliff_overshoot": round(strat["max_cliff_overshoot"], 1)
+            "expected_total_time_sec": round(
+                strat["expected_total_time_sec"], 3
+            ),
+            "risk_adjusted_total_time_sec": round(
+                strat["risk_adjusted_total_time_sec"], 3
+            ),
+            "cost_breakdown": {
+                "base_lap_time_cost_sec": round(
+                    strat["base_lap_time_cost_sec"], 3
+                ),
+                "degradation_cost_sec": round(
+                    strat["degradation_cost_sec"], 3
+                ),
+                "weather_mismatch_cost_sec": round(
+                    strat["weather_mismatch_cost_sec"], 3
+                ),
+                "pit_loss_cost_sec": round(strat["pit_loss_cost_sec"], 3),
+                "traffic_cost_sec": round(strat["traffic_cost_sec"], 3),
+                "cliff_risk_cost_sec": round(
+                    strat["cliff_risk_cost_sec"], 3
+                ),
+            },
+            "max_performance_cliff_overshoot_laps": (
+                None
+                if strat["max_performance_cliff_overshoot_laps"] is None
+                else round(
+                    strat["max_performance_cliff_overshoot_laps"], 2
+                )
+            ),
+            "max_useful_life_overshoot_laps": round(
+                strat["max_useful_life_overshoot_laps"], 2
+            ),
+            "risk_cliff_overshoot": round(strat["max_cliff_overshoot"], 1),
         }
 
 if __name__ == "__main__":

@@ -28,7 +28,7 @@ def preprocess_laps(session):
     # but for consistent *tire deg* modeling, mixing wet/dry laps in one model is tricky.
     # However, the user explicitly asked for "is_wet" feature, so we KEEP them and mark them.
     valid_compounds = ['SOFT', 'MEDIUM', 'HARD', 'INTERMEDIATE', 'WET']
-    laps = laps[laps['Compound'].isin(valid_compounds)]
+    laps = laps[laps['Compound'].isin(valid_compounds)].copy()
     
     # 3. Basic Lap Features
     laps['LapTimeSeconds'] = laps['LapTime'].dt.total_seconds()
