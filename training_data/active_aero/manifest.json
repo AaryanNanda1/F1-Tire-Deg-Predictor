@@ -1,9 +1,11 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
+  "preprocessing_version": "track-features-v8-observed-stints-missing-weather",
+  "preprocessing_git_commit": "99ff69beb520eabe05d7dd4b235ef5dbf73721d2",
   "format": "csv.gz",
-  "description": "Processed FastF1 sessions used to train the Active Aero model. Raw FastF1 cache files remain in GitHub Actions cache storage.",
-  "created_at": "2026-07-30T00:22:34+00:00",
-  "updated_at": "2026-08-10T01:06:37+00:00",
+  "description": "Processed FastF1 sessions used for reproducible model training. Raw FastF1 response files are stored separately.",
+  "created_at": "2026-08-30T22:39:03+00:00",
+  "updated_at": "2026-08-31T07:00:26+00:00",
   "sessions": {
     "2024:Abu Dhabi Grand Prix:FP2": {
       "year": 2024,
@@ -15,11 +17,20 @@
       "session_key": "2024:Abu Dhabi Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "physics_prior/2024/2024-24-abu-dhabi-grand-prix-fp2-ea05269ac9.csv.gz",
-      "rows": 215,
-      "columns": 82,
-      "columns_sha256": "43dd1b985eae679b7fde17f47b3237533ebfe50555b89bf75492c7f97431cdb1",
-      "sha256": "69c582d599e890c78d737c0a9281de0a630107855948d16bbf23423e7fe09c45",
-      "processed_at": "2026-07-30T00:26:41+00:00"
+      "rows": 182,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "0595c19cd23b12bfd48dc7a36aa37cfb01dfccf35d4170ce9f6ea78e6203b480",
+      "processed_at": "2026-08-30T22:39:06+00:00",
+      "filter_audit": {
+        "input_rows": 507,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 44,
+        "robust_outlier_removed": 69,
+        "final_rows": 182,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2024:Abu Dhabi Grand Prix:R": {
       "year": 2024,
@@ -31,11 +42,20 @@
       "session_key": "2024:Abu Dhabi Grand Prix:R",
       "session_weight": 1.0,
       "path": "physics_prior/2024/2024-24-abu-dhabi-grand-prix-r-5dc6466877.csv.gz",
-      "rows": 883,
-      "columns": 81,
-      "columns_sha256": "6a9ce00174400eda3bbaed324f0b7119f18eb1ef2c3883c74e7d51d4e3e75f62",
-      "sha256": "389ec7c637962ed4df5d48a1fdc25f91fdf0f0e2dc8ff30a09573b154c282c7a",
-      "processed_at": "2026-07-30T00:26:39+00:00"
+      "rows": 880,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "3fdfc00b299132f172f50a1527777cf373c9883123ce902ffa4640169b42d4f0",
+      "processed_at": "2026-08-30T22:39:09+00:00",
+      "filter_audit": {
+        "input_rows": 1035,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 3,
+        "robust_outlier_removed": 0,
+        "final_rows": 880,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2024:Australian Grand Prix:FP2": {
       "year": 2024,
@@ -47,11 +67,20 @@
       "session_key": "2024:Australian Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "physics_prior/2024/2024-03-australian-grand-prix-fp2-751d805238.csv.gz",
-      "rows": 265,
-      "columns": 81,
-      "columns_sha256": "a72c035e80c73eddc8212bb88e25380a66e749b62dedc6fc44b5dbef8d084c24",
-      "sha256": "e20a221c379376a28d49300f0ee4fa6c8229fa7b63bdfc7f6f4d73e3b9821495",
-      "processed_at": "2026-07-30T00:24:11+00:00"
+      "rows": 275,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "f7679597977fd4f51c79a0b32100404cf5b04d9b1a249060eb743701faa8dd3b",
+      "processed_at": "2026-08-30T22:39:11+00:00",
+      "filter_audit": {
+        "input_rows": 532,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 24,
+        "robust_outlier_removed": 66,
+        "final_rows": 275,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2024:Australian Grand Prix:R": {
       "year": 2024,
@@ -63,11 +92,20 @@
       "session_key": "2024:Australian Grand Prix:R",
       "session_weight": 1.0,
       "path": "physics_prior/2024/2024-03-australian-grand-prix-r-5649015461.csv.gz",
-      "rows": 852,
-      "columns": 81,
-      "columns_sha256": "31c09a76c354171de891baa33c8292ef17664cba3bf33a6886dbf8773c32c73f",
-      "sha256": "73ae4d7e017aae53b5cb6a189f1227feabbb87909ea505ae109b420fe6b1d57d",
-      "processed_at": "2026-07-30T00:24:09+00:00"
+      "rows": 849,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "2d287ca93e0bd0d09a8e520be13e20587a9674d52758b495042f47cb5ef6dfc1",
+      "processed_at": "2026-08-30T22:39:17+00:00",
+      "filter_audit": {
+        "input_rows": 998,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 2,
+        "robust_outlier_removed": 1,
+        "final_rows": 849,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2024:Austrian Grand Prix:R": {
       "year": 2024,
@@ -79,11 +117,20 @@
       "session_key": "2024:Austrian Grand Prix:R",
       "session_weight": 1.0,
       "path": "physics_prior/2024/2024-11-austrian-grand-prix-r-dde972b3ba.csv.gz",
-      "rows": 1249,
-      "columns": 82,
-      "columns_sha256": "61919cc4e8de90426f0ba22e80d84634392dc1eb92f4e9998899daf7e484b330",
-      "sha256": "58f3b422f7b179b8aadc841b926fc67bdde4d2dd8efec350b032160085753934",
-      "processed_at": "2026-07-30T00:25:17+00:00"
+      "rows": 1247,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "775e1d0b7c5a76a7c5799e0f5d16340754610ef1c9676954fe8fd8d78a811173",
+      "processed_at": "2026-08-30T22:39:21+00:00",
+      "filter_audit": {
+        "input_rows": 1405,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 1,
+        "robust_outlier_removed": 2,
+        "final_rows": 1247,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2024:Austrian Grand Prix:S": {
       "year": 2024,
@@ -95,11 +142,20 @@
       "session_key": "2024:Austrian Grand Prix:S",
       "session_weight": 0.75,
       "path": "physics_prior/2024/2024-11-austrian-grand-prix-s-8f0626ba50.csv.gz",
-      "rows": 440,
-      "columns": 82,
-      "columns_sha256": "61919cc4e8de90426f0ba22e80d84634392dc1eb92f4e9998899daf7e484b330",
-      "sha256": "907a6cf79be7dd6029c313d5f32d5136223d37fbdbb52694974684158a351e2e",
-      "processed_at": "2026-07-30T00:25:19+00:00"
+      "rows": 439,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "0388c5eefc50d8b24e47aabef7d5e787760375ec4ea59f58976ecde287044845",
+      "processed_at": "2026-08-30T22:39:23+00:00",
+      "filter_audit": {
+        "input_rows": 460,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 1,
+        "final_rows": 439,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2024:Azerbaijan Grand Prix:FP2": {
       "year": 2024,
@@ -111,11 +167,20 @@
       "session_key": "2024:Azerbaijan Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "physics_prior/2024/2024-17-azerbaijan-grand-prix-fp2-f9a9190530.csv.gz",
-      "rows": 157,
-      "columns": 82,
-      "columns_sha256": "92c68472d8c83d2946a171413550cf7241e0c388a96a6ae258efa9d42dfcee8a",
-      "sha256": "5b8c1d7f7515d0cb1f3756bfb2e3c76bcfb8f4c9be41eac81d1dd823d453fa0d",
-      "processed_at": "2026-07-30T00:25:56+00:00"
+      "rows": 125,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "3376623bb5b139d8862b0ecdf51860f9e9968df89d5bc4a8f361ca4875b0d124",
+      "processed_at": "2026-08-30T22:39:26+00:00",
+      "filter_audit": {
+        "input_rows": 470,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 50,
+        "robust_outlier_removed": 29,
+        "final_rows": 125,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2024:Azerbaijan Grand Prix:R": {
       "year": 2024,
@@ -128,10 +193,19 @@
       "session_weight": 1.0,
       "path": "physics_prior/2024/2024-17-azerbaijan-grand-prix-r-0fd44a8fb4.csv.gz",
       "rows": 853,
-      "columns": 82,
-      "columns_sha256": "92c68472d8c83d2946a171413550cf7241e0c388a96a6ae258efa9d42dfcee8a",
-      "sha256": "3e670df9bb1fd83084a5e00cdbff31c7012a7db473e55940b10f6f26c7586e51",
-      "processed_at": "2026-07-30T00:25:53+00:00"
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "e70f34b8b3bda92b82d7db6c95d512d62fab7c14c00f1cf4ca58c1db26199d59",
+      "processed_at": "2026-08-30T22:39:30+00:00",
+      "filter_audit": {
+        "input_rows": 973,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 0,
+        "final_rows": 853,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2024:Bahrain Grand Prix:FP2": {
       "year": 2024,
@@ -143,11 +217,20 @@
       "session_key": "2024:Bahrain Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "physics_prior/2024/2024-01-bahrain-grand-prix-fp2-da0b3712a7.csv.gz",
-      "rows": 273,
-      "columns": 82,
-      "columns_sha256": "4d0fceec9356644d79a3f29901a5dbe066a1c5b88e60625c0efc9742e2845939",
-      "sha256": "14a35621939f43e916f2d7fb05e782362667a034087d49eb4e21c2b72e4c8db0",
-      "processed_at": "2026-07-30T00:24:00+00:00"
+      "rows": 220,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "7b3605ddb39c1001e8125480c4d630fe6c189b1c9f6c8c0213f6a459f1394f2a",
+      "processed_at": "2026-08-30T22:39:33+00:00",
+      "filter_audit": {
+        "input_rows": 511,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 37,
+        "robust_outlier_removed": 93,
+        "final_rows": 220,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2024:Bahrain Grand Prix:R": {
       "year": 2024,
@@ -160,10 +243,19 @@
       "session_weight": 1.0,
       "path": "physics_prior/2024/2024-01-bahrain-grand-prix-r-3451cd2718.csv.gz",
       "rows": 1006,
-      "columns": 82,
-      "columns_sha256": "4d0fceec9356644d79a3f29901a5dbe066a1c5b88e60625c0efc9742e2845939",
-      "sha256": "e5af435c98126aa66b8c6a191612c1a87973e941ae894021948cf103e8f85c6c",
-      "processed_at": "2026-07-30T00:23:57+00:00"
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "0e2a8c19cf666708493aa6b47cb24fb3500bf54b873a635c479877f700948503",
+      "processed_at": "2026-08-30T22:39:36+00:00",
+      "filter_audit": {
+        "input_rows": 1129,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 0,
+        "final_rows": 1006,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2024:Belgian Grand Prix:FP2": {
       "year": 2024,
@@ -175,11 +267,20 @@
       "session_key": "2024:Belgian Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "physics_prior/2024/2024-14-belgian-grand-prix-fp2-4bcc88e895.csv.gz",
-      "rows": 223,
-      "columns": 82,
-      "columns_sha256": "e18514b5c8193e5d0838e2a149f451b8f8cb5a8fa31102c55cb1ff42e5c46295",
-      "sha256": "7553a317353505b5fc18e008895fa2e3e9e1253b2c5b12d38ce379f148498dfb",
-      "processed_at": "2026-07-30T00:25:36+00:00"
+      "rows": 178,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "12038d0d9c4ddbdc7c0f5e3f5a3c1777b02c099114d72d4e59a3200f2ed9620c",
+      "processed_at": "2026-08-30T22:39:41+00:00",
+      "filter_audit": {
+        "input_rows": 462,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 56,
+        "robust_outlier_removed": 27,
+        "final_rows": 178,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2024:Belgian Grand Prix:R": {
       "year": 2024,
@@ -191,11 +292,20 @@
       "session_key": "2024:Belgian Grand Prix:R",
       "session_weight": 1.0,
       "path": "physics_prior/2024/2024-14-belgian-grand-prix-r-36088ad6ae.csv.gz",
-      "rows": 733,
-      "columns": 82,
-      "columns_sha256": "e18514b5c8193e5d0838e2a149f451b8f8cb5a8fa31102c55cb1ff42e5c46295",
-      "sha256": "293617629e080cf4c0a2222c799944fbf8178dea47baddfd73e25f7f5572d350",
-      "processed_at": "2026-07-30T00:25:34+00:00"
+      "rows": 731,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "0ba99f93281a4e1c2a09eb2c2495ccbbba9e8286b2283a5ff5a48284d1731868",
+      "processed_at": "2026-08-30T22:39:44+00:00",
+      "filter_audit": {
+        "input_rows": 841,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 3,
+        "robust_outlier_removed": 0,
+        "final_rows": 731,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2024:British Grand Prix:FP2": {
       "year": 2024,
@@ -207,11 +317,20 @@
       "session_key": "2024:British Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "physics_prior/2024/2024-12-british-grand-prix-fp2-9785d66cce.csv.gz",
-      "rows": 221,
-      "columns": 82,
-      "columns_sha256": "dbba3552e14ad085491f09ea6d23bfc3f3cc6dd11b735fab497404cd20746525",
-      "sha256": "2ae2896d161ff399bd095bede3027173731bd3ec34066d087138187309700d8c",
-      "processed_at": "2026-07-30T00:25:24+00:00"
+      "rows": 196,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "4f6a084c27de3f27d5a6142eb6215bf969cd2ed33afe5c5b92fcf58c9186fea5",
+      "processed_at": "2026-08-30T22:39:46+00:00",
+      "filter_audit": {
+        "input_rows": 477,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 39,
+        "robust_outlier_removed": 64,
+        "final_rows": 196,
+        "baseline_groups": 13,
+        "clean_baseline_count": 13
+      }
     },
     "2024:British Grand Prix:R": {
       "year": 2024,
@@ -223,11 +342,20 @@
       "session_key": "2024:British Grand Prix:R",
       "session_weight": 1.0,
       "path": "physics_prior/2024/2024-12-british-grand-prix-r-e738bbb269.csv.gz",
-      "rows": 635,
-      "columns": 81,
-      "columns_sha256": "e38e847e2662ab29b555851ed48ff29d52c1fca7cd967bbb6d1dee6de5b706db",
-      "sha256": "271c1677732d58b76411b823fc7a1681c6c9bb2031a422c5db8bb204eccdf23c",
-      "processed_at": "2026-07-30T00:25:22+00:00"
+      "rows": 843,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "c02f25a46ff7874379f309b3c7799f85034d3592ef806794046d8a54d361e8d3",
+      "processed_at": "2026-08-30T22:39:49+00:00",
+      "filter_audit": {
+        "input_rows": 961,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 3,
+        "robust_outlier_removed": 4,
+        "final_rows": 843,
+        "baseline_groups": 20,
+        "clean_baseline_count": 20
+      }
     },
     "2024:Canadian Grand Prix:FP2": {
       "year": 2024,
@@ -239,11 +367,20 @@
       "session_key": "2024:Canadian Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "physics_prior/2024/2024-09-canadian-grand-prix-fp2-f58f2dc220.csv.gz",
-      "rows": 207,
-      "columns": 82,
-      "columns_sha256": "d50a4cff33a35c5f76a81d143cc43f8e73b4df3c6753e1db8e17b4bc0076f796",
-      "sha256": "eb6a1256417c34fb49bb58d1bcd702be401638290e159ee51e9f0de58ad22dac",
-      "processed_at": "2026-07-30T00:25:03+00:00"
+      "rows": 241,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "b0a41a2ab6b3aacae7b2b511e4756f8a0f324dfa3d9cb58acdc6c1fe34e94efb",
+      "processed_at": "2026-08-30T22:39:51+00:00",
+      "filter_audit": {
+        "input_rows": 437,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 18,
+        "robust_outlier_removed": 12,
+        "final_rows": 241,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2024:Canadian Grand Prix:R": {
       "year": 2024,
@@ -255,11 +392,20 @@
       "session_key": "2024:Canadian Grand Prix:R",
       "session_weight": 1.0,
       "path": "physics_prior/2024/2024-09-canadian-grand-prix-r-76e1a157db.csv.gz",
-      "rows": 803,
-      "columns": 82,
-      "columns_sha256": "d50a4cff33a35c5f76a81d143cc43f8e73b4df3c6753e1db8e17b4bc0076f796",
-      "sha256": "bf65b344035e50fb70d71b0ac60348d0e4b684dcb8c9a4e9e9208b2e05b036f9",
-      "processed_at": "2026-07-30T00:25:00+00:00"
+      "rows": 889,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "c8b3c138b043bf8ed54042e2ba6a83ab43b53bd7b4dd8501a23215267ea238a4",
+      "processed_at": "2026-08-30T22:39:55+00:00",
+      "filter_audit": {
+        "input_rows": 1272,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 1,
+        "robust_outlier_removed": 24,
+        "final_rows": 889,
+        "baseline_groups": 20,
+        "clean_baseline_count": 20
+      }
     },
     "2024:Chinese Grand Prix:R": {
       "year": 2024,
@@ -271,11 +417,20 @@
       "session_key": "2024:Chinese Grand Prix:R",
       "session_weight": 1.0,
       "path": "physics_prior/2024/2024-05-chinese-grand-prix-r-9ffc4cfb0f.csv.gz",
-      "rows": 743,
-      "columns": 82,
-      "columns_sha256": "437a640292a3dfca5f6a33138e25a34f520123179fec3d862ca23b9aa625a3e2",
-      "sha256": "fc8eec69d446e3ad0c1286194a4110c6f57e3257c5104441796846c7aee3088a",
-      "processed_at": "2026-07-30T00:24:22+00:00"
+      "rows": 741,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "7221884eb60ea25033effe79443449115c57d6bee48c593ad575736f9240d603",
+      "processed_at": "2026-08-30T22:40:00+00:00",
+      "filter_audit": {
+        "input_rows": 1032,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 3,
+        "robust_outlier_removed": 0,
+        "final_rows": 741,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2024:Chinese Grand Prix:S": {
       "year": 2024,
@@ -288,10 +443,19 @@
       "session_weight": 0.75,
       "path": "physics_prior/2024/2024-05-chinese-grand-prix-s-d63df84ca4.csv.gz",
       "rows": 356,
-      "columns": 82,
-      "columns_sha256": "437a640292a3dfca5f6a33138e25a34f520123179fec3d862ca23b9aa625a3e2",
-      "sha256": "c0d0043c3cc9386d08d6122b56e4646e001bcee816c9b7b1de9db43f9f91f1bd",
-      "processed_at": "2026-07-30T00:24:25+00:00"
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "e6d7f6bec50e1d28217a008595af846e92298165ae3fd74519202ca86e0a56e3",
+      "processed_at": "2026-08-30T22:40:02+00:00",
+      "filter_audit": {
+        "input_rows": 378,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 0,
+        "final_rows": 356,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2024:Dutch Grand Prix:FP2": {
       "year": 2024,
@@ -303,11 +467,20 @@
       "session_key": "2024:Dutch Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "physics_prior/2024/2024-15-dutch-grand-prix-fp2-8b4b26de5b.csv.gz",
-      "rows": 322,
-      "columns": 82,
-      "columns_sha256": "0a4205058b79cc96ad9679e1180ea739c22e02db2d7ba96418afd49ed99ec324",
-      "sha256": "6b0f3e511c265b2b0956948ac2fd00e340db38a26d8e3b8e0b1a7041b57cd64b",
-      "processed_at": "2026-07-30T00:25:43+00:00"
+      "rows": 303,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "daee3a8194e263e50c5ad5806712e1e46524223ce84f48f34944dbe0cb2ce2f0",
+      "processed_at": "2026-08-30T22:40:05+00:00",
+      "filter_audit": {
+        "input_rows": 589,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 28,
+        "robust_outlier_removed": 95,
+        "final_rows": 303,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2024:Dutch Grand Prix:R": {
       "year": 2024,
@@ -319,11 +492,20 @@
       "session_key": "2024:Dutch Grand Prix:R",
       "session_weight": 1.0,
       "path": "physics_prior/2024/2024-15-dutch-grand-prix-r-00309476b9.csv.gz",
-      "rows": 1353,
-      "columns": 82,
-      "columns_sha256": "0a4205058b79cc96ad9679e1180ea739c22e02db2d7ba96418afd49ed99ec324",
-      "sha256": "4f12987d31daf6ad049852feb1e9b78bf5efa9f1ca5bca59b754426f5294323a",
-      "processed_at": "2026-07-30T00:25:40+00:00"
+      "rows": 1352,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "529a1f521a28040668ce0fed93ccd9aa69ce65c91fe10ef181ffdd69c6dedfc2",
+      "processed_at": "2026-08-30T22:40:09+00:00",
+      "filter_audit": {
+        "input_rows": 1426,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 2,
+        "final_rows": 1352,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2024:Emilia Romagna Grand Prix:FP2": {
       "year": 2024,
@@ -335,11 +517,20 @@
       "session_key": "2024:Emilia Romagna Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "physics_prior/2024/2024-07-emilia-romagna-grand-prix-fp2-7352bc2042.csv.gz",
-      "rows": 298,
-      "columns": 82,
-      "columns_sha256": "24da1e56c6a75bb37c484c2007d6b7995222f1b0d274f4b87989d03c2cd97e9a",
-      "sha256": "2b55b849ed8fd74cae4bbe5e01828390f7d94fc86933b29783ebbdbc215b8a78",
-      "processed_at": "2026-07-30T00:24:47+00:00"
+      "rows": 278,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "6ac51aaba33c7374b1e805b5dc68028783ab39d8e6b9303a511e983456234427",
+      "processed_at": "2026-08-30T22:40:13+00:00",
+      "filter_audit": {
+        "input_rows": 571,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 24,
+        "robust_outlier_removed": 114,
+        "final_rows": 278,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2024:Emilia Romagna Grand Prix:R": {
       "year": 2024,
@@ -351,11 +542,20 @@
       "session_key": "2024:Emilia Romagna Grand Prix:R",
       "session_weight": 1.0,
       "path": "physics_prior/2024/2024-07-emilia-romagna-grand-prix-r-f5f8bac053.csv.gz",
-      "rows": 1164,
-      "columns": 82,
-      "columns_sha256": "24da1e56c6a75bb37c484c2007d6b7995222f1b0d274f4b87989d03c2cd97e9a",
-      "sha256": "b54139251845d4f0db7ce9d958e377a5a35ff3e9e2747d6e7739bdf098ea7931",
-      "processed_at": "2026-07-30T00:24:43+00:00"
+      "rows": 1155,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "88b0806907dc043407af6b5d5543e001eca42ad03d5f73948e123ab192bd9035",
+      "processed_at": "2026-08-30T22:40:16+00:00",
+      "filter_audit": {
+        "input_rows": 1238,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 2,
+        "robust_outlier_removed": 7,
+        "final_rows": 1155,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2024:Hungarian Grand Prix:FP2": {
       "year": 2024,
@@ -367,11 +567,20 @@
       "session_key": "2024:Hungarian Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "physics_prior/2024/2024-13-hungarian-grand-prix-fp2-ebe5e4a76e.csv.gz",
-      "rows": 189,
-      "columns": 82,
-      "columns_sha256": "bf51dbd8cb57169f896054a87cb76749bd3470ca8930196debcab1bc09d5904d",
-      "sha256": "2e0816c86e6bc8f8dd560b33de1df2f542bc3b958631f37da5a6f519f9658db3",
-      "processed_at": "2026-07-30T00:25:31+00:00"
+      "rows": 156,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "ff8c6eb6f7d44ed6bd2db6bdf779516e7e507107c6411f80e49f2543eadd1a7c",
+      "processed_at": "2026-08-30T22:40:18+00:00",
+      "filter_audit": {
+        "input_rows": 431,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 46,
+        "robust_outlier_removed": 52,
+        "final_rows": 156,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2024:Hungarian Grand Prix:R": {
       "year": 2024,
@@ -383,11 +592,20 @@
       "session_key": "2024:Hungarian Grand Prix:R",
       "session_weight": 1.0,
       "path": "physics_prior/2024/2024-13-hungarian-grand-prix-r-0e126c9dd2.csv.gz",
-      "rows": 1233,
-      "columns": 82,
-      "columns_sha256": "bf51dbd8cb57169f896054a87cb76749bd3470ca8930196debcab1bc09d5904d",
-      "sha256": "54ea0c6376c8087c87dfff5d02dd7807d09b5bde38e9647c8802b37c1079734d",
-      "processed_at": "2026-07-30T00:25:28+00:00"
+      "rows": 1228,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "1ffd366c8ae02da9a80478484e8ddef6e8fd8f27d8a0ba5bd149ea10e7644514",
+      "processed_at": "2026-08-30T22:40:23+00:00",
+      "filter_audit": {
+        "input_rows": 1355,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 5,
+        "final_rows": 1228,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2024:Italian Grand Prix:FP2": {
       "year": 2024,
@@ -399,11 +617,20 @@
       "session_key": "2024:Italian Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "physics_prior/2024/2024-16-italian-grand-prix-fp2-6c887b63ee.csv.gz",
-      "rows": 196,
-      "columns": 82,
-      "columns_sha256": "102e56a3561ca0e7cf53127dfb73c0fa863a5f42f42e0e6c463906d0f605b5a9",
-      "sha256": "c5cb4a01c1139abf0ffe92392b45d905079d9f6e2a5130984c210fb5bb3699ae",
-      "processed_at": "2026-07-30T00:25:50+00:00"
+      "rows": 172,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "620eb281c5cbf79758fac855f455e8c6d4ee64b27609a4b93fe16185b45532ed",
+      "processed_at": "2026-08-30T22:40:28+00:00",
+      "filter_audit": {
+        "input_rows": 454,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 49,
+        "robust_outlier_removed": 49,
+        "final_rows": 172,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2024:Italian Grand Prix:R": {
       "year": 2024,
@@ -415,11 +642,20 @@
       "session_key": "2024:Italian Grand Prix:R",
       "session_weight": 1.0,
       "path": "physics_prior/2024/2024-16-italian-grand-prix-r-ce1556bda4.csv.gz",
-      "rows": 925,
-      "columns": 82,
-      "columns_sha256": "102e56a3561ca0e7cf53127dfb73c0fa863a5f42f42e0e6c463906d0f605b5a9",
-      "sha256": "2800fc0d74d976e431884aabc94ac4d598e468069fd25dc3ac2f06cd0ce11927",
-      "processed_at": "2026-07-30T00:25:47+00:00"
+      "rows": 924,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "e463d1b584867d08616799f335db8f11d719128e1adf0fb70d164505c80e4be6",
+      "processed_at": "2026-08-30T22:40:34+00:00",
+      "filter_audit": {
+        "input_rows": 1008,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 1,
+        "robust_outlier_removed": 2,
+        "final_rows": 924,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2024:Japanese Grand Prix:FP2": {
       "year": 2024,
@@ -431,11 +667,20 @@
       "session_key": "2024:Japanese Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "physics_prior/2024/2024-04-japanese-grand-prix-fp2-9cdc62c22d.csv.gz",
-      "rows": 11,
-      "columns": 65,
-      "columns_sha256": "9129d799db72afb679ba822cd2426f82487640793fd124b4afa9f0be9511b197",
-      "sha256": "0230d918371c7c7d244a77d5b65cbf09868d7d89ac74491612edf59f951c7621",
-      "processed_at": "2026-07-30T00:24:18+00:00"
+      "rows": 7,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "4ea5ccbf30935682e9071d0f7c54098c2ed865afcaf2caf852608ef54c2902b8",
+      "processed_at": "2026-08-30T22:40:35+00:00",
+      "filter_audit": {
+        "input_rows": 71,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 13,
+        "robust_outlier_removed": 3,
+        "final_rows": 7,
+        "baseline_groups": 2,
+        "clean_baseline_count": 2
+      }
     },
     "2024:Japanese Grand Prix:R": {
       "year": 2024,
@@ -447,11 +692,20 @@
       "session_key": "2024:Japanese Grand Prix:R",
       "session_weight": 1.0,
       "path": "physics_prior/2024/2024-04-japanese-grand-prix-r-950a5bc02c.csv.gz",
-      "rows": 758,
-      "columns": 80,
-      "columns_sha256": "a02a93b7a3c1cfe5bc492011accc2b0585b1f02aeb1c7655e90e4acf3a6ec9c3",
-      "sha256": "76dfdda208365fd40d781eaadc032d22f1c70094c6230e85b38a7177ed11507e",
-      "processed_at": "2026-07-30T00:24:16+00:00"
+      "rows": 755,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "8d414774d71fa65797565aa7d32d1d177488791601759ac631bf485c4c80a124",
+      "processed_at": "2026-08-30T22:40:38+00:00",
+      "filter_audit": {
+        "input_rows": 907,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 3,
+        "robust_outlier_removed": 6,
+        "final_rows": 755,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2024:Las Vegas Grand Prix:FP2": {
       "year": 2024,
@@ -463,11 +717,20 @@
       "session_key": "2024:Las Vegas Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "physics_prior/2024/2024-22-las-vegas-grand-prix-fp2-5c7b9aee93.csv.gz",
-      "rows": 185,
-      "columns": 81,
-      "columns_sha256": "7b8a205bc30c41f33556f54aa11f01dccaa4368e7bf7798a70f961b1627189ed",
-      "sha256": "d653edc49b0bdaf51f0c80a035c26fea27efc3a029226b944fb5046e4a8eeb4c",
-      "processed_at": "2026-07-30T00:26:30+00:00"
+      "rows": 211,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "cc9c3e757d62565fa7a7c51ec9ad70d6869cd1ce5fff7ae5065dea2719db41ca",
+      "processed_at": "2026-08-30T22:40:41+00:00",
+      "filter_audit": {
+        "input_rows": 502,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 23,
+        "robust_outlier_removed": 31,
+        "final_rows": 211,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2024:Las Vegas Grand Prix:R": {
       "year": 2024,
@@ -479,11 +742,20 @@
       "session_key": "2024:Las Vegas Grand Prix:R",
       "session_weight": 1.0,
       "path": "physics_prior/2024/2024-22-las-vegas-grand-prix-r-4bdb6fa6ba.csv.gz",
-      "rows": 826,
-      "columns": 82,
-      "columns_sha256": "3c812840a6dc5ca27e5f7549020f857803acc40fcc07d92a0a27490f57a88e87",
-      "sha256": "d86ed2e862e9853a5c6ef19201dd7a8d6cc01ad5d1774623b3808e307df5bfd9",
-      "processed_at": "2026-07-30T00:26:28+00:00"
+      "rows": 824,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "fa319d3621b28ea3464f5a78920363400beb7bc3c492495fc74ba283a2a41a5f",
+      "processed_at": "2026-08-30T22:40:44+00:00",
+      "filter_audit": {
+        "input_rows": 938,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 2,
+        "robust_outlier_removed": 0,
+        "final_rows": 824,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2024:Mexico City Grand Prix:FP2": {
       "year": 2024,
@@ -495,11 +767,20 @@
       "session_key": "2024:Mexico City Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "physics_prior/2024/2024-20-mexico-city-grand-prix-fp2-78608dfc21.csv.gz",
-      "rows": 9,
-      "columns": 60,
-      "columns_sha256": "e74bae3e0836edc2a9c4b78be6df314a2b6ef54ec6c2b7cf19118568e585c367",
-      "sha256": "6684cef297a30dd0205a60e2df4f4683555c3c947fae030de5c40924e9477129",
-      "processed_at": "2026-07-30T00:26:17+00:00"
+      "rows": 12,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "5f9cc5ca56096c9d2df31d619d1aadbdaf50ffe99f554ad390b5f92f72b9f485",
+      "processed_at": "2026-08-30T22:40:46+00:00",
+      "filter_audit": {
+        "input_rows": 562,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 3,
+        "robust_outlier_removed": 1,
+        "final_rows": 12,
+        "baseline_groups": 3,
+        "clean_baseline_count": 3
+      }
     },
     "2024:Mexico City Grand Prix:R": {
       "year": 2024,
@@ -511,11 +792,20 @@
       "session_key": "2024:Mexico City Grand Prix:R",
       "session_weight": 1.0,
       "path": "physics_prior/2024/2024-20-mexico-city-grand-prix-r-f18d0654de.csv.gz",
-      "rows": 1060,
-      "columns": 80,
-      "columns_sha256": "63b19030cea9b1db22ccb110c077188dfad75e10f5a2c715f8354386e5b75061",
-      "sha256": "c400824da15ead61f73fa5bb7a06d43ca1209308f20bedc9574fd8f014dd0080",
-      "processed_at": "2026-07-30T00:26:13+00:00"
+      "rows": 1055,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "b15ef9fea0cb9959ef74ca9a1e5b87f2fd56f4e439e1ccac560331622d036c30",
+      "processed_at": "2026-08-30T22:40:49+00:00",
+      "filter_audit": {
+        "input_rows": 1215,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 2,
+        "robust_outlier_removed": 4,
+        "final_rows": 1055,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2024:Miami Grand Prix:R": {
       "year": 2024,
@@ -528,10 +818,19 @@
       "session_weight": 1.0,
       "path": "physics_prior/2024/2024-06-miami-grand-prix-r-350123d164.csv.gz",
       "rows": 934,
-      "columns": 82,
-      "columns_sha256": "8e0c6b65776f94996d77bebfa8801c345ab6ff34c3b005492f386eb3e5a85de6",
-      "sha256": "4e9cd65cfd4ecbb8c27ec304d7404d67c2b3c06ba6e81c8897df418ea393a35e",
-      "processed_at": "2026-07-30T00:24:31+00:00"
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "98f98f5d41b8c8b56cbfd27cedbbd4dddcb66200d6792316b432bc43b2d04959",
+      "processed_at": "2026-08-30T22:40:54+00:00",
+      "filter_audit": {
+        "input_rows": 1111,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 0,
+        "final_rows": 934,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2024:Miami Grand Prix:S": {
       "year": 2024,
@@ -544,10 +843,19 @@
       "session_weight": 0.75,
       "path": "physics_prior/2024/2024-06-miami-grand-prix-s-e07150a8fe.csv.gz",
       "rows": 286,
-      "columns": 80,
-      "columns_sha256": "2a67176ca7219365688ad4f6b0f74b67b4ca7322058e8d4668546c6a57566c38",
-      "sha256": "fd433ab88d5bf29835a9189e660dc25cda29aa3ac2b150670664861533a2a222",
-      "processed_at": "2026-07-30T00:24:33+00:00"
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "2574f0ded3a0f4b1054660c5afa44cd982588e73b84793bef75d6a844abe058c",
+      "processed_at": "2026-08-30T22:40:57+00:00",
+      "filter_audit": {
+        "input_rows": 344,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 0,
+        "final_rows": 286,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2024:Monaco Grand Prix:FP2": {
       "year": 2024,
@@ -559,11 +867,20 @@
       "session_key": "2024:Monaco Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "physics_prior/2024/2024-08-monaco-grand-prix-fp2-2bb2aac979.csv.gz",
-      "rows": 322,
-      "columns": 82,
-      "columns_sha256": "8b100f502d3cd2a34e8e7250d87f4c967e2077ef11a0b98cfb9bb5afed257621",
-      "sha256": "33c6273c0e6301f53bad5f699694c6cfb0717fb6ac0e1dd75085fb1511a2c80a",
-      "processed_at": "2026-07-30T00:24:55+00:00"
+      "rows": 398,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "b7998c14986d0418fc347fd476826d2975e32ca7ca34f09d35516741636f0db0",
+      "processed_at": "2026-08-30T22:41:01+00:00",
+      "filter_audit": {
+        "input_rows": 676,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 14,
+        "robust_outlier_removed": 82,
+        "final_rows": 398,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2024:Monaco Grand Prix:R": {
       "year": 2024,
@@ -576,10 +893,19 @@
       "session_weight": 1.0,
       "path": "physics_prior/2024/2024-08-monaco-grand-prix-r-309d0a366f.csv.gz",
       "rows": 1155,
-      "columns": 77,
-      "columns_sha256": "9492a22c3bda764c2d1dfff96be28d371b44c1b2d086a3c7e8d984d050d24709",
-      "sha256": "4552167532252aa92e8140bb1df2cce553b2c3b54e1cb7765fc0449ede090cbd",
-      "processed_at": "2026-07-30T00:24:51+00:00"
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "e070661d189a9dc6b59d03e2415c02409df32f41e76812ed4c87e50c6d731f37",
+      "processed_at": "2026-08-30T22:41:05+00:00",
+      "filter_audit": {
+        "input_rows": 1237,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 16,
+        "final_rows": 1155,
+        "baseline_groups": 9,
+        "clean_baseline_count": 9
+      }
     },
     "2024:Qatar Grand Prix:R": {
       "year": 2024,
@@ -591,11 +917,20 @@
       "session_key": "2024:Qatar Grand Prix:R",
       "session_weight": 1.0,
       "path": "physics_prior/2024/2024-23-qatar-grand-prix-r-352a54d830.csv.gz",
-      "rows": 678,
-      "columns": 80,
-      "columns_sha256": "008cb7d9d9e2320bb92ab18c49bd19b69b097656fc6d3f1f9a8bf33d46fbc2cf",
-      "sha256": "0b335cd6513d7e793679e20f03e2d7e6dae8b2bc8afd01f197dc66107d546b39",
-      "processed_at": "2026-07-30T00:26:34+00:00"
+      "rows": 675,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "d1992a0d057aead078d7bbca740f46806e1c635bc6004dfa73dbc8f72c4eed5b",
+      "processed_at": "2026-08-30T22:41:10+00:00",
+      "filter_audit": {
+        "input_rows": 943,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 4,
+        "robust_outlier_removed": 0,
+        "final_rows": 675,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2024:Qatar Grand Prix:S": {
       "year": 2024,
@@ -607,11 +942,20 @@
       "session_key": "2024:Qatar Grand Prix:S",
       "session_weight": 0.75,
       "path": "physics_prior/2024/2024-23-qatar-grand-prix-s-a3f4aaf8c6.csv.gz",
-      "rows": 347,
-      "columns": 82,
-      "columns_sha256": "766604aa54048151189db13692f784ed2fc7eb1192c32e15ab1cdee86bef0c2a",
-      "sha256": "78a38bb4caab41b64c613e5ff2cf2b962f28ec68fedbda199b28760da787659e",
-      "processed_at": "2026-07-30T00:26:36+00:00"
+      "rows": 344,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "148eb4e49287773b10ecee92c24018a69700ad767ae59b96ad1022e402ca40f7",
+      "processed_at": "2026-08-30T22:41:12+00:00",
+      "filter_audit": {
+        "input_rows": 380,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 3,
+        "final_rows": 344,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2024:Saudi Arabian Grand Prix:FP2": {
       "year": 2024,
@@ -623,11 +967,20 @@
       "session_key": "2024:Saudi Arabian Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "physics_prior/2024/2024-02-saudi-arabian-grand-prix-fp2-c12d91e289.csv.gz",
-      "rows": 263,
-      "columns": 82,
-      "columns_sha256": "f975aae740cdb65cb963c1b39cfc11d9c574bfb0203d86e8bb991c4c028be1e6",
-      "sha256": "5d93889c1292c207d9f9f4de77839a8789038924e2bfbe2930d24ed0a0fe10ed",
-      "processed_at": "2026-07-30T00:24:05+00:00"
+      "rows": 241,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "9ad2628049052c99e79774d4be7b02b3c5f9754cce185db253f17d0e982aff2b",
+      "processed_at": "2026-08-30T22:41:15+00:00",
+      "filter_audit": {
+        "input_rows": 528,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 30,
+        "robust_outlier_removed": 84,
+        "final_rows": 241,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2024:Saudi Arabian Grand Prix:R": {
       "year": 2024,
@@ -639,11 +992,20 @@
       "session_key": "2024:Saudi Arabian Grand Prix:R",
       "session_weight": 1.0,
       "path": "physics_prior/2024/2024-02-saudi-arabian-grand-prix-r-e902182ecc.csv.gz",
-      "rows": 801,
-      "columns": 81,
-      "columns_sha256": "f19817aa9350211e806a7dda75c84b46e9c01b71c5365c842e3c47422e2f5100",
-      "sha256": "ead6799ab62088f0db402dd802c2f1c9d01221b826ddbf836142316ca8a3c1b0",
-      "processed_at": "2026-07-30T00:24:03+00:00"
+      "rows": 797,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "921ff8f4ebb378076d86b32fb466c35ac36ba81a78661747def1b3a9081a073d",
+      "processed_at": "2026-08-30T22:41:18+00:00",
+      "filter_audit": {
+        "input_rows": 901,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 5,
+        "final_rows": 797,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2024:Singapore Grand Prix:FP2": {
       "year": 2024,
@@ -655,11 +1017,20 @@
       "session_key": "2024:Singapore Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "physics_prior/2024/2024-18-singapore-grand-prix-fp2-f76707a07d.csv.gz",
-      "rows": 187,
-      "columns": 82,
-      "columns_sha256": "ca3a4ddba26082948cbf16f4ed50bbc3d61aeb2dd513fe084eb0e12db0bb23ec",
-      "sha256": "3edfd93ba0166d05d5c84e9907cd6bbf369737b7c948dd3ce339b9ebe11f7ebc",
-      "processed_at": "2026-07-30T00:26:04+00:00"
+      "rows": 160,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "2213fad04e28180731d71dafc3da24babdb0e4cb5d5bb983c82e77956b3ed536",
+      "processed_at": "2026-08-30T22:41:20+00:00",
+      "filter_audit": {
+        "input_rows": 521,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 41,
+        "robust_outlier_removed": 25,
+        "final_rows": 160,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2024:Singapore Grand Prix:R": {
       "year": 2024,
@@ -671,11 +1042,20 @@
       "session_key": "2024:Singapore Grand Prix:R",
       "session_weight": 1.0,
       "path": "physics_prior/2024/2024-18-singapore-grand-prix-r-b8cfc25a6d.csv.gz",
-      "rows": 1109,
-      "columns": 82,
-      "columns_sha256": "ca3a4ddba26082948cbf16f4ed50bbc3d61aeb2dd513fe084eb0e12db0bb23ec",
-      "sha256": "274b44b997827e17e384985331806c0a14a23571a8bf4aa47e482559647d18f2",
-      "processed_at": "2026-07-30T00:26:01+00:00"
+      "rows": 1102,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "498aba7e5a2b8b0dee2bf346b5a5c39033adbd800385881b870831009aa50015",
+      "processed_at": "2026-08-30T22:41:23+00:00",
+      "filter_audit": {
+        "input_rows": 1177,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 4,
+        "robust_outlier_removed": 3,
+        "final_rows": 1102,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2024:Spanish Grand Prix:FP2": {
       "year": 2024,
@@ -687,11 +1067,20 @@
       "session_key": "2024:Spanish Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "physics_prior/2024/2024-10-spanish-grand-prix-fp2-4fd207a716.csv.gz",
-      "rows": 292,
-      "columns": 82,
-      "columns_sha256": "eaf3a183e84a7e89a5c75108fc8900ff5665caa3ed3077507c16279e1bace77a",
-      "sha256": "306ce2a043a2b825640766aa11aac86be7197a6375b2ec5eac51b470300a9f34",
-      "processed_at": "2026-07-30T00:25:12+00:00"
+      "rows": 247,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "7ac540b9eb61cb98cf739adb70a4f583e53e8d23abb2c22b90cb7d44a4eb92ae",
+      "processed_at": "2026-08-30T22:41:25+00:00",
+      "filter_audit": {
+        "input_rows": 571,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 40,
+        "robust_outlier_removed": 103,
+        "final_rows": 247,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2024:Spanish Grand Prix:R": {
       "year": 2024,
@@ -704,10 +1093,19 @@
       "session_weight": 1.0,
       "path": "physics_prior/2024/2024-10-spanish-grand-prix-r-73b1682344.csv.gz",
       "rows": 1205,
-      "columns": 82,
-      "columns_sha256": "eaf3a183e84a7e89a5c75108fc8900ff5665caa3ed3077507c16279e1bace77a",
-      "sha256": "cc87d833f8ba8553551d46cf380dadefeb96f425156dab934536df8efa2169e1",
-      "processed_at": "2026-07-30T00:25:10+00:00"
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "86ca49fc5a85df74ab593cbc5a557298499e4f4a6025d762768ade9131e82411",
+      "processed_at": "2026-08-30T22:41:31+00:00",
+      "filter_audit": {
+        "input_rows": 1310,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 1,
+        "final_rows": 1205,
+        "baseline_groups": 20,
+        "clean_baseline_count": 20
+      }
     },
     "2024:S\u00e3o Paulo Grand Prix:R": {
       "year": 2024,
@@ -720,10 +1118,19 @@
       "session_weight": 1.0,
       "path": "physics_prior/2024/2024-21-sao-paulo-grand-prix-r-5a2a95ac7c.csv.gz",
       "rows": 767,
-      "columns": 80,
-      "columns_sha256": "c0d4b146cb6c2105556420f4850815743508be3ce3d190ae4f2d8743d56c46bf",
-      "sha256": "c0c0a0fd0a8b70bd76f43e7c69f77fe160bcc8d1500809819d308480f4fe997e",
-      "processed_at": "2026-07-30T00:26:22+00:00"
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "bf68659a5a0f89d9763ed27192366799f30e60c0a532aa014fbe09951e5d340a",
+      "processed_at": "2026-08-30T22:41:37+00:00",
+      "filter_audit": {
+        "input_rows": 1135,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 8,
+        "robust_outlier_removed": 25,
+        "final_rows": 767,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2024:S\u00e3o Paulo Grand Prix:S": {
       "year": 2024,
@@ -736,10 +1143,19 @@
       "session_weight": 0.75,
       "path": "physics_prior/2024/2024-21-sao-paulo-grand-prix-s-f65707bef1.csv.gz",
       "rows": 379,
-      "columns": 82,
-      "columns_sha256": "7f2dd2c86fee9b2794fbbc1bcf29af03b516c3f1f3093f56810eeeb75d281d75",
-      "sha256": "a4429c0fa57e7a5519e66de7164cf9f0548ae01e4e808cb14b098faa75538511",
-      "processed_at": "2026-07-30T00:26:24+00:00"
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "ce962c7e7904f5d81786331e8b5b71beccaa2cc125d05b5dd71b64065f030b68",
+      "processed_at": "2026-08-30T22:41:39+00:00",
+      "filter_audit": {
+        "input_rows": 476,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 0,
+        "final_rows": 379,
+        "baseline_groups": 20,
+        "clean_baseline_count": 20
+      }
     },
     "2024:United States Grand Prix:R": {
       "year": 2024,
@@ -751,11 +1167,20 @@
       "session_key": "2024:United States Grand Prix:R",
       "session_weight": 1.0,
       "path": "physics_prior/2024/2024-19-united-states-grand-prix-r-c78c9973bd.csv.gz",
-      "rows": 882,
-      "columns": 81,
-      "columns_sha256": "e062cf4d23baf37328c8b7e81bf57861d0ded5a7cac45199b5af455d959a75d2",
-      "sha256": "af9188bf0455848083feaa2bcfe903ffef16eb35e1062485f2f7c2f6e16144cb",
-      "processed_at": "2026-07-30T00:26:07+00:00"
+      "rows": 881,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "551482a0dbb8562d3c51315123758c3586910bb2f9359ed41bb11f047b41b06e",
+      "processed_at": "2026-08-30T22:41:43+00:00",
+      "filter_audit": {
+        "input_rows": 1059,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 2,
+        "final_rows": 881,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2024:United States Grand Prix:S": {
       "year": 2024,
@@ -768,10 +1193,19 @@
       "session_weight": 0.75,
       "path": "physics_prior/2024/2024-19-united-states-grand-prix-s-ba441ec4ec.csv.gz",
       "rows": 360,
-      "columns": 82,
-      "columns_sha256": "426263ee4782a0f2617f4dc84cf75db7cd527c23acf706b4fcda831fe9feecd9",
-      "sha256": "9de90a4b626b5ee7cdd8e47d52b69be09aaeb7574a33c7dbac3df3124f09bcaa",
-      "processed_at": "2026-07-30T00:26:09+00:00"
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "a71971054d5a39b36cb17285e860ddd5c1b4fc7d647d69e54b2e577770f6d306",
+      "processed_at": "2026-08-30T22:41:45+00:00",
+      "filter_audit": {
+        "input_rows": 380,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 0,
+        "final_rows": 360,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2025:Abu Dhabi Grand Prix:FP2": {
       "year": 2025,
@@ -783,11 +1217,20 @@
       "session_key": "2025:Abu Dhabi Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "physics_prior/2025/2025-24-abu-dhabi-grand-prix-fp2-13c1492ef8.csv.gz",
-      "rows": 284,
-      "columns": 82,
-      "columns_sha256": "e9ad70e9c265e7a8d552428c10a7a13f9e04eb660e03945e3e60201a6cf165c0",
-      "sha256": "4d65421b9a6aabe00436b6c134146854c32f8a7ad02a939081814494b0b044cc",
-      "processed_at": "2026-08-10T01:06:36+00:00"
+      "rows": 256,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "5bce4a093756b747eb1bdb9e3f1619fb519d27bf726588ac867756d55c39c3dc",
+      "processed_at": "2026-08-30T22:41:48+00:00",
+      "filter_audit": {
+        "input_rows": 584,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 39,
+        "robust_outlier_removed": 80,
+        "final_rows": 256,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2025:Abu Dhabi Grand Prix:R": {
       "year": 2025,
@@ -800,10 +1243,19 @@
       "session_weight": 1.0,
       "path": "physics_prior/2025/2025-24-abu-dhabi-grand-prix-r-a18fe0d167.csv.gz",
       "rows": 1082,
-      "columns": 82,
-      "columns_sha256": "e9ad70e9c265e7a8d552428c10a7a13f9e04eb660e03945e3e60201a6cf165c0",
-      "sha256": "ad285514334efc9e34f175118a7e91042e4b2b8f4941caf313d2a3c4b1a2ce63",
-      "processed_at": "2026-08-10T01:06:36+00:00"
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "4777fd53b102f0f19589608b572f4c371927e807e265725a6ec3f9146730935d",
+      "processed_at": "2026-08-30T22:41:51+00:00",
+      "filter_audit": {
+        "input_rows": 1156,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 0,
+        "final_rows": 1082,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2025:Australian Grand Prix:FP2": {
       "year": 2025,
@@ -815,11 +1267,20 @@
       "session_key": "2025:Australian Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "physics_prior/2025/2025-01-australian-grand-prix-fp2-2c0d8cf280.csv.gz",
-      "rows": 279,
-      "columns": 81,
-      "columns_sha256": "8f79fb9c1f357a81a9ba62f18469fbb127467e16600dd932daa4934fe13ca7aa",
-      "sha256": "01d14d974d515a0d62d9dd26da9658b760de3cde7da59b2df3fdc00185fe6a16",
-      "processed_at": "2026-07-30T00:26:48+00:00"
+      "rows": 248,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "a3baa7f1ce3a381cf41497251161baed0f8def2aafe550b0b75c6e25a588e01c",
+      "processed_at": "2026-08-30T22:41:53+00:00",
+      "filter_audit": {
+        "input_rows": 552,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 30,
+        "robust_outlier_removed": 96,
+        "final_rows": 248,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2025:Australian Grand Prix:R": {
       "year": 2025,
@@ -831,11 +1292,20 @@
       "session_key": "2025:Australian Grand Prix:R",
       "session_weight": 1.0,
       "path": "physics_prior/2025/2025-01-australian-grand-prix-r-90c612288e.csv.gz",
-      "rows": 530,
-      "columns": 79,
-      "columns_sha256": "e8536bad5de71765e6d4bf7a90b05a7d9b6119c77d100b42b91444aa5e733eda",
-      "sha256": "c9c13962cc27af517f45bf085b8e95f17025ee653a6a126ed569a261634c2569",
-      "processed_at": "2026-07-30T00:26:45+00:00"
+      "rows": 518,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "b7f56ff0a7cba372520bec41d1bf09034583316b48bcb9a3a7b4b678d118adeb",
+      "processed_at": "2026-08-30T22:41:56+00:00",
+      "filter_audit": {
+        "input_rows": 927,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 24,
+        "robust_outlier_removed": 9,
+        "final_rows": 518,
+        "baseline_groups": 13,
+        "clean_baseline_count": 13
+      }
     },
     "2025:Austrian Grand Prix:FP2": {
       "year": 2025,
@@ -847,11 +1317,20 @@
       "session_key": "2025:Austrian Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "physics_prior/2025/2025-11-austrian-grand-prix-fp2-fc48af146b.csv.gz",
-      "rows": 336,
-      "columns": 82,
-      "columns_sha256": "89744c08e2e44e55daa9e40205ad6e33f9896bbf38b979e847ebf6d7a9a0650e",
-      "sha256": "4d12a77e2fe89f0ae275d6f7e3b848ff6b8462c1e4f78c914c50126da1a216a8",
-      "processed_at": "2026-07-30T00:27:58+00:00"
+      "rows": 285,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "86235a80d201683142db5d12746bfb61af59b7db5645b701f3250a87e657c317",
+      "processed_at": "2026-08-30T22:42:00+00:00",
+      "filter_audit": {
+        "input_rows": 664,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 60,
+        "robust_outlier_removed": 99,
+        "final_rows": 285,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2025:Austrian Grand Prix:R": {
       "year": 2025,
@@ -864,10 +1343,19 @@
       "session_weight": 1.0,
       "path": "physics_prior/2025/2025-11-austrian-grand-prix-r-31ca805682.csv.gz",
       "rows": 995,
-      "columns": 79,
-      "columns_sha256": "635c4521240ddaf776dbc0bae9fa5402f5b182cb50738146fe4da4d5e29ea69b",
-      "sha256": "4035af99c6e0cc50b111a7dbc1597873e94791e25ffbd5409d4e7d47dd1984bd",
-      "processed_at": "2026-07-30T00:27:55+00:00"
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "264f995bf039361649c6963bfae87a58cfc7685e5761864fd46b6dbc96e3d40a",
+      "processed_at": "2026-08-30T22:42:03+00:00",
+      "filter_audit": {
+        "input_rows": 1127,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 0,
+        "final_rows": 995,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2025:Azerbaijan Grand Prix:FP2": {
       "year": 2025,
@@ -879,11 +1367,20 @@
       "session_key": "2025:Azerbaijan Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "physics_prior/2025/2025-17-azerbaijan-grand-prix-fp2-8a0ec1a043.csv.gz",
-      "rows": 109,
-      "columns": 81,
-      "columns_sha256": "cb2aa5e46a6456367301a2f48c043d64bbcc48b3c58eda11071dd578049891f8",
-      "sha256": "f7b5a44c23fcb70c97bea738844c8c15dfa82ef9a83fda7b8a3edf36c01d5844",
-      "processed_at": "2026-07-30T00:28:38+00:00"
+      "rows": 70,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "0d70eeda9b27665d1b881a944d13ac7f16018d7ad5c694075ede469054f76e1a",
+      "processed_at": "2026-08-30T22:42:06+00:00",
+      "filter_audit": {
+        "input_rows": 434,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 34,
+        "robust_outlier_removed": 21,
+        "final_rows": 70,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2025:Azerbaijan Grand Prix:R": {
       "year": 2025,
@@ -895,11 +1392,20 @@
       "session_key": "2025:Azerbaijan Grand Prix:R",
       "session_weight": 1.0,
       "path": "physics_prior/2025/2025-17-azerbaijan-grand-prix-r-9a76983530.csv.gz",
-      "rows": 787,
-      "columns": 81,
-      "columns_sha256": "934256fc77f5b9426e68796d42984b3aeaa163b63a91ef194a093e5c44af8357",
-      "sha256": "258fbee7b58aa85de2db61202333a0be26019f5c16f671f3d1b62a50969e625e",
-      "processed_at": "2026-07-30T00:28:35+00:00"
+      "rows": 779,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "e2bec099f51ee842946bade105aea0ab6dfca3393928241c0a098b4e09e17679",
+      "processed_at": "2026-08-30T22:42:10+00:00",
+      "filter_audit": {
+        "input_rows": 968,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 17,
+        "final_rows": 779,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2025:Bahrain Grand Prix:FP2": {
       "year": 2025,
@@ -911,11 +1417,20 @@
       "session_key": "2025:Bahrain Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "physics_prior/2025/2025-04-bahrain-grand-prix-fp2-0e902304f9.csv.gz",
-      "rows": 255,
-      "columns": 82,
-      "columns_sha256": "80dbabb8e29dac7b43f7c9f3ebcb870a2a042eecd31f5e4a350482b599c69a34",
-      "sha256": "5fe5090286bc71d4c04c55f87f3da1445de711837a9957c9b396a73e6807b6ba",
-      "processed_at": "2026-07-30T00:27:04+00:00"
+      "rows": 211,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "318d58894fc1069aa2e3f295f22c8568d97ee76d4d1fff95a40aeceea8cb480c",
+      "processed_at": "2026-08-30T22:42:13+00:00",
+      "filter_audit": {
+        "input_rows": 522,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 60,
+        "robust_outlier_removed": 52,
+        "final_rows": 211,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2025:Bahrain Grand Prix:R": {
       "year": 2025,
@@ -927,11 +1442,20 @@
       "session_key": "2025:Bahrain Grand Prix:R",
       "session_weight": 1.0,
       "path": "physics_prior/2025/2025-04-bahrain-grand-prix-r-30799eff94.csv.gz",
-      "rows": 952,
-      "columns": 82,
-      "columns_sha256": "80dbabb8e29dac7b43f7c9f3ebcb870a2a042eecd31f5e4a350482b599c69a34",
-      "sha256": "fd1f31f590ce6692d7b5a40fcc6f219b91a737a44dc2e5ea7079c8a6023a4ccf",
-      "processed_at": "2026-07-30T00:27:01+00:00"
+      "rows": 950,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "fb002f0dca7272e41ce2abf726fd21f8dd280a4fb2a22144cf34be78cf0b7eab",
+      "processed_at": "2026-08-30T22:42:17+00:00",
+      "filter_audit": {
+        "input_rows": 1128,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 2,
+        "robust_outlier_removed": 0,
+        "final_rows": 950,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2025:Belgian Grand Prix:R": {
       "year": 2025,
@@ -943,11 +1467,20 @@
       "session_key": "2025:Belgian Grand Prix:R",
       "session_weight": 1.0,
       "path": "physics_prior/2025/2025-13-belgian-grand-prix-r-4fc53f6e33.csv.gz",
-      "rows": 535,
-      "columns": 82,
-      "columns_sha256": "61fc9d706b8c81eb59e43741206e13392fec0518883ce53f2c2751daf02324d2",
-      "sha256": "511b0accbfa66f3cab60dcb06216662594bb8fe90eae5a1245d10eef3a3ff04d",
-      "processed_at": "2026-07-30T00:28:10+00:00"
+      "rows": 667,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "e8b8443f581ee8143343ab0d364d1862b826598ec786154761ad7e1e9b744f01",
+      "processed_at": "2026-08-30T22:42:20+00:00",
+      "filter_audit": {
+        "input_rows": 879,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 10,
+        "final_rows": 667,
+        "baseline_groups": 20,
+        "clean_baseline_count": 20
+      }
     },
     "2025:Belgian Grand Prix:S": {
       "year": 2025,
@@ -960,10 +1493,19 @@
       "session_weight": 0.75,
       "path": "physics_prior/2025/2025-13-belgian-grand-prix-s-37bec8d38a.csv.gz",
       "rows": 276,
-      "columns": 82,
-      "columns_sha256": "61fc9d706b8c81eb59e43741206e13392fec0518883ce53f2c2751daf02324d2",
-      "sha256": "1d9a332c76ba953e3454daf908b49723153898d2377311cd6d4dc052f601a68e",
-      "processed_at": "2026-07-30T00:28:12+00:00"
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "812bea70419413909728b00facfb545d0c0d419737f163df421ecdb3f4c1dee7",
+      "processed_at": "2026-08-30T22:42:22+00:00",
+      "filter_audit": {
+        "input_rows": 297,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 0,
+        "final_rows": 276,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2025:British Grand Prix:FP2": {
       "year": 2025,
@@ -975,11 +1517,20 @@
       "session_key": "2025:British Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "physics_prior/2025/2025-12-british-grand-prix-fp2-c260b728ea.csv.gz",
-      "rows": 250,
-      "columns": 82,
-      "columns_sha256": "cffa5365cfa5b46aedec2aaefa2cf3a1121ea281092e314412ba3211126703ae",
-      "sha256": "e12232e64ee6e6b4b9dc3158cbaa766c0271be8d68e013dad057e77ab7937cb0",
-      "processed_at": "2026-07-30T00:28:04+00:00"
+      "rows": 177,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "4581e0c27700206f4a34f46e556d3fa3c563bd13eb65d192a22b51d9e4f0c318",
+      "processed_at": "2026-08-30T22:42:26+00:00",
+      "filter_audit": {
+        "input_rows": 536,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 67,
+        "robust_outlier_removed": 67,
+        "final_rows": 177,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2025:British Grand Prix:R": {
       "year": 2025,
@@ -991,11 +1542,20 @@
       "session_key": "2025:British Grand Prix:R",
       "session_weight": 1.0,
       "path": "physics_prior/2025/2025-12-british-grand-prix-r-ad403d7696.csv.gz",
-      "rows": 435,
-      "columns": 79,
-      "columns_sha256": "6f611b3b1bdca7932ce64eb1247bad6588bd4ea1325fbde5e17ec4087eed92f2",
-      "sha256": "05a70d91f2c8e159a31165e838ab922a253ff3543138e96d64f4a45680a92ffb",
-      "processed_at": "2026-07-30T00:28:02+00:00"
+      "rows": 403,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "e80cbb97a078af5bf3f9babfc81c59d3ac8bea0eacf15674a9685c871a779096",
+      "processed_at": "2026-08-30T22:42:30+00:00",
+      "filter_audit": {
+        "input_rows": 826,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 15,
+        "robust_outlier_removed": 23,
+        "final_rows": 403,
+        "baseline_groups": 18,
+        "clean_baseline_count": 18
+      }
     },
     "2025:Canadian Grand Prix:FP2": {
       "year": 2025,
@@ -1007,11 +1567,20 @@
       "session_key": "2025:Canadian Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "physics_prior/2025/2025-10-canadian-grand-prix-fp2-0037cc3d79.csv.gz",
-      "rows": 295,
-      "columns": 80,
-      "columns_sha256": "f7b0e558a03183aab33bd7abf1416c40f39ebd4ed8bec365338e1f4f1a3d75d1",
-      "sha256": "fa489e37ac28b961108a86f20168f867efdaa65952906a909df31df055f53250",
-      "processed_at": "2026-07-30T00:27:52+00:00"
+      "rows": 300,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "21dd62468df46018a8d07d8077b0b864a68ac957b2f6c3d647503b5f78b0c74d",
+      "processed_at": "2026-08-30T22:42:32+00:00",
+      "filter_audit": {
+        "input_rows": 598,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 21,
+        "robust_outlier_removed": 83,
+        "final_rows": 300,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2025:Canadian Grand Prix:R": {
       "year": 2025,
@@ -1023,11 +1592,20 @@
       "session_key": "2025:Canadian Grand Prix:R",
       "session_weight": 1.0,
       "path": "physics_prior/2025/2025-10-canadian-grand-prix-r-4bcb9fdfd3.csv.gz",
-      "rows": 1163,
-      "columns": 82,
-      "columns_sha256": "7a0f0bac6bbafecf54d275603ecc1326a324f792701256bc5d578c59137a5c86",
-      "sha256": "13051b65cc17b32451f6f26ee26cd6e2416ecaf3aaf908f8b6e03392fa4a79c4",
-      "processed_at": "2026-07-30T00:27:50+00:00"
+      "rows": 1162,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "b53c36200bbf43daba18e4cd71d10c76c9a4fe063470bf085d3361bf0703f8ac",
+      "processed_at": "2026-08-30T22:42:35+00:00",
+      "filter_audit": {
+        "input_rows": 1349,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 1,
+        "final_rows": 1162,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2025:Chinese Grand Prix:R": {
       "year": 2025,
@@ -1040,10 +1618,19 @@
       "session_weight": 1.0,
       "path": "physics_prior/2025/2025-02-chinese-grand-prix-r-69f22da1de.csv.gz",
       "rows": 945,
-      "columns": 81,
-      "columns_sha256": "3a9eb58bf65587536c1a8276807891d166eef819b1ae5bd0f49c840ad70b6ad0",
-      "sha256": "b059aa7177b14fafe2d9e2ce27571da1d6366882a33927d8bd80f81f9a944a73",
-      "processed_at": "2026-07-30T00:26:51+00:00"
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "bfac8ce047c1f9904660ca5a42c75a180edd79069a75d9d28234aae8da560fa7",
+      "processed_at": "2026-08-30T22:42:38+00:00",
+      "filter_audit": {
+        "input_rows": 1065,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 0,
+        "final_rows": 945,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2025:Chinese Grand Prix:S": {
       "year": 2025,
@@ -1056,10 +1643,19 @@
       "session_weight": 0.75,
       "path": "physics_prior/2025/2025-02-chinese-grand-prix-s-272036468e.csv.gz",
       "rows": 355,
-      "columns": 82,
-      "columns_sha256": "1988691e50b7c015c6919a7ce716c6343bcb49e2334113fac298e28102f8896b",
-      "sha256": "0da1e873132011542e8b9ce94ec3039bcac6e8546131e0403e9bd66d90238479",
-      "processed_at": "2026-07-30T00:26:53+00:00"
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "3c3823d1907471243e587a96b61454db28a0f31669ae25f928d20541ca968a07",
+      "processed_at": "2026-08-30T22:42:39+00:00",
+      "filter_audit": {
+        "input_rows": 380,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 0,
+        "final_rows": 355,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2025:Dutch Grand Prix:FP2": {
       "year": 2025,
@@ -1071,11 +1667,20 @@
       "session_key": "2025:Dutch Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "physics_prior/2025/2025-15-dutch-grand-prix-fp2-7e8ea32f53.csv.gz",
-      "rows": 182,
-      "columns": 81,
-      "columns_sha256": "7d48943cc20626841d66f89df9c26c9438e1ab73019cb8027ca593331dfa7793",
-      "sha256": "c021e90b12bf0c50c42955a4f6a70861b91922a717bccdc6652353717c55282c",
-      "processed_at": "2026-07-30T00:28:27+00:00"
+      "rows": 165,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "6aadaad49107a73b184742d80dc697321de1d9285ed5ebc601c90061ab2fbecc",
+      "processed_at": "2026-08-30T22:42:41+00:00",
+      "filter_audit": {
+        "input_rows": 449,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 46,
+        "robust_outlier_removed": 31,
+        "final_rows": 165,
+        "baseline_groups": 19,
+        "clean_baseline_count": 19
+      }
     },
     "2025:Dutch Grand Prix:R": {
       "year": 2025,
@@ -1087,11 +1692,20 @@
       "session_key": "2025:Dutch Grand Prix:R",
       "session_weight": 1.0,
       "path": "physics_prior/2025/2025-15-dutch-grand-prix-r-5356f791d7.csv.gz",
-      "rows": 1005,
-      "columns": 82,
-      "columns_sha256": "ea701315245c63365f12f27c04a4ebc569aa430e68040395a17f23d34ea78392",
-      "sha256": "309874c85957074c933d251109eebfe36334bbfddc067b6c142f85137ab975a3",
-      "processed_at": "2026-07-30T00:28:24+00:00"
+      "rows": 1004,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "e2c9e0fd4bb290c0911ca2e24d428e84965735020ebe3fac41ecb41d3c2fc73c",
+      "processed_at": "2026-08-30T22:42:44+00:00",
+      "filter_audit": {
+        "input_rows": 1364,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 1,
+        "final_rows": 1004,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2025:Emilia Romagna Grand Prix:FP2": {
       "year": 2025,
@@ -1103,11 +1717,20 @@
       "session_key": "2025:Emilia Romagna Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "physics_prior/2025/2025-07-emilia-romagna-grand-prix-fp2-ba98e0e448.csv.gz",
-      "rows": 204,
-      "columns": 82,
-      "columns_sha256": "ba0d33bc812b5904d72e1d9871635e8ae6296d8afb1b5e9231ff9ee1e3b9b63f",
-      "sha256": "3f064945fa801cb1fad2225d80804e5d8307aea35649173483a8afae0e97a40b",
-      "processed_at": "2026-07-30T00:27:25+00:00"
+      "rows": 166,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "3b92506531589c87d1554bf66b48a27970f0cff37d8024d88914949263e0c39a",
+      "processed_at": "2026-08-30T22:42:46+00:00",
+      "filter_audit": {
+        "input_rows": 519,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 75,
+        "robust_outlier_removed": 45,
+        "final_rows": 166,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2025:Emilia Romagna Grand Prix:R": {
       "year": 2025,
@@ -1120,10 +1743,19 @@
       "session_weight": 1.0,
       "path": "physics_prior/2025/2025-07-emilia-romagna-grand-prix-r-bf3532d60a.csv.gz",
       "rows": 942,
-      "columns": 82,
-      "columns_sha256": "ba0d33bc812b5904d72e1d9871635e8ae6296d8afb1b5e9231ff9ee1e3b9b63f",
-      "sha256": "0ec6576b00b98085ed11f7679de78ddc0fdf35382c22b37a08a9065e09ef4b4c",
-      "processed_at": "2026-07-30T00:27:23+00:00"
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "97c012d695812cdb71a6f9c8126df83e8a4b3cf18db094836fe2a542ac952dbb",
+      "processed_at": "2026-08-30T22:42:49+00:00",
+      "filter_audit": {
+        "input_rows": 1207,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 0,
+        "final_rows": 942,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2025:Hungarian Grand Prix:FP2": {
       "year": 2025,
@@ -1135,11 +1767,20 @@
       "session_key": "2025:Hungarian Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "physics_prior/2025/2025-14-hungarian-grand-prix-fp2-dcf91669d8.csv.gz",
-      "rows": 255,
-      "columns": 82,
-      "columns_sha256": "8c9b74ff64295124283cde378b503b678360684e9516592afe8668fce0d4fe96",
-      "sha256": "0c3b383c62d225ca1ee8935e46a12020d3912954ff94489d24bce5c8b4367e6f",
-      "processed_at": "2026-07-30T00:28:20+00:00"
+      "rows": 200,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "1a24e3f05bcce7d0f2a5d49439248703bf00a3948d1fa33701613f601ae30406",
+      "processed_at": "2026-08-30T22:42:51+00:00",
+      "filter_audit": {
+        "input_rows": 565,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 78,
+        "robust_outlier_removed": 67,
+        "final_rows": 200,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2025:Hungarian Grand Prix:R": {
       "year": 2025,
@@ -1152,10 +1793,19 @@
       "session_weight": 1.0,
       "path": "physics_prior/2025/2025-14-hungarian-grand-prix-r-07b3dce955.csv.gz",
       "rows": 1289,
-      "columns": 82,
-      "columns_sha256": "8c9b74ff64295124283cde378b503b678360684e9516592afe8668fce0d4fe96",
-      "sha256": "e915671c1bafc2ed168289c5945ab91abab4970da59e48580634f36b8772499f",
-      "processed_at": "2026-07-30T00:28:17+00:00"
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "0d784452a3c1cc5853b375291316579c2fea52468ca5535c0a984b37ca712079",
+      "processed_at": "2026-08-30T22:42:54+00:00",
+      "filter_audit": {
+        "input_rows": 1368,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 0,
+        "final_rows": 1289,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2025:Italian Grand Prix:FP2": {
       "year": 2025,
@@ -1167,11 +1817,20 @@
       "session_key": "2025:Italian Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "physics_prior/2025/2025-16-italian-grand-prix-fp2-6beb55f36d.csv.gz",
-      "rows": 233,
-      "columns": 82,
-      "columns_sha256": "42ca2543df1511bc87ccb273ad1a25d8fe018550d92757f61f04d312c53c7f67",
-      "sha256": "0b359255287c287d9d5a2308a8af6302b6f46b499028440cc4d2c4a1fcc7f2e3",
-      "processed_at": "2026-07-30T00:28:32+00:00"
+      "rows": 202,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "eea179bc935da39d3eda0df20effd441466881f768faee3e2ec9cd45e4705f0d",
+      "processed_at": "2026-08-30T22:42:57+00:00",
+      "filter_audit": {
+        "input_rows": 531,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 61,
+        "robust_outlier_removed": 56,
+        "final_rows": 202,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2025:Italian Grand Prix:R": {
       "year": 2025,
@@ -1183,11 +1842,20 @@
       "session_key": "2025:Italian Grand Prix:R",
       "session_weight": 1.0,
       "path": "physics_prior/2025/2025-16-italian-grand-prix-r-a393b8d446.csv.gz",
-      "rows": 897,
-      "columns": 81,
-      "columns_sha256": "e4d63f205eb3dfc5161b59bf8d2b828ba7f72d369abfb5c5e9e252b42d20ee45",
-      "sha256": "b1ab2526fe91bff55588a2a5449b2fa64ad75cc6561ec5acb7f2d294a9211402",
-      "processed_at": "2026-07-30T00:28:30+00:00"
+      "rows": 890,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "9bdadfecd5b27ad43a8e66814f50b3d1ac162739d0a8047d2d1d6133ac4185e4",
+      "processed_at": "2026-08-30T22:43:00+00:00",
+      "filter_audit": {
+        "input_rows": 975,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 6,
+        "robust_outlier_removed": 1,
+        "final_rows": 890,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2025:Japanese Grand Prix:FP2": {
       "year": 2025,
@@ -1199,11 +1867,20 @@
       "session_key": "2025:Japanese Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "physics_prior/2025/2025-03-japanese-grand-prix-fp2-5def9a9964.csv.gz",
-      "rows": 47,
-      "columns": 81,
-      "columns_sha256": "62cdd416052d7b151a4f91ee5325f253c08994e69b91f4d7d8348d9ea0d5fc3b",
-      "sha256": "7bc3cac6e44c6f683361b839130e1c8d7dc991072c920a3f40d98581615e3ca5",
-      "processed_at": "2026-07-30T00:26:58+00:00"
+      "rows": 6,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "e078fac30260746dab8d9b7895bcdd4c57ff34a94338f856858b111f4415ef3d",
+      "processed_at": "2026-08-30T22:43:02+00:00",
+      "filter_audit": {
+        "input_rows": 220,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 70,
+        "robust_outlier_removed": 0,
+        "final_rows": 6,
+        "baseline_groups": 2,
+        "clean_baseline_count": 2
+      }
     },
     "2025:Japanese Grand Prix:R": {
       "year": 2025,
@@ -1216,10 +1893,19 @@
       "session_weight": 1.0,
       "path": "physics_prior/2025/2025-03-japanese-grand-prix-r-d1a306f757.csv.gz",
       "rows": 997,
-      "columns": 82,
-      "columns_sha256": "e241a4ec44aaf9b55abb5e56d791e855bfd24a989c11152cc4c320d6a6728c2b",
-      "sha256": "85d672ba4c08dc70727ff115e426097b9ec0e55b0c50bf7d84b78f342010b008",
-      "processed_at": "2026-07-30T00:26:56+00:00"
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "ecb746674ea50eae2446e40a8253c953e93c57e3a55fc439f1ab8fd0dd80e9ed",
+      "processed_at": "2026-08-30T22:43:05+00:00",
+      "filter_audit": {
+        "input_rows": 1059,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 0,
+        "final_rows": 997,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2025:Las Vegas Grand Prix:FP2": {
       "year": 2025,
@@ -1231,11 +1917,20 @@
       "session_key": "2025:Las Vegas Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "physics_prior/2025/2025-22-las-vegas-grand-prix-fp2-9e500fa3c5.csv.gz",
-      "rows": 77,
-      "columns": 82,
-      "columns_sha256": "8376e2c89f4e974271324f27cc54d3c338e89c42dde6d2b9bed608e8d24b1e06",
-      "sha256": "3103b9f2996615cf89c323e085249f346f5f66be3f8fa24c0a6b94d1d788005c",
-      "processed_at": "2026-08-10T01:06:36+00:00"
+      "rows": 116,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "bab1f901ba57c01be53d5166125da57fa1e471e7b1f49f06c4d2f72f7425854c",
+      "processed_at": "2026-08-30T22:43:07+00:00",
+      "filter_audit": {
+        "input_rows": 313,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 14,
+        "robust_outlier_removed": 8,
+        "final_rows": 116,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2025:Las Vegas Grand Prix:R": {
       "year": 2025,
@@ -1248,10 +1943,19 @@
       "session_weight": 1.0,
       "path": "physics_prior/2025/2025-22-las-vegas-grand-prix-r-74fb57a050.csv.gz",
       "rows": 760,
-      "columns": 80,
-      "columns_sha256": "1f4dc48f21cf78da778b167e911a3fad0913c6ca6f70e238837a9ec61045bd4d",
-      "sha256": "4390fcd7371f2476afeb501a22c9a6395636bd877ae7a8a60919de4ab16f61e5",
-      "processed_at": "2026-08-10T01:06:36+00:00"
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "51302bbc7d283e43e4f07ac3e3a98ec93bb07b6dcca1e702c287b7ea10a2ce8e",
+      "processed_at": "2026-08-30T22:43:11+00:00",
+      "filter_audit": {
+        "input_rows": 886,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 0,
+        "final_rows": 760,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2025:Mexico City Grand Prix:FP2": {
       "year": 2025,
@@ -1263,11 +1967,20 @@
       "session_key": "2025:Mexico City Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "physics_prior/2025/2025-20-mexico-city-grand-prix-fp2-1931734ee2.csv.gz",
-      "rows": 301,
-      "columns": 82,
-      "columns_sha256": "983665b1fb427e65aafba3d6ef4e7a47a37b81dc41592821404435da3832e36b",
-      "sha256": "54100eb61e7e2a8f0443daf20bb868c6e8473f2198a5d44a874bb184977df146",
-      "processed_at": "2026-08-10T01:06:36+00:00"
+      "rows": 270,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "51d636fc231c1ef9e3236da712a4228027c988a0c0480112a1ada2f05cec99ca",
+      "processed_at": "2026-08-30T22:43:14+00:00",
+      "filter_audit": {
+        "input_rows": 620,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 51,
+        "robust_outlier_removed": 94,
+        "final_rows": 270,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2025:Mexico City Grand Prix:R": {
       "year": 2025,
@@ -1279,11 +1992,20 @@
       "session_key": "2025:Mexico City Grand Prix:R",
       "session_weight": 1.0,
       "path": "physics_prior/2025/2025-20-mexico-city-grand-prix-r-7b32684fe4.csv.gz",
-      "rows": 1105,
-      "columns": 81,
-      "columns_sha256": "08a2297023e1d7eb0e1c04742e4634c7d34d20aa21c8e055c61bd9c316f061f9",
-      "sha256": "fe9edbe1f14f9454514a253f9d7922e8ce3e4e7b831d34bd0a99fcfa0fa7fdb6",
-      "processed_at": "2026-08-10T01:06:36+00:00"
+      "rows": 1104,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "ba67c03fe7751081a1ae6aca0b9597645d69efe69051bfd598f3d8a4ce2b7d1e",
+      "processed_at": "2026-08-30T22:43:17+00:00",
+      "filter_audit": {
+        "input_rows": 1263,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 1,
+        "robust_outlier_removed": 1,
+        "final_rows": 1104,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2025:Miami Grand Prix:R": {
       "year": 2025,
@@ -1295,11 +2017,20 @@
       "session_key": "2025:Miami Grand Prix:R",
       "session_weight": 1.0,
       "path": "physics_prior/2025/2025-06-miami-grand-prix-r-ca8794e176.csv.gz",
-      "rows": 478,
-      "columns": 81,
-      "columns_sha256": "ed3c3a6656ca67ae5ac9e151cf914a60682bd6dfce02bdebfe4266dca8afa775",
-      "sha256": "d7e845eb357ad3c6b1f6e50cdb287271924aec7745dfe10f9794915b12580937",
-      "processed_at": "2026-07-30T00:27:14+00:00"
+      "rows": 476,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "fe40d1cfb3c30219ee1c44124c6188fab895c04ec7c726f34da237bdd5d82f96",
+      "processed_at": "2026-08-30T22:43:19+00:00",
+      "filter_audit": {
+        "input_rows": 1005,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 2,
+        "robust_outlier_removed": 1,
+        "final_rows": 476,
+        "baseline_groups": 19,
+        "clean_baseline_count": 19
+      }
     },
     "2025:Miami Grand Prix:S": {
       "year": 2025,
@@ -1311,11 +2042,20 @@
       "session_key": "2025:Miami Grand Prix:S",
       "session_weight": 0.75,
       "path": "physics_prior/2025/2025-06-miami-grand-prix-s-8c4037d932.csv.gz",
-      "rows": 152,
-      "columns": 81,
-      "columns_sha256": "9629ed669b19853bba07480bdd30b28ecb13c58a6a20b1928b494b95f4c12741",
-      "sha256": "b7b6a3f5f22ca961f0983d9453913be8614f79aa4e2a693186cf565f06c204fe",
-      "processed_at": "2026-07-30T00:27:18+00:00"
+      "rows": 149,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "fbdcfe549b3a4fe3d5619031ff81852962032c4911f2c6b112e9d84b692b9009",
+      "processed_at": "2026-08-30T22:43:21+00:00",
+      "filter_audit": {
+        "input_rows": 331,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 3,
+        "robust_outlier_removed": 11,
+        "final_rows": 149,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2025:Monaco Grand Prix:FP2": {
       "year": 2025,
@@ -1327,11 +2067,20 @@
       "session_key": "2025:Monaco Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "physics_prior/2025/2025-08-monaco-grand-prix-fp2-f881fb3074.csv.gz",
-      "rows": 258,
-      "columns": 82,
-      "columns_sha256": "b970ee5ab51c18e7567f96466438d2396fc8b64f341911548934611af4414b14",
-      "sha256": "b864d9130167e4dc65acaa14141a04f20a5101e6b52aa1cff2fb8d8a2a2a8108",
-      "processed_at": "2026-07-30T00:27:35+00:00"
+      "rows": 237,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "e3b14f5c58a357557cb94f9def3eab0f1ea1cae0744721d0e8ab8f146bc544ba",
+      "processed_at": "2026-08-30T22:43:23+00:00",
+      "filter_audit": {
+        "input_rows": 612,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 64,
+        "robust_outlier_removed": 79,
+        "final_rows": 237,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2025:Monaco Grand Prix:R": {
       "year": 2025,
@@ -1343,11 +2092,20 @@
       "session_key": "2025:Monaco Grand Prix:R",
       "session_weight": 1.0,
       "path": "physics_prior/2025/2025-08-monaco-grand-prix-r-84e4879317.csv.gz",
-      "rows": 1177,
-      "columns": 82,
-      "columns_sha256": "b970ee5ab51c18e7567f96466438d2396fc8b64f341911548934611af4414b14",
-      "sha256": "78d8725775582e2bf325d581a21753091680d57f0d850af7ddf6b968e51b3a88",
-      "processed_at": "2026-07-30T00:27:31+00:00"
+      "rows": 1163,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "1bfb570ab99c7c652bd0c2ab7da11d37ffd8372e45efd08b4970f49f7ea2a92e",
+      "processed_at": "2026-08-30T22:43:26+00:00",
+      "filter_audit": {
+        "input_rows": 1425,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 2,
+        "robust_outlier_removed": 12,
+        "final_rows": 1163,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2025:Qatar Grand Prix:R": {
       "year": 2025,
@@ -1360,10 +2118,19 @@
       "session_weight": 1.0,
       "path": "physics_prior/2025/2025-23-qatar-grand-prix-r-1801faa87e.csv.gz",
       "rows": 922,
-      "columns": 82,
-      "columns_sha256": "db31e7238c38ccf5c51e91c54cfc9587fdef5a120f811b1a6c85fa44720bfb84",
-      "sha256": "1a3fb5d8c5e45419a2db8463eec0a2b067bac1f4aa07545be0ab1cbf97ae2cea",
-      "processed_at": "2026-08-10T01:06:36+00:00"
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "9fc888f04f3c9b85df83e0dc46adc09a259cddd19b2557aa83be26f5ca914f24",
+      "processed_at": "2026-08-30T22:43:29+00:00",
+      "filter_audit": {
+        "input_rows": 1067,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 0,
+        "final_rows": 922,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2025:Qatar Grand Prix:S": {
       "year": 2025,
@@ -1375,11 +2142,20 @@
       "session_key": "2025:Qatar Grand Prix:S",
       "session_weight": 0.75,
       "path": "physics_prior/2025/2025-23-qatar-grand-prix-s-99d7894495.csv.gz",
-      "rows": 353,
-      "columns": 82,
-      "columns_sha256": "db31e7238c38ccf5c51e91c54cfc9587fdef5a120f811b1a6c85fa44720bfb84",
-      "sha256": "0c7d9ca27c445019bd16debca811fbd7050d55875a6e2b53e47ad87bc9eabd9c",
-      "processed_at": "2026-08-10T01:06:36+00:00"
+      "rows": 351,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "d1839ee966002d04d069e101e100f2f54f4cf4f869c7d48cd2e42181012db42d",
+      "processed_at": "2026-08-30T22:43:31+00:00",
+      "filter_audit": {
+        "input_rows": 380,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 2,
+        "robust_outlier_removed": 1,
+        "final_rows": 351,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2025:Saudi Arabian Grand Prix:FP2": {
       "year": 2025,
@@ -1391,11 +2167,20 @@
       "session_key": "2025:Saudi Arabian Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "physics_prior/2025/2025-05-saudi-arabian-grand-prix-fp2-e3b3a571d5.csv.gz",
-      "rows": 106,
-      "columns": 81,
-      "columns_sha256": "c3ac1f715677a7de757cd2f7c798123934a24dea2b47487e6a071b0b96f34a6d",
-      "sha256": "d58ddebd61ce62a75d39da7e315df2f435ad3078f8ba3ae0166ab6415634c671",
-      "processed_at": "2026-07-30T00:27:10+00:00"
+      "rows": 57,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "12fec14b12794a35eb13096ac735dfbcc76bd5a6b777cce142576e739fa49242",
+      "processed_at": "2026-08-30T22:43:32+00:00",
+      "filter_audit": {
+        "input_rows": 394,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 86,
+        "robust_outlier_removed": 19,
+        "final_rows": 57,
+        "baseline_groups": 8,
+        "clean_baseline_count": 8
+      }
     },
     "2025:Saudi Arabian Grand Prix:R": {
       "year": 2025,
@@ -1408,10 +2193,19 @@
       "session_weight": 1.0,
       "path": "physics_prior/2025/2025-05-saudi-arabian-grand-prix-r-f31a0a37b8.csv.gz",
       "rows": 809,
-      "columns": 80,
-      "columns_sha256": "e5201d7d9b31de54850cb5a5c3dd20fc76220e72b421527bfde1ec3b7585658d",
-      "sha256": "157e04639bc78930d72fe8370fe957af79d6cbf56bf3fa8334085073a17b741a",
-      "processed_at": "2026-07-30T00:27:07+00:00"
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "44f02c55af4ae92b07b46184459b5ac833d52801f7e87022e2a54eead77867ff",
+      "processed_at": "2026-08-30T22:43:35+00:00",
+      "filter_audit": {
+        "input_rows": 898,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 1,
+        "final_rows": 809,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2025:Singapore Grand Prix:FP2": {
       "year": 2025,
@@ -1423,11 +2217,20 @@
       "session_key": "2025:Singapore Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "physics_prior/2025/2025-18-singapore-grand-prix-fp2-2be225ea8f.csv.gz",
-      "rows": 72,
-      "columns": 81,
-      "columns_sha256": "7008386dfa5f649780c4af3b38c2d28265473ed7144085799691fc1e47ad6e44",
-      "sha256": "6714ef224df5051ee4cd7a689933988d1245722875db758d3c0f18a13923ecd3",
-      "processed_at": "2026-08-10T01:06:37+00:00"
+      "rows": 78,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "931c89ae75aae4dfc90c692dd6e2385d314339e843d1aba199b40e29d7a6780b",
+      "processed_at": "2026-08-30T22:43:36+00:00",
+      "filter_audit": {
+        "input_rows": 353,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 35,
+        "robust_outlier_removed": 22,
+        "final_rows": 78,
+        "baseline_groups": 9,
+        "clean_baseline_count": 9
+      }
     },
     "2025:Singapore Grand Prix:R": {
       "year": 2025,
@@ -1439,11 +2242,20 @@
       "session_key": "2025:Singapore Grand Prix:R",
       "session_weight": 1.0,
       "path": "physics_prior/2025/2025-18-singapore-grand-prix-r-eb0004b5c2.csv.gz",
-      "rows": 1122,
-      "columns": 82,
-      "columns_sha256": "9074e10501c4e8b160e3945e682ce9d1f323d0022c58e9b607a8167c35502f16",
-      "sha256": "eaf621a3e106c83988ee680c6c53fb98dd66b94b762a154b585f9e22ba585951",
-      "processed_at": "2026-07-30T00:28:41+00:00"
+      "rows": 1100,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "80b9cef56b45f57cb3f4a1413e823dc8cf63de86f2291d86b4893bf9784eb89b",
+      "processed_at": "2026-08-30T22:43:39+00:00",
+      "filter_audit": {
+        "input_rows": 1229,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 24,
+        "final_rows": 1100,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2025:Spanish Grand Prix:FP2": {
       "year": 2025,
@@ -1455,11 +2267,20 @@
       "session_key": "2025:Spanish Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "physics_prior/2025/2025-09-spanish-grand-prix-fp2-2967872826.csv.gz",
-      "rows": 278,
-      "columns": 82,
-      "columns_sha256": "a83c114716f99a2f02975376dcd605f44669fe06ee17354927404c217dde10c7",
-      "sha256": "02ae48d0d0979f362128d47c3498a07694fd8e1b5065be148977806cb0c9ae40",
-      "processed_at": "2026-07-30T00:27:44+00:00"
+      "rows": 251,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "3bfd72e34261247a9697f0c2408c39f9e8c2f5d81ab57365ca96c7a1fc39b3a1",
+      "processed_at": "2026-08-30T22:43:41+00:00",
+      "filter_audit": {
+        "input_rows": 581,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 61,
+        "robust_outlier_removed": 32,
+        "final_rows": 251,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2025:Spanish Grand Prix:R": {
       "year": 2025,
@@ -1471,11 +2292,20 @@
       "session_key": "2025:Spanish Grand Prix:R",
       "session_weight": 1.0,
       "path": "physics_prior/2025/2025-09-spanish-grand-prix-r-a25b07793b.csv.gz",
-      "rows": 988,
-      "columns": 81,
-      "columns_sha256": "4d554b324eb6d3b5bde3280087e1b2ed5ee2e8f4e0102b5463f964254158364c",
-      "sha256": "3011472e5a13e69723615b1972bfa267dec708531034ce847c5084ee628bec36",
-      "processed_at": "2026-07-30T00:27:39+00:00"
+      "rows": 983,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "ca7e484af9646a248f8aae51d0a783cf2857c24b843e6ef2196d5050444d2799",
+      "processed_at": "2026-08-30T22:43:45+00:00",
+      "filter_audit": {
+        "input_rows": 1203,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 6,
+        "final_rows": 983,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2025:S\u00e3o Paulo Grand Prix:R": {
       "year": 2025,
@@ -1488,10 +2318,19 @@
       "session_weight": 1.0,
       "path": "physics_prior/2025/2025-21-sao-paulo-grand-prix-r-212ce0cfdf.csv.gz",
       "rows": 1032,
-      "columns": 80,
-      "columns_sha256": "d8d57e9ebe78bd2e85fdb87b217a3f761152ccff0a3515557f8596552d08bd52",
-      "sha256": "d07e8518b474633105e0afc4ade8b51a4ebcade7f3f243b30ff4e5a7afae4325",
-      "processed_at": "2026-08-10T01:06:37+00:00"
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "5fc5be01f2ab28c605032fac92783b523aa1eb145fba3b033c5baf24e1b4a326",
+      "processed_at": "2026-08-30T22:43:49+00:00",
+      "filter_audit": {
+        "input_rows": 1251,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 0,
+        "final_rows": 1032,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2025:S\u00e3o Paulo Grand Prix:S": {
       "year": 2025,
@@ -1503,11 +2342,20 @@
       "session_key": "2025:S\u00e3o Paulo Grand Prix:S",
       "session_weight": 0.75,
       "path": "physics_prior/2025/2025-21-sao-paulo-grand-prix-s-ea27e2336f.csv.gz",
-      "rows": 346,
-      "columns": 82,
-      "columns_sha256": "8bfa6e542e279177a5a2d66036b287880805a66144e4330699f8d8ad1add69b1",
-      "sha256": "4f2e05c803961ba2b0c18cda68eb381dea393f2540e8da5c49c2fec34edee1bc",
-      "processed_at": "2026-08-10T01:06:37+00:00"
+      "rows": 337,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "507de524b71b48829e76f2f6313fd53c439674404f119ed15974f05ed5788220",
+      "processed_at": "2026-08-30T22:43:51+00:00",
+      "filter_audit": {
+        "input_rows": 444,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 9,
+        "final_rows": 337,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2025:United States Grand Prix:R": {
       "year": 2025,
@@ -1519,11 +2367,20 @@
       "session_key": "2025:United States Grand Prix:R",
       "session_weight": 1.0,
       "path": "physics_prior/2025/2025-19-united-states-grand-prix-r-1ea3358715.csv.gz",
-      "rows": 926,
-      "columns": 82,
-      "columns_sha256": "ebe75545562560493fd59b2ae263c097a43879a78f29957b20b3ef2af18e9158",
-      "sha256": "2f83c103a56df1b2cda3e1546ff177683c6d1f4f2f4c7570e2b8cba50d09e509",
-      "processed_at": "2026-08-10T01:06:37+00:00"
+      "rows": 925,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "d6ab9646992074c1c7b1dca381065ae188a8166423ced9e4ebd6a06c83b9a9d7",
+      "processed_at": "2026-08-30T22:43:56+00:00",
+      "filter_audit": {
+        "input_rows": 1067,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 1,
+        "final_rows": 925,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2025:United States Grand Prix:S": {
       "year": 2025,
@@ -1536,10 +2393,19 @@
       "session_weight": 0.75,
       "path": "physics_prior/2025/2025-19-united-states-grand-prix-s-5099c6cf10.csv.gz",
       "rows": 170,
-      "columns": 78,
-      "columns_sha256": "6db98bbd2203efa16d2a130dff803d3481702f71a6dbde788d21c61dca9dd8d7",
-      "sha256": "a3795d42c2236229694bd6698ff4a40ff27ed28498acd312c5cb5e45d55df1ec",
-      "processed_at": "2026-08-10T01:06:37+00:00"
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "8b4a9c9892f7835da4988cf9b7924198dc2d825ac0183688d85e77c169cddfdb",
+      "processed_at": "2026-08-30T22:43:58+00:00",
+      "filter_audit": {
+        "input_rows": 320,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 0,
+        "final_rows": 170,
+        "baseline_groups": 9,
+        "clean_baseline_count": 9
+      }
     },
     "2026:Australian Grand Prix:FP2": {
       "year": 2026,
@@ -1551,11 +2417,20 @@
       "session_key": "2026:Australian Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "active_aero/2026/2026-01-australian-grand-prix-fp2-eaa24110bf.csv.gz",
-      "rows": 224,
-      "columns": 84,
-      "columns_sha256": "736550a7c0270d32a2938c6d6bbbb6986928643ea21cff6171e8fbbcd4886a02",
-      "sha256": "7743b482cdf1aa788ab89a280bb4c5c330a215968cbe5ab568b56e4fa6c3ceae",
-      "processed_at": "2026-07-30T00:22:41+00:00"
+      "rows": 228,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "1eb2d7cfd2d3f233f776cec0870720685fc8ecd7bbbedf77d4084c04156da429",
+      "processed_at": "2026-08-30T22:44:04+00:00",
+      "filter_audit": {
+        "input_rows": 544,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 32,
+        "robust_outlier_removed": 69,
+        "final_rows": 228,
+        "baseline_groups": 11,
+        "clean_baseline_count": 11
+      }
     },
     "2026:Australian Grand Prix:R": {
       "year": 2026,
@@ -1567,11 +2442,20 @@
       "session_key": "2026:Australian Grand Prix:R",
       "session_weight": 1.0,
       "path": "active_aero/2026/2026-01-australian-grand-prix-r-ae6e3b6aee.csv.gz",
-      "rows": 833,
-      "columns": 83,
-      "columns_sha256": "f154980e014cb2db8ae70fa55b216ccea1aa2c351f1a401a8acf97e76878a0ba",
-      "sha256": "aa5c47cb3eb452766d20a1a7ff4c7a3722a1009202a950cd7ca1b90a34326184",
-      "processed_at": "2026-07-30T00:22:38+00:00"
+      "rows": 825,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "e342ca34016ba533552f576482703357b9f5142c3873993b02890ef17fd6a915",
+      "processed_at": "2026-08-30T22:44:50+00:00",
+      "filter_audit": {
+        "input_rows": 1007,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 2,
+        "robust_outlier_removed": 7,
+        "final_rows": 825,
+        "baseline_groups": 11,
+        "clean_baseline_count": 11
+      }
     },
     "2026:Austrian Grand Prix:FP2": {
       "year": 2026,
@@ -1583,11 +2467,20 @@
       "session_key": "2026:Austrian Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "active_aero/2026/2026-08-austrian-grand-prix-fp2-ce73e3ee67.csv.gz",
-      "rows": 255,
-      "columns": 84,
-      "columns_sha256": "14f0ae52347fb1509cddf291ea93226e1e46c42324f2b8b1df6875d8f50cdc4c",
-      "sha256": "c9864c06bb0cbc476da40fe948fd227ff0b5d9832f3f11b2752c7053bd5c2417",
-      "processed_at": "2026-07-30T00:23:41+00:00"
+      "rows": 234,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "d9ad3fe7a6ba98dd8b03dd1b2961d84b2e29b749812fb67db8e53ee3e186dfdb",
+      "processed_at": "2026-08-30T22:45:03+00:00",
+      "filter_audit": {
+        "input_rows": 631,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 61,
+        "robust_outlier_removed": 76,
+        "final_rows": 234,
+        "baseline_groups": 11,
+        "clean_baseline_count": 11
+      }
     },
     "2026:Austrian Grand Prix:R": {
       "year": 2026,
@@ -1599,11 +2492,20 @@
       "session_key": "2026:Austrian Grand Prix:R",
       "session_weight": 1.0,
       "path": "active_aero/2026/2026-08-austrian-grand-prix-r-40ad3254f4.csv.gz",
-      "rows": 1157,
-      "columns": 84,
-      "columns_sha256": "2051ea72d2c7d23d2117ef91eb262371e1b4104314784c3043e8acd9ca5be661",
-      "sha256": "2d9cae405c88ff40d1f202188d07d90350f6507e7b73cafce60afb1d6ed069ee",
-      "processed_at": "2026-07-30T00:23:38+00:00"
+      "rows": 1155,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "53f3fa2096c931cfe590a575ce066cae0f89a6429e4f62f74e847b6b2ab78e68",
+      "processed_at": "2026-08-30T22:45:20+00:00",
+      "filter_audit": {
+        "input_rows": 1339,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 2,
+        "robust_outlier_removed": 0,
+        "final_rows": 1155,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2026:Barcelona Grand Prix:FP2": {
       "year": 2026,
@@ -1615,11 +2517,20 @@
       "session_key": "2026:Barcelona Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "active_aero/2026/2026-07-barcelona-grand-prix-fp2-b0618a2e34.csv.gz",
-      "rows": 250,
-      "columns": 83,
-      "columns_sha256": "15b2621b37e8d0f921835a8b8edd4bcd132eddebf4aa14d7becfd84f44dcdb0e",
-      "sha256": "2a0259a98c3c1f72c30e7e5052947c48f4f325e3fdce63eba303fd22c2a1cb59",
-      "processed_at": "2026-07-30T00:23:33+00:00"
+      "rows": 227,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "3b1eacdfc3f6f9f946c87eac97d1318a2f97bfc8122b5c0a7e7cee45c4d518c7",
+      "processed_at": "2026-08-30T22:45:26+00:00",
+      "filter_audit": {
+        "input_rows": 586,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 74,
+        "robust_outlier_removed": 40,
+        "final_rows": 227,
+        "baseline_groups": 11,
+        "clean_baseline_count": 11
+      }
     },
     "2026:Barcelona Grand Prix:R": {
       "year": 2026,
@@ -1631,11 +2542,20 @@
       "session_key": "2026:Barcelona Grand Prix:R",
       "session_weight": 1.0,
       "path": "active_aero/2026/2026-07-barcelona-grand-prix-r-82493f9bbd.csv.gz",
-      "rows": 1010,
-      "columns": 85,
-      "columns_sha256": "7c6956e9dd40b9fb89f6cbe52994e4fa765538329b3628422f35226309649f72",
-      "sha256": "4de073e4daa26cdee4df29a5e0abe5ef375a5c44c842acad052398bc14885802",
-      "processed_at": "2026-07-30T00:23:28+00:00"
+      "rows": 1004,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "a7b937965fd5acd331c20b8a76f513ef3e07dbc9378df0c6eafd4e1f059f6a5e",
+      "processed_at": "2026-08-30T22:45:37+00:00",
+      "filter_audit": {
+        "input_rows": 1236,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 6,
+        "robust_outlier_removed": 0,
+        "final_rows": 1004,
+        "baseline_groups": 11,
+        "clean_baseline_count": 11
+      }
     },
     "2026:Belgian Grand Prix:FP2": {
       "year": 2026,
@@ -1647,11 +2567,20 @@
       "session_key": "2026:Belgian Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "active_aero/2026/2026-10-belgian-grand-prix-fp2-3c25a7a54d.csv.gz",
-      "rows": 103,
-      "columns": 84,
-      "columns_sha256": "1a5c252dd5ecd80a01c79dc29744e5c4870aaa8be03a08d1e55e5629ff40072e",
-      "sha256": "6e0a54a99ee50f357bee2dbbf3ef10f029cc13afc2ff57200314aa776495e97f",
-      "processed_at": "2026-08-09T23:03:37+00:00"
+      "rows": 27,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "26a47ac7c781cb138aa29f39e60fae946fead9c12197af9a926aabd61e590b32",
+      "processed_at": "2026-08-30T22:45:43+00:00",
+      "filter_audit": {
+        "input_rows": 394,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 110,
+        "robust_outlier_removed": 3,
+        "final_rows": 27,
+        "baseline_groups": 5,
+        "clean_baseline_count": 5
+      }
     },
     "2026:Belgian Grand Prix:R": {
       "year": 2026,
@@ -1663,11 +2592,20 @@
       "session_key": "2026:Belgian Grand Prix:R",
       "session_weight": 1.0,
       "path": "active_aero/2026/2026-10-belgian-grand-prix-r-aa8355a48f.csv.gz",
-      "rows": 681,
-      "columns": 84,
-      "columns_sha256": "f61dfb953ee32abeab932dad0b33d8eae8576e67e4bae94eeed121b61bcd9dd6",
-      "sha256": "d7069e39395453cea45f2449b27474aedef93ad7b9f850e2d55b08fe44064fdd",
-      "processed_at": "2026-08-09T23:03:30+00:00"
+      "rows": 679,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "e0a9a03dc16863f1567184b93fcd74bcabedac9bcdafb48521db325e67d4a6a8",
+      "processed_at": "2026-08-30T22:45:57+00:00",
+      "filter_audit": {
+        "input_rows": 872,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 3,
+        "final_rows": 679,
+        "baseline_groups": 11,
+        "clean_baseline_count": 11
+      }
     },
     "2026:British Grand Prix:R": {
       "year": 2026,
@@ -1679,11 +2617,20 @@
       "session_key": "2026:British Grand Prix:R",
       "session_weight": 1.0,
       "path": "active_aero/2026/2026-09-british-grand-prix-r-dfdc6a2b14.csv.gz",
-      "rows": 822,
-      "columns": 85,
-      "columns_sha256": "0267c533377b739b1d4e855fca76368d410928f74cb843b33757357027666d20",
-      "sha256": "628fa6fa92bc649cd2b797c98a0a1704682beca10ea963c1e13322933f958890",
-      "processed_at": "2026-07-30T00:23:50+00:00"
+      "rows": 815,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "8c0e494ed426bbf3a7ca9920aaf4486724a1c4d218360a2accdf0cc8aaf369a6",
+      "processed_at": "2026-08-30T22:46:11+00:00",
+      "filter_audit": {
+        "input_rows": 1113,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 8,
+        "robust_outlier_removed": 1,
+        "final_rows": 815,
+        "baseline_groups": 11,
+        "clean_baseline_count": 11
+      }
     },
     "2026:British Grand Prix:S": {
       "year": 2026,
@@ -1695,11 +2642,20 @@
       "session_key": "2026:British Grand Prix:S",
       "session_weight": 0.75,
       "path": "active_aero/2026/2026-09-british-grand-prix-s-6e05b7d8b2.csv.gz",
-      "rows": 324,
-      "columns": 85,
-      "columns_sha256": "0267c533377b739b1d4e855fca76368d410928f74cb843b33757357027666d20",
-      "sha256": "6f0c9a58ee0287a15a2e38aa66eff08f89b82d0f97f4fdf605f1a3fbd54c0dc2",
-      "processed_at": "2026-07-30T00:23:53+00:00"
+      "rows": 323,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "e825fd7be108dc71631bbf672836197a21856053e444baa55cf2481f619ff45e",
+      "processed_at": "2026-08-30T22:46:18+00:00",
+      "filter_audit": {
+        "input_rows": 372,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 1,
+        "robust_outlier_removed": 1,
+        "final_rows": 323,
+        "baseline_groups": 11,
+        "clean_baseline_count": 11
+      }
     },
     "2026:Canadian Grand Prix:R": {
       "year": 2026,
@@ -1711,11 +2667,20 @@
       "session_key": "2026:Canadian Grand Prix:R",
       "session_weight": 1.0,
       "path": "active_aero/2026/2026-05-canadian-grand-prix-r-da229e964e.csv.gz",
-      "rows": 928,
-      "columns": 84,
-      "columns_sha256": "358268ff41e6af5a731933117da3f176d6f404b8d8aaf3a9fe92457d9e869649",
-      "sha256": "7061184151022cb8903c63785a16c0b3d2fa3f403d7d4be6a7717ed534c95456",
-      "processed_at": "2026-07-30T00:23:07+00:00"
+      "rows": 909,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "c02d092dbe9a491a13f18d5dff18f3526fad1ad5af426a9ca36912a657a54db8",
+      "processed_at": "2026-08-30T22:46:29+00:00",
+      "filter_audit": {
+        "input_rows": 1212,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 3,
+        "robust_outlier_removed": 23,
+        "final_rows": 909,
+        "baseline_groups": 11,
+        "clean_baseline_count": 11
+      }
     },
     "2026:Canadian Grand Prix:S": {
       "year": 2026,
@@ -1727,11 +2692,20 @@
       "session_key": "2026:Canadian Grand Prix:S",
       "session_weight": 0.75,
       "path": "active_aero/2026/2026-05-canadian-grand-prix-s-7db1a7ae05.csv.gz",
-      "rows": 430,
-      "columns": 85,
-      "columns_sha256": "7c7f36c9afd88e444e62aa5e3b1ac545e608c0c1ef88c706bec08ea5304d913e",
-      "sha256": "b2bbc47f3b23be2ca278f74e3b96448f6fb22c007f28f39a3525bff06142abdb",
-      "processed_at": "2026-07-30T00:23:10+00:00"
+      "rows": 424,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "6c57c93a829cf5c91f3da10ddaf95fc3863332e450aef4d8e93297fd404bb2aa",
+      "processed_at": "2026-08-30T22:46:35+00:00",
+      "filter_audit": {
+        "input_rows": 491,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 2,
+        "robust_outlier_removed": 9,
+        "final_rows": 424,
+        "baseline_groups": 11,
+        "clean_baseline_count": 11
+      }
     },
     "2026:Chinese Grand Prix:R": {
       "year": 2026,
@@ -1743,11 +2717,20 @@
       "session_key": "2026:Chinese Grand Prix:R",
       "session_weight": 1.0,
       "path": "active_aero/2026/2026-02-chinese-grand-prix-r-e14f5c8de3.csv.gz",
-      "rows": 737,
-      "columns": 80,
-      "columns_sha256": "0da6dd6d1a425f96536963cc688b81d9caf39485a995bd0efc903f8504a1d18b",
-      "sha256": "1e83a157e05f64b474f4636b0e02dd06f7f11e3e89935db2090aaa6f9c669fd0",
-      "processed_at": "2026-07-30T00:22:47+00:00"
+      "rows": 735,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "23370e79ad08acf7b5d36d6f43643294a6253c0cb67a446fa32c1a03e7ecf8b3",
+      "processed_at": "2026-08-30T22:46:45+00:00",
+      "filter_audit": {
+        "input_rows": 924,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 3,
+        "final_rows": 735,
+        "baseline_groups": 10,
+        "clean_baseline_count": 10
+      }
     },
     "2026:Chinese Grand Prix:S": {
       "year": 2026,
@@ -1759,11 +2742,70 @@
       "session_key": "2026:Chinese Grand Prix:S",
       "session_weight": 0.75,
       "path": "active_aero/2026/2026-02-chinese-grand-prix-s-6e14cd485a.csv.gz",
-      "rows": 295,
-      "columns": 85,
-      "columns_sha256": "42a4eb218d754f86c756555e366c20b6184b5f249a949a0890500475d3d81029",
-      "sha256": "ee2d2d0d0765fd8427f675e2d385cbd14365bee9acf61e1b693517133b7fcf81",
-      "processed_at": "2026-07-30T00:22:49+00:00"
+      "rows": 293,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "b5e2728fea8a11f99f1d8513f5e1ca1b289605a65fe1b2ee6c305b679d6aa63e",
+      "processed_at": "2026-08-30T22:46:53+00:00",
+      "filter_audit": {
+        "input_rows": 397,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 3,
+        "final_rows": 293,
+        "baseline_groups": 11,
+        "clean_baseline_count": 11
+      }
+    },
+    "2026:Dutch Grand Prix:R": {
+      "year": 2026,
+      "round_number": 12,
+      "event_name": "Dutch Grand Prix",
+      "event_date": "2026-08-23",
+      "session_code": "R",
+      "role": "active_aero",
+      "session_key": "2026:Dutch Grand Prix:R",
+      "session_weight": 1.0,
+      "path": "active_aero/2026/2026-12-dutch-grand-prix-r-a16d486c8a.csv.gz",
+      "rows": 1082,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "c1dec133da90b3b15369b7518a0312f33fafdc0d6bcee32cecbff4710067cf36",
+      "processed_at": "2026-08-31T07:00:19+00:00",
+      "filter_audit": {
+        "input_rows": 1368,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 4,
+        "robust_outlier_removed": 4,
+        "final_rows": 1082,
+        "baseline_groups": 22,
+        "clean_baseline_count": 22
+      }
+    },
+    "2026:Dutch Grand Prix:S": {
+      "year": 2026,
+      "round_number": 12,
+      "event_name": "Dutch Grand Prix",
+      "event_date": "2026-08-23",
+      "session_code": "S",
+      "role": "active_aero",
+      "session_key": "2026:Dutch Grand Prix:S",
+      "session_weight": 0.75,
+      "path": "active_aero/2026/2026-12-dutch-grand-prix-s-6a3399aec7.csv.gz",
+      "rows": 459,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "c09920fea702d2bdbec30a0b9c7b79803ec2c5b836d3b4beccedcac7b2158d32",
+      "processed_at": "2026-08-31T07:00:26+00:00",
+      "filter_audit": {
+        "input_rows": 506,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 1,
+        "robust_outlier_removed": 20,
+        "final_rows": 459,
+        "baseline_groups": 11,
+        "clean_baseline_count": 11
+      }
     },
     "2026:Hungarian Grand Prix:FP2": {
       "year": 2026,
@@ -1775,11 +2817,20 @@
       "session_key": "2026:Hungarian Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "active_aero/2026/2026-11-hungarian-grand-prix-fp2-8205bff2c3.csv.gz",
-      "rows": 257,
-      "columns": 84,
-      "columns_sha256": "454421e4fec3786f424497edb56d375719c7f386cabb6c34ee938c13aaa43aa0",
-      "sha256": "781ee29d9a82cba99f3dd57b1c2500dae44a73f6f79972e5eda5c3d166d458c2",
-      "processed_at": "2026-08-09T23:03:57+00:00"
+      "rows": 261,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "71aa314b9be4bb7284b4ba8b4be638c47760714113231ce7d672c742366ba23a",
+      "processed_at": "2026-08-30T22:47:00+00:00",
+      "filter_audit": {
+        "input_rows": 572,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 40,
+        "robust_outlier_removed": 77,
+        "final_rows": 261,
+        "baseline_groups": 11,
+        "clean_baseline_count": 11
+      }
     },
     "2026:Hungarian Grand Prix:R": {
       "year": 2026,
@@ -1791,11 +2842,20 @@
       "session_key": "2026:Hungarian Grand Prix:R",
       "session_weight": 1.0,
       "path": "active_aero/2026/2026-11-hungarian-grand-prix-r-bc82f8a175.csv.gz",
-      "rows": 1231,
-      "columns": 85,
-      "columns_sha256": "eda032e4866a400aaf5d641398f75b7f398c078cb0f3e62c7a646e11e1dac009",
-      "sha256": "e26239b26d36eb9661dc48fddf352a12ab0e220f201a99a652e86aca66be11f1",
-      "processed_at": "2026-08-09T23:03:49+00:00"
+      "rows": 1229,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "37b49cc4a3efe4649cc390cc8cee1ce69843eaed03dbc439d106d78dbd634181",
+      "processed_at": "2026-08-30T22:47:13+00:00",
+      "filter_audit": {
+        "input_rows": 1431,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 2,
+        "final_rows": 1229,
+        "baseline_groups": 11,
+        "clean_baseline_count": 11
+      }
     },
     "2026:Japanese Grand Prix:FP2": {
       "year": 2026,
@@ -1807,11 +2867,20 @@
       "session_key": "2026:Japanese Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "active_aero/2026/2026-03-japanese-grand-prix-fp2-0dc49faaac.csv.gz",
-      "rows": 245,
-      "columns": 84,
-      "columns_sha256": "27591e271b64af59eb0f5fbe72ab1ef866638a58d4840dc574b8863e146d4c6b",
-      "sha256": "0989d38bf1f8f149cdbedf01c312d9763d33e80b7fe70065e28d1035f7605c78",
-      "processed_at": "2026-07-30T00:22:56+00:00"
+      "rows": 228,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "22225f12c107b804a148f6cace8b7a4d657194c84bd41f8298d9bea29f198f43",
+      "processed_at": "2026-08-30T22:47:20+00:00",
+      "filter_audit": {
+        "input_rows": 547,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 38,
+        "robust_outlier_removed": 64,
+        "final_rows": 228,
+        "baseline_groups": 11,
+        "clean_baseline_count": 11
+      }
     },
     "2026:Japanese Grand Prix:R": {
       "year": 2026,
@@ -1823,11 +2892,20 @@
       "session_key": "2026:Japanese Grand Prix:R",
       "session_weight": 1.0,
       "path": "active_aero/2026/2026-03-japanese-grand-prix-r-06fd49be19.csv.gz",
-      "rows": 916,
-      "columns": 85,
-      "columns_sha256": "c330de84d9e9fa6eb2e5dded085d6a071f89dac0ff576b58c1b4bebcc6b0dfba",
-      "sha256": "851f154727ac7e079edf524346c7d54367b5c784b950e50ed39e42d3a9213055",
-      "processed_at": "2026-07-30T00:22:53+00:00"
+      "rows": 914,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "2c011456ac7bce26c4eabccd0f100ae8af9f639317084b7314daf6c4603a6fae",
+      "processed_at": "2026-08-30T22:47:31+00:00",
+      "filter_audit": {
+        "input_rows": 1107,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 3,
+        "robust_outlier_removed": 1,
+        "final_rows": 914,
+        "baseline_groups": 11,
+        "clean_baseline_count": 11
+      }
     },
     "2026:Miami Grand Prix:R": {
       "year": 2026,
@@ -1839,11 +2917,20 @@
       "session_key": "2026:Miami Grand Prix:R",
       "session_weight": 1.0,
       "path": "active_aero/2026/2026-04-miami-grand-prix-r-a9955df6e0.csv.gz",
-      "rows": 791,
-      "columns": 85,
-      "columns_sha256": "8ea16086fc12750a1b7effe685c04b9452fb0de1b65a76b1d5ff9d4f496e6518",
-      "sha256": "470275b0fa9868e624aac0a572ec721dc3d0542ff3df4feef00a9232fc3bdeb4",
-      "processed_at": "2026-07-30T00:23:01+00:00"
+      "rows": 782,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "7e8a2f9515426148527bc46d882c982c297e4b276afb5b5240700874a6d6693f",
+      "processed_at": "2026-08-30T22:47:42+00:00",
+      "filter_audit": {
+        "input_rows": 1040,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 2,
+        "robust_outlier_removed": 7,
+        "final_rows": 782,
+        "baseline_groups": 11,
+        "clean_baseline_count": 11
+      }
     },
     "2026:Miami Grand Prix:S": {
       "year": 2026,
@@ -1855,11 +2942,20 @@
       "session_key": "2026:Miami Grand Prix:S",
       "session_weight": 0.75,
       "path": "active_aero/2026/2026-04-miami-grand-prix-s-f95281f530.csv.gz",
-      "rows": 358,
-      "columns": 83,
-      "columns_sha256": "7a7f8b752eb8960bbf233eddae01d90870885f5f15cb6f2b29d2b47dad78fb47",
-      "sha256": "68cf46432c142758d44fcaacd88b742cd93f229655d4a8f4e0734b94812238ae",
-      "processed_at": "2026-07-30T00:23:03+00:00"
+      "rows": 357,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "ce9b2324b8a2b329da1982235470416336ec61c4d75b05fc339eb17d75cd71b0",
+      "processed_at": "2026-08-30T22:47:50+00:00",
+      "filter_audit": {
+        "input_rows": 382,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 0,
+        "robust_outlier_removed": 1,
+        "final_rows": 357,
+        "baseline_groups": 11,
+        "clean_baseline_count": 11
+      }
     },
     "2026:Monaco Grand Prix:FP2": {
       "year": 2026,
@@ -1871,11 +2967,20 @@
       "session_key": "2026:Monaco Grand Prix:FP2",
       "session_weight": 0.5,
       "path": "active_aero/2026/2026-06-monaco-grand-prix-fp2-3b1b71fa81.csv.gz",
-      "rows": 316,
-      "columns": 85,
-      "columns_sha256": "2cca4dbb7b4b384789244d776a54f70edaac6611056fa1e616f456005f3079f1",
-      "sha256": "46ae51915631c0484fc41bfcb2de1be5394cba3aaf826bc626765b7f5f059753",
-      "processed_at": "2026-07-30T00:23:21+00:00"
+      "rows": 420,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "b7b7e5c4db7f054cc4fae17f7802dfeb9b3350de5cd6c7ab79bd1ebc093f6e07",
+      "processed_at": "2026-08-30T22:47:58+00:00",
+      "filter_audit": {
+        "input_rows": 711,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 31,
+        "robust_outlier_removed": 37,
+        "final_rows": 420,
+        "baseline_groups": 22,
+        "clean_baseline_count": 22
+      }
     },
     "2026:Monaco Grand Prix:R": {
       "year": 2026,
@@ -1887,11 +2992,20 @@
       "session_key": "2026:Monaco Grand Prix:R",
       "session_weight": 1.0,
       "path": "active_aero/2026/2026-06-monaco-grand-prix-r-f904cf50f2.csv.gz",
-      "rows": 1160,
-      "columns": 84,
-      "columns_sha256": "4254400196ad25113c83d2f82b42a67b75369c12b61e3f7176c59cd76f810dec",
-      "sha256": "7096b7b28b6a5fc56386b18e788cd3049f89dcb4e86706d33193911317b937ce",
-      "processed_at": "2026-07-30T00:23:16+00:00"
+      "rows": 1140,
+      "columns": 41,
+      "columns_sha256": "6a57fb5f1abed4874e5d7e7cddfafb3574565867f1621f5e7065c12057a19337",
+      "sha256": "c1860ee51a25c8b9384608a1ba1ee8e090ca8d893018e78afa4ca12b9bacbff6",
+      "processed_at": "2026-08-30T22:48:12+00:00",
+      "filter_audit": {
+        "input_rows": 1452,
+        "pit_in_out_removed": 0,
+        "short_stint_removed": 5,
+        "robust_outlier_removed": 16,
+        "final_rows": 1140,
+        "baseline_groups": 11,
+        "clean_baseline_count": 11
+      }
     }
   }
 }
