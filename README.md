@@ -255,6 +255,14 @@ event and production inference inputs. This prevents per-session dummy-column
 drift and prevents the model from memorizing circuits through event-name
 features.
 
+The preprocessing contract counts observed valid laps when removing short
+stints, so a two-lap observation of a used tire is not mistaken for a long
+stint. Missing numeric weather predictors are preserved for the training
+pipeline's median imputer, which also adds missingness indicators; only rows
+missing the target or essential identifiers are removed. Walk-forward
+validation raises an explicit error when no valid chronological folds can be
+scored instead of reporting a misleading zero MAE.
+
 ```bash
 python scripts/rebuild_processed_training_data.py \
   --source-dir training_data/ground_effect \

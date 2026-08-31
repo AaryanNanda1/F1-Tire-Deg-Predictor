@@ -67,6 +67,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", required=True)
     parser.add_argument("--max-sessions", type=int, default=0)
     parser.add_argument("--offline-cache-only", action="store_true")
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="Resume an existing partially rebuilt output directory",
+    )
     parser.add_argument("--json-output", default=None)
     return parser.parse_args()
 
@@ -79,7 +84,7 @@ def main() -> int:
 
     source = ProcessedSessionStore(args.source_dir)
     output_path = Path(args.output_dir)
-    if output_path.exists() and any(output_path.iterdir()):
+    if output_path.exists() and any(output_path.iterdir()) and not args.resume:
         raise SystemExit(f"Output directory must be empty or absent: {output_path}")
     if args.offline_cache_only:
         fastf1.Cache.offline_mode(True)
@@ -88,6 +93,10 @@ def main() -> int:
     if args.max_sessions:
         specs = specs[: args.max_sessions]
     target = ProcessedSessionStore(output_path)
+    if args.resume and target.requires_rebuild:
+        raise SystemExit(
+            f"Cannot resume a directory with a stale/incomplete manifest: {output_path}"
+        )
     # Preserve store-level coverage metadata while replacing the rows and
     # upgrading the schema/provenance fields in the new manifest.
     for metadata_key in ("coverage",):

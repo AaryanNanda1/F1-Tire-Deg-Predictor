@@ -72,7 +72,17 @@ def _make_model_pipeline(X: pd.DataFrame) -> Pipeline:
         transformers.append(
             (
                 "numeric",
-                Pipeline([("imputer", SimpleImputer(strategy="median"))]),
+                Pipeline(
+                    [
+                        (
+                            "imputer",
+                            SimpleImputer(
+                                strategy="median",
+                                add_indicator=True,
+                            ),
+                        )
+                    ]
+                ),
                 numeric,
             )
         )
@@ -458,13 +468,10 @@ def train_and_save(
     # This evaluates how the model would have performed "in-season"
     sequential_mae = None
     if len(data_df) > 500: # Only worth doing if we have enough data
-        try:
-            sequential_mae = perform_walk_forward_validation(
-                data_df,
-                test_start_year=validation_test_start_year,
-            )
-        except Exception as e:
-            print(f"  Warning: Sequential validation failed: {e}")
+        sequential_mae = perform_walk_forward_validation(
+            data_df,
+            test_start_year=validation_test_start_year,
+        )
 
     # Extract sample weights for final training
     sample_weights = data_df.get('SampleWeight', pd.Series(1.0, index=data_df.index))
@@ -516,7 +523,10 @@ def perform_walk_forward_validation(
     """
     # Check if we have the necessary metadata
     if 'EventDate' not in df.columns or 'EventName' not in df.columns:
-        return 0.0
+        raise ValueError(
+            "Walk-forward validation unavailable: EventDate and EventName "
+            "are required"
+        )
         
     # Group by EventDate and EventName to get unique race weekends in order
     events = df[['EventDate', 'EventName']].drop_duplicates().copy()
@@ -528,7 +538,9 @@ def perform_walk_forward_validation(
         scored_events = events.iloc[2:]
     
     if len(events) < 2:
-        return 0.0
+        raise ValueError(
+            "Walk-forward validation unavailable: fewer than two events"
+        )
         
     print(
         "\n  [Walk-Forward Validation] "
@@ -566,9 +578,36 @@ def perform_walk_forward_validation(
         maes.append(mae)
         print(f"    Tested on {test_event['EventName']} ({test_event['EventDate']}) -> MAE: {mae:.3f}s")
 
-    overall_mae = np.mean(maes) if maes else 0.0
+    if not maes:
+        raise ValueError(
+            "Walk-forward validation unavailable: no valid chronological folds "
+            "were scored"
+        )
+    overall_mae = np.mean(maes)
     print(f"  [Walk-Forward Validation] Overall Sequential MAE: {overall_mae:.3f}s\n")
     return overall_mae
+
+
+def _validation_event_keys(events: pd.DataFrame) -> pd.Series:
+    """Create stable event identifiers for repeated annual event names."""
+    dates = pd.to_datetime(events["EventDate"], errors="coerce").dt.strftime("%Y-%m-%d")
+    return dates + "::" + events["EventName"].astype(str)
+
+
+def _eligible_walk_forward_test_events(
+    events: pd.DataFrame,
+    *,
+    test_start_year: int = None,
+) -> pd.DataFrame:
+    """Return chronological event rows eligible for walk-forward scoring."""
+    eligible = events.copy()
+    eligible["EventDate"] = pd.to_datetime(eligible["EventDate"], errors="coerce")
+    eligible = eligible.dropna(subset=["EventDate"])
+    eligible = eligible.sort_values(["EventDate", "EventName"])
+    if test_start_year is not None:
+        eligible = eligible[eligible["EventDate"].dt.year >= test_start_year]
+    eligible["EventDate"] = eligible["EventDate"].dt.strftime("%Y-%m-%d")
+    return eligible.reset_index(drop=True)
 
 
 def train_era(

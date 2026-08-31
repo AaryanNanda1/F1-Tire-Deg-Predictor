@@ -14,7 +14,7 @@ from mappings import (
 # Increment this whenever the persisted processed-session feature schema or
 # feature-generation logic changes.  The training-data store records it in
 # each manifest so immutable session keys do not hide stale preprocessing.
-PREPROCESSING_VERSION = "track-features-v7-canonical-categoricals"
+PREPROCESSING_VERSION = "track-features-v8-observed-stints-missing-weather"
 ROBUST_FILTER_MAD_MULTIPLIER = 6.0
 ROBUST_FILTER_MIN_THRESHOLD_SEC = 3.0
 FUTURE_INFORMATION_FEATURES = frozenset(
@@ -127,13 +127,12 @@ def preprocess_laps(session):
     # 6. Distance-based Tyre Life
     laps['TyreLifeKM'] = laps['TyreLife'] * track_length_km
     
-    # 6b. Filter out very short stints (< 3 laps): removes installation laps, in/out laps, SC anomalies
-    stint_len_map = laps.groupby(['Driver', 'Stint'])['TyreLife'].transform('max')
-    # Keep the eventual stint length as a filtering-only quantity. It must not
-    # enter the model because it is unknown at the time a strategy is chosen.
-    stint_length_for_filter = stint_len_map.clip(lower=1)
-    audit["short_stint_removed"] = int((stint_length_for_filter < 3).sum())
-    laps = laps[stint_length_for_filter >= 3].copy()
+    # 6b. Filter out very short observed stints (< 3 laps). TyreLife can start
+    # at 7 or 8 when a driver takes over a used set, so its maximum is not a
+    # valid count of how many laps were actually observed in this session.
+    observed_laps = laps.groupby(['Driver', 'Stint'])['LapNumber'].transform('count')
+    audit["short_stint_removed"] = int((observed_laps < 3).sum())
+    laps = laps.loc[observed_laps >= 3].copy()
     
     # 7b. TyreLifeSquared: Captures exponential/non-linear late-stint degradation cliffs
     laps['TyreLifeSquared'] = laps['TyreLife'] ** 2
@@ -323,7 +322,11 @@ def preprocess_laps(session):
     # an observed empty tank.
     df['FuelLoad'] = df['FuelLoad'].fillna(0.0)
         
-    df.dropna(inplace=True)
+    essential_columns = [
+        'Driver', 'Team', 'Compound', 'TrackType', 'SessionCode',
+        'LapNumber', 'TyreLife', 'LapTimeDelta', 'EventDate', 'EventName',
+    ]
+    df.dropna(subset=essential_columns, inplace=True)
     audit["final_rows"] = int(len(df))
     df.attrs["filter_audit"] = audit
     

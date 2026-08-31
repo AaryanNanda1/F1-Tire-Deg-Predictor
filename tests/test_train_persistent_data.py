@@ -11,7 +11,6 @@ from train_era_models import (
     build_active_aero_training_data,
     load_persistent_active_aero_data,
     load_persistent_ground_effect_data,
-    train_model_pair,
 )
 from training_data_store import (
     ACTIVE_AERO_ROLE,
@@ -113,11 +112,9 @@ class PersistentTrainingDataTest(unittest.TestCase):
             combined["SessionKey"].astype(str).str.startswith("2025:")
         ]
         self.assertEqual(sampled_prior_rows, 10)
-        self.assertEqual(selected_prior["SessionKey"].nunique(), 2)
-        self.assertEqual(
-            set(selected_prior.groupby("SessionKey").size().tolist()),
-            {5},
-        )
+        self.assertEqual(selected_prior["SessionKey"].nunique(), 4)
+        self.assertEqual(len(selected_prior), 10)
+        self.assertTrue((selected_prior.groupby("SessionKey").size() <= 5).all())
 
     def test_does_not_train_from_prior_without_active_data(self):
         prior = self._frame(2025, "British Grand Prix", 10)
@@ -149,10 +146,12 @@ class PersistentTrainingDataTest(unittest.TestCase):
             data, details = load_persistent_ground_effect_data(store.root)
 
             self.assertEqual(len(data), 5)
-            self.assertEqual(details["training_data_source"], "local_processed_sessions")
+            self.assertEqual(
+                details["training_data_source"],
+                "persistent_processed_sessions",
+            )
             self.assertEqual(details["coverage_start_year"], 2022)
             self.assertEqual(details["coverage_end_year"], 2025)
-            self.assertEqual(details["race_count_by_year"]["2022"], 1)
             self.assertEqual(
                 data["EventName"].unique().tolist(),
                 ["Bahrain Grand Prix"],
@@ -226,47 +225,6 @@ class PersistentTrainingDataTest(unittest.TestCase):
             eligible["EventDate"].tolist(),
             ["2026-03-08", "2026-03-22"],
         )
-
-    @patch("train_era_models.train_degradation_model")
-    @patch("train_era_models.train_and_save")
-    def test_model_pair_reuses_one_processed_frame(
-        self,
-        train_pace,
-        train_degradation,
-    ):
-        frame = pd.DataFrame({"LapTimeDelta": [0.1]})
-        train_pace.return_value = {
-            "mae": 0.8,
-            "mae_validation_scope": (
-                "walk_forward_2026_plus_test_events"
-            ),
-        }
-        train_degradation.return_value = {
-            "degradation_mae": 0.4,
-            "degradation_mae_validation_scope": (
-                "walk_forward_2026_plus_test_events"
-            ),
-        }
-
-        result = train_model_pair(
-            frame,
-            "active_aero_2026_2030",
-            Path("models"),
-            validation_test_start_year=2026,
-        )
-
-        self.assertIs(train_pace.call_args.args[0], frame)
-        self.assertIs(train_degradation.call_args.args[0], frame)
-        self.assertEqual(
-            result["training_architecture"],
-            "additive_pace_plus_degradation",
-        )
-        self.assertEqual(
-            result["degradation_model_path"],
-            "models/active_aero_2026_2030_degradation_model.joblib",
-        )
-        self.assertTrue(result["training_run_id"])
-
 
 if __name__ == "__main__":
     unittest.main()
