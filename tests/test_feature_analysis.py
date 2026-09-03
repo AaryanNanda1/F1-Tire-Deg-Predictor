@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from analysis.feature_experiments import TrackPCATransformer, make_feature_set, prepare_variant
+from analysis.feature_experiments import PCA_AGE_INTERACTIONS, TrackPCATransformer, make_feature_set, prepare_variant
 from analysis.feature_groups import LEAKAGE_FEATURES, TRACK_FEATURES
 
 
@@ -36,3 +36,28 @@ class FeatureAnalysisTests(unittest.TestCase):
         self.assertEqual(train_x.shape[1], test_x.shape[1])
         self.assertEqual(transformer.pca.n_components_, 4)
         self.assertLess(abs(float(train_x["PC1"].mean())), 10.0)
+
+    def test_pca_age_interactions_are_exactly_the_requested_columns(self):
+        train_x, test_x, _ = prepare_variant(fixture(), fixture(), "hgb_track_pca4_age_interactions")
+        self.assertEqual([c for c in train_x if c.startswith("tire_age_x_PC")], PCA_AGE_INTERACTIONS)
+        self.assertTrue(set(PCA_AGE_INTERACTIONS).issubset(test_x.columns))
+        self.assertFalse(set(TRACK_FEATURES) & set(train_x.columns))
+        plain_train_x, _, _ = prepare_variant(fixture(), fixture(), "hgb_track_pca4")
+        self.assertFalse(set(PCA_AGE_INTERACTIONS) & set(plain_train_x.columns))
+
+    def test_pca_and_interactions_do_not_use_prohibited_columns(self):
+        frame = fixture()
+        for column in LEAKAGE_FEATURES - {"EventName", "EventDate"}:
+            frame[column] = 1.0
+        for variant in ("hgb_raw", "hgb_track_pca4", "hgb_track_pca4_age_interactions"):
+            train_x, test_x, _ = prepare_variant(frame, frame, variant)
+            self.assertFalse(set(train_x.columns) & LEAKAGE_FEATURES)
+            self.assertFalse(set(test_x.columns) & LEAKAGE_FEATURES)
+
+    def test_pca_scaler_is_not_refit_on_held_out_values(self):
+        training = fixture()
+        held_out = fixture()
+        held_out[TRACK_FEATURES[0]] = 10_000.0
+        transformer = TrackPCATransformer(4).fit(training)
+        expected_mean = training.groupby("EventName")[TRACK_FEATURES].median()[TRACK_FEATURES[0]].mean()
+        self.assertAlmostEqual(float(transformer.scaler.mean_[0]), float(expected_mean))

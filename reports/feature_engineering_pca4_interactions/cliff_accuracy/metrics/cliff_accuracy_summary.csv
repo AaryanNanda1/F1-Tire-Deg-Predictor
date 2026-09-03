@@ -1,0 +1,4 @@
+stints,confirmed_cliffs,confirmed_no_cliffs,true_positives,false_negatives,true_negatives,false_positives,precision,recall,specificity,balanced_accuracy,f1,false_cliff_rate,mean_absolute_cliff_lap_error,within_1_lap_rate,matched_cliffs,variant
+67,33,34,1,32,34,0,1.0,0.030303030303030304,1.0,0.5151515151515151,0.05882352941176471,0.0,2.0,0.0,1,hgb_raw
+67,33,34,0,33,34,0,,0.0,1.0,0.5,,0.0,,,0,hgb_track_pca4
+67,33,34,0,33,34,0,,0.0,1.0,0.5,,0.0,,,0,hgb_track_pca4_age_interactions

@@ -25,7 +25,8 @@ import sklearn
 from sklearn.inspection import permutation_importance
 
 from analysis.feature_experiments import (
-    event_keys, fit_model, make_feature_set, prepare_variant, raw_model_features, score_predictions,
+    PCA_AGE_INTERACTION_VARIANT, event_keys, fit_model, make_feature_set, prepare_variant,
+    raw_model_features, score_predictions,
 )
 from analysis.feature_groups import (
     ALL_RAW_FEATURES, CATEGORICAL_FEATURES, FEATURE_GROUPS, LEAKAGE_FEATURES, TARGET, TRACK_FEATURES,
@@ -37,6 +38,7 @@ VARIANTS = ["hgb_raw", "hgb_pruned", "hgb_track_pca4", "hgb_track_pca5", "ridge_
 PCA_SWEEP_VARIANTS = ["hgb_raw"] + [f"hgb_track_pca{i}" for i in range(1, 8)]
 FOCUSED_PCA_VARIANTS = ["hgb_raw", "hgb_track_pca1", "hgb_track_pca2", "hgb_track_pca4"]
 RAW_VS_PCA4_VARIANTS = ["hgb_raw", "hgb_track_pca4"]
+PCA4_INTERACTION_VARIANTS = ["hgb_raw", "hgb_track_pca4", PCA_AGE_INTERACTION_VARIANT]
 
 
 def load_store(path: Path) -> pd.DataFrame:
@@ -110,7 +112,40 @@ def pca_report(data: pd.DataFrame, output: Path) -> dict:
     return {"components": len(TRACK_FEATURES), "pc4_cumulative": float(variance.loc[variance.component == 4, "cumulative_variance"].iloc[0]), "pc5_cumulative": float(variance.loc[variance.component == 5, "cumulative_variance"].iloc[0]), "circuits": len(profiles)}
 
 
-def evaluate(data: pd.DataFrame, output: Path, smoke: bool, random_state: int, *, pca_sweep: bool = False, focused_pca: bool = False, raw_vs_pca4: bool = False) -> dict:
+def _paired_event_differences(result: pd.DataFrame, output: Path) -> None:
+    development = result[result["split"] == "development"]
+    pivot = development.pivot_table(index="fold", columns="variant", values="mae", aggfunc="first")
+    rows = []
+    for baseline in ("hgb_raw", "hgb_track_pca4"):
+        if PCA_AGE_INTERACTION_VARIANT not in pivot or baseline not in pivot:
+            continue
+        difference = (pivot[PCA_AGE_INTERACTION_VARIANT] - pivot[baseline]).dropna()
+        rows.append({
+            "candidate": PCA_AGE_INTERACTION_VARIANT,
+            "baseline": baseline,
+            "event_count": int(len(difference)),
+            "mean_mae_difference_candidate_minus_baseline": float(difference.mean()),
+            "median_mae_difference_candidate_minus_baseline": float(difference.median()),
+            "proportion_events_improved": float((difference < 0).mean()) if len(difference) else None,
+        })
+    pd.DataFrame(rows).to_csv(output / "metrics" / "paired_event_mae_differences.csv", index=False)
+    if PCA_AGE_INTERACTION_VARIANT in pivot and "hgb_track_pca4" in pivot:
+        difference = (pivot[PCA_AGE_INTERACTION_VARIANT] - pivot["hgb_track_pca4"]).dropna().sort_index()
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots(figsize=(12, 4.5))
+        colors = ["#2f8f5b" if value < 0 else "#c75c2c" for value in difference]
+        ax.bar(np.arange(len(difference)), difference.values, color=colors)
+        ax.axhline(0, color="#333333", linewidth=0.8)
+        ax.set_title("Development event MAE difference: PCA-4 + age interactions − PCA-4")
+        ax.set_ylabel("MAE difference (seconds; negative favors interactions)")
+        ax.set_xlabel("Chronological development event fold")
+        ax.set_xticks(np.arange(len(difference)), [str(index).split("::", 1)[-1] for index in difference.index], rotation=75, ha="right", fontsize=7)
+        ax.grid(axis="y", alpha=.25); fig.tight_layout()
+        path = output / "figures" / "pca4_age_interaction_event_mae_difference.png"
+        fig.savefig(path, dpi=300, bbox_inches="tight"); fig.savefig(path.with_suffix(".svg"), bbox_inches="tight"); plt.close(fig)
+
+
+def evaluate(data: pd.DataFrame, output: Path, smoke: bool, random_state: int, *, pca_sweep: bool = False, focused_pca: bool = False, raw_vs_pca4: bool = False, pca4_interactions: bool = False) -> dict:
     dates = pd.to_datetime(data.EventDate)
     dev = data[dates.dt.year <= 2024].copy(); final = data[dates.dt.year == 2025].copy()
     if smoke:
@@ -140,10 +175,10 @@ def evaluate(data: pd.DataFrame, output: Path, smoke: bool, random_state: int, *
         "remove_driver_team": ["Driver", "Team"],
         "remove_session_context": ["SessionCode", "TrackType"],
     }
-    variants = RAW_VS_PCA4_VARIANTS if raw_vs_pca4 else (FOCUSED_PCA_VARIANTS if focused_pca else (PCA_SWEEP_VARIANTS if pca_sweep else (["hgb_raw", "hgb_track_pca4"] if smoke else VARIANTS)))
+    variants = PCA4_INTERACTION_VARIANTS if pca4_interactions else (RAW_VS_PCA4_VARIANTS if raw_vs_pca4 else (FOCUSED_PCA_VARIANTS if focused_pca else (PCA_SWEEP_VARIANTS if pca_sweep else (["hgb_raw", "hgb_track_pca4"] if smoke else VARIANTS))))
     if smoke:
         ablation_specs = dict(list(ablation_specs.items())[:2])
-    if pca_sweep or focused_pca or raw_vs_pca4:
+    if pca_sweep or focused_pca or raw_vs_pca4 or pca4_interactions:
         ablation_specs = {}
     for _, test_event in events.iterrows():
         train = dev[pd.to_datetime(dev.EventDate) < test_event.EventDate]
@@ -154,7 +189,7 @@ def evaluate(data: pd.DataFrame, output: Path, smoke: bool, random_state: int, *
             started = time.perf_counter(); train_x, test_x, transformer = prepare_variant(train, test, variant)
             model = fit_model(train_x, train[TARGET], variant, train.get("SampleWeight"))
             predictions = model.predict(test_x); metrics = score_predictions(test[TARGET], predictions)
-            rows.append({"variant": variant, "fold": fold_id, "split": "development", "n_features": train_x.shape[1], "degradation_slope_error": degradation_slope_error(test, predictions), **metrics, "runtime_seconds": time.perf_counter() - started})
+            rows.append({"variant": variant, "fold": fold_id, "event_date": str(test_event.EventDate.date()), "event_name": test_event.EventName, "split": "development", "n_features": train_x.shape[1], "degradation_slope_error": degradation_slope_error(test, predictions), **metrics, "runtime_seconds": time.perf_counter() - started})
             if variant == "hgb_raw" and smoke:
                 perm = permutation_importance(model, test_x, test[TARGET], scoring="neg_mean_absolute_error", n_repeats=3, random_state=random_state)
                 for name, value, std in zip(train_x.columns, perm.importances_mean, perm.importances_std): importance_rows.append({"fold": fold_id, "feature": name, "importance_in_mae": -float(value), "std": float(std)})
@@ -181,6 +216,8 @@ def evaluate(data: pd.DataFrame, output: Path, smoke: bool, random_state: int, *
         if not ablation_summary.empty:
             ablation_summary.to_csv(output / "metrics" / "ablation_summary.csv", index=False)
             bar_plot(ablation_summary, "variant", "mae", "Grouped feature ablation MAE", "Mean absolute error (seconds)", output / "figures" / "10_ablation_results.png")
+    if pca4_interactions:
+        _paired_event_differences(result, output)
     pd.DataFrame(importance_rows).to_csv(output / "metrics" / "permutation_importance_folds.csv", index=False)
     if importance_rows:
         imp = pd.DataFrame(importance_rows).groupby("feature", as_index=False).agg(mean_increase_mae=("importance_in_mae", "mean"), std_across_folds=("importance_in_mae", "std"), events=("fold", "nunique")).sort_values("mean_increase_mae", ascending=False)
@@ -214,13 +251,14 @@ def evaluate(data: pd.DataFrame, output: Path, smoke: bool, random_state: int, *
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(); parser.add_argument("--era", default="ground_effect", choices=["ground_effect"]); parser.add_argument("--output-dir", default="reports/feature_engineering"); parser.add_argument("--random-state", type=int, default=42); parser.add_argument("--smoke", action="store_true"); parser.add_argument("--pca-sweep", action="store_true", help="Compare PCA-1 through PCA-7 against hgb_raw"); parser.add_argument("--focused-pca", action="store_true", help="Full-data second stage: raw, PCA-1, PCA-2, and PCA-4"); parser.add_argument("--raw-vs-pca4", action="store_true", help="Full-data comparison of only hgb_raw and PCA-4"); args = parser.parse_args()
+    parser = argparse.ArgumentParser(); parser.add_argument("--era", default="ground_effect", choices=["ground_effect"]); parser.add_argument("--output-dir", default="reports/feature_engineering"); parser.add_argument("--random-state", type=int, default=42); parser.add_argument("--smoke", action="store_true"); parser.add_argument("--pca-sweep", action="store_true", help="Compare PCA-1 through PCA-7 against hgb_raw"); parser.add_argument("--focused-pca", action="store_true", help="Full-data second stage: raw, PCA-1, PCA-2, and PCA-4"); parser.add_argument("--raw-vs-pca4", action="store_true", help="Full-data comparison of only hgb_raw and PCA-4"); parser.add_argument("--pca4-interactions", action="store_true", help="Compare raw, PCA-4, and PCA-4 with tire-age interactions"); args = parser.parse_args()
     np.random.seed(args.random_state); output = Path(args.output_dir); (output / "figures").mkdir(parents=True, exist_ok=True); (output / "tables").mkdir(exist_ok=True); (output / "metrics").mkdir(exist_ok=True)
     data = load_store(PROJECT_ROOT / "training_data/ground_effect"); years = pd.to_datetime(data.EventDate).dt.year; data = data[years.between(2022, 2025)].copy()
     prohibited = sorted(set(data.columns) & LEAKAGE_FEATURES - {TARGET, "EventName", "EventDate"});
     if prohibited: raise ValueError(f"Unexpected prohibited columns present: {prohibited}")
-    correlations(data, output); pca = pca_report(data, output); evaluation = evaluate(data, output, args.smoke, args.random_state, pca_sweep=args.pca_sweep, focused_pca=args.focused_pca, raw_vs_pca4=args.raw_vs_pca4)
-    provenance = {"git_commit": __import__("subprocess").check_output(["git", "rev-parse", "HEAD"], cwd=PROJECT_ROOT, text=True).strip(), "generation_timestamp_utc": pd.Timestamp.utcnow().isoformat(), "python_version": platform.python_version(), "sklearn_version": sklearn.__version__, "random_state": args.random_state, "input_manifest": "training_data/ground_effect/manifest.json", "input_manifest_sha256": hash_file(PROJECT_ROOT / "training_data/ground_effect/manifest.json"), "dataset_years": [2022, 2023, 2024, 2025], "row_count": len(data), "session_count": int(data[["EventDate", "EventName"]].drop_duplicates().shape[0]), "feature_groups": FEATURE_GROUPS, "folds": evaluation, "pca": pca, "selected_model": "hgb_raw", "selection_reason": "Initial report runner preserves the current representation until all downstream benchmarks are available; no production change is made."}
+    correlations(data, output); pca = pca_report(data, output); evaluation = evaluate(data, output, args.smoke, args.random_state, pca_sweep=args.pca_sweep, focused_pca=args.focused_pca, raw_vs_pca4=args.raw_vs_pca4, pca4_interactions=args.pca4_interactions)
+    source_commit = __import__("subprocess").check_output(["git", "rev-parse", "HEAD"], cwd=PROJECT_ROOT, text=True).strip()
+    provenance = {"source_commit": source_commit, "baseline_source_commit": "4b2c3ea0e92486ba93d7d0c2754b1e90093232da", "generation_timestamp_utc": pd.Timestamp.utcnow().isoformat(), "python_version": platform.python_version(), "sklearn_version": sklearn.__version__, "random_state": args.random_state, "input_manifest": "training_data/ground_effect/manifest.json", "input_manifest_sha256": hash_file(PROJECT_ROOT / "training_data/ground_effect/manifest.json"), "dataset_years": [2022, 2023, 2024, 2025], "row_count": len(data), "session_count": int(data[["EventDate", "EventName"]].drop_duplicates().shape[0]), "feature_groups": FEATURE_GROUPS, "variants": {"hgb_raw": make_feature_set(data, "hgb_raw"), "hgb_track_pca4": make_feature_set(data, "hgb_track_pca4") + [f"PC{i}" for i in range(1, 5)], PCA_AGE_INTERACTION_VARIANT: make_feature_set(data, "hgb_track_pca4") + [f"PC{i}" for i in range(1, 5)] + [f"tire_age_x_PC{i}" for i in range(1, 5)]}, "pca_fitting_policy": "Each fold fits StandardScaler and PCA on one median profile per circuit using training-fold rows only; held-out rows are transformed with those fitted objects.", "folds": evaluation, "pca": pca, "production_artifact_changed": False, "production_training_or_inference_changed": False}
     (output / "provenance.json").write_text(json.dumps(provenance, indent=2, default=str)); print(json.dumps({"rows": len(data), "pca": pca, "evaluation": evaluation}, indent=2))
 
 

@@ -35,14 +35,14 @@ def score(rows):
 
 
 def main():
-    parser = argparse.ArgumentParser(); parser.add_argument("--output-dir", default="reports/feature_engineering_downstream/cliff_accuracy"); args = parser.parse_args()
+    parser = argparse.ArgumentParser(); parser.add_argument("--output-dir", default="reports/feature_engineering_pca4_interactions/cliff_accuracy"); args = parser.parse_args()
     out = Path(args.output_dir); (out / "figures").mkdir(parents=True, exist_ok=True); (out / "metrics").mkdir(exist_ok=True); (out / "tables").mkdir(exist_ok=True)
     data = load_store(ROOT / "training_data/ground_effect"); data["EventDate"] = pd.to_datetime(data["EventDate"])
     train = data[data.EventDate.dt.year == 2022].copy(); scored = data[data.EventDate.dt.year == 2023].copy()
     labels = json.loads((ROOT / "calibration_work/fastf1_cliff_calibration/reviewed_labels.json").read_text())["labels"]
     labels = [label for label in labels if label["season"] == 2023 and label["manual_review_status"] in {"confirmed_cliff", "confirmed_no_cliff"}]
     output_rows = []
-    for variant in ("hgb_raw", "hgb_track_pca4"):
+    for variant in ("hgb_raw", "hgb_track_pca4", "hgb_track_pca4_age_interactions"):
         train_x, scored_x, _ = prepare_variant(train, scored, variant); model = fit_model(train_x, train["LapTimeDelta"], variant, train.get("SampleWeight")); scored = scored.copy(); scored["prediction"] = model.predict(scored_x)
         for label in labels:
             team = normalize_team_name(label["team"]); group = scored[(scored.EventName == label["event_name"]) & (scored.Driver == label["driver"]) & (scored.Team == team) & (scored.Compound == label["compound"]) & (scored.Stint == label["stint"])]
@@ -57,10 +57,14 @@ def main():
         report = score(group.to_dict("records")); report["variant"] = variant; reports.append(report)
     summary = pd.DataFrame(reports); summary.to_csv(out / "metrics" / "cliff_accuracy_summary.csv", index=False); (out / "metrics" / "cliff_accuracy_summary.json").write_text(json.dumps(reports, indent=2, default=str))
     import matplotlib.pyplot as plt
-    metrics = [("balanced_accuracy", "Balanced accuracy"), ("precision", "Precision"), ("recall", "Recall"), ("specificity", "Specificity"), ("f1", "F1 score"), ("false_cliff_rate", "False-cliff rate")]
-    fig, axes = plt.subplots(2, 3, figsize=(15, 8)); positions = np.arange(len(summary)); labels_x = summary.variant.tolist()
+    metrics = [("balanced_accuracy", "Balanced accuracy"), ("precision", "Precision"), ("recall", "Recall"), ("specificity", "Specificity"), ("f1", "F1 score"), ("false_cliff_rate", "False-cliff rate"), ("mean_absolute_cliff_lap_error", "Mean absolute cliff-lap error")]
+    fig, axes = plt.subplots(2, 4, figsize=(18, 8)); positions = np.arange(len(summary)); labels_x = summary.variant.tolist()
     for axis, (column, title) in zip(axes.flat, metrics):
-        axis.bar(positions, summary[column].fillna(0), color="#2f6f9f"); axis.set_title(title); axis.set_ylim(0, 1); axis.set_xticks(positions, labels_x, rotation=25); axis.grid(axis="y", alpha=.25)
+        values = summary[column].fillna(0)
+        axis.bar(positions, values, color="#2f6f9f"); axis.set_title(title)
+        axis.set_ylim(0, max(1.0, float(values.max()) * 1.2))
+        axis.set_xticks(positions, labels_x, rotation=25); axis.grid(axis="y", alpha=.25)
+    axis = axes.flat[-1]; axis.axis("off")
     fig.suptitle("Reviewed 2023 cliff-detection comparison"); fig.tight_layout(); fig.savefig(out / "figures" / "20_cliff_accuracy_comparison.png", dpi=300, bbox_inches="tight"); fig.savefig(out / "figures" / "20_cliff_accuracy_comparison.svg", bbox_inches="tight"); plt.close(fig)
     print(json.dumps({"evaluated_rows": len(rows), "reports": reports}, indent=2, default=str))
 

@@ -59,3 +59,5 @@ dist/
 # Local analysis caches and smoke-test reports
 .analysis-mpl-cache/
 reports/feature_engineering_smoke/
+reports/feature_engineering_pca4_interactions_smoke/
+reports/feature_engineering_focused/

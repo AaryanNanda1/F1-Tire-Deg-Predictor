@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 from typing import Iterable
 
 import numpy as np
@@ -20,6 +21,10 @@ from .feature_groups import (
     AGE_REDUNDANCY_REMOVALS, ALL_RAW_FEATURES, CATEGORICAL_FEATURES,
     LEAKAGE_FEATURES, TRACK_AGE_INTERACTIONS, TRACK_FEATURES, assert_safe_features,
 )
+
+
+PCA_AGE_INTERACTION_VARIANT = "hgb_track_pca4_age_interactions"
+PCA_AGE_INTERACTIONS = [f"tire_age_x_PC{i}" for i in range(1, 5)]
 
 
 def raw_model_features(frame: pd.DataFrame) -> list[str]:
@@ -106,16 +111,37 @@ class TrackPCATransformer:
         return result
 
 
+def _pca_component_count(variant: str) -> int | None:
+    match = re.search(r"(?:hgb_track_pca|ridge_pca)(\d+)", variant)
+    return int(match.group(1)) if match else None
+
+
+def _add_pca_age_interactions(frame: pd.DataFrame) -> pd.DataFrame:
+    result = frame.copy()
+    for index in range(1, 5):
+        result[f"tire_age_x_PC{index}"] = result["TyreLife"] * result[f"PC{index}"]
+    return result
+
+
 def prepare_variant(train: pd.DataFrame, test: pd.DataFrame, variant: str):
     transformer = None
     if variant.startswith("hgb_track_pca") or variant.startswith("ridge_pca"):
-        components = int(variant.rsplit("pca", 1)[1]) if "track_pca" in variant else 5
+        components = _pca_component_count(variant)
+        if components is None:
+            raise ValueError(f"Could not determine PCA component count for {variant}")
         transformer = TrackPCATransformer(components).fit(train)
         train = transformer.transform(train)
         test = transformer.transform(test)
+        if variant == PCA_AGE_INTERACTION_VARIANT:
+            if transformer.n_components != 4:
+                raise ValueError("PCA-4 age interactions require exactly four components")
+            train = _add_pca_age_interactions(train)
+            test = _add_pca_age_interactions(test)
     features = make_feature_set(train, variant)
     if transformer is not None:
         features += [f"PC{i}" for i in range(1, transformer.n_components + 1)]
+    if variant == PCA_AGE_INTERACTION_VARIANT:
+        features += PCA_AGE_INTERACTIONS
     assert_safe_features(features)
     return train.reindex(columns=features), test.reindex(columns=features), transformer
 
