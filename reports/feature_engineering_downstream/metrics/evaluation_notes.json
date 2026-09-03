@@ -1,0 +1,10 @@
+{
+  "data_scope": "2025 held-out Ground Effect events",
+  "training_scope": "2022-2024",
+  "variants": [
+    "hgb_raw",
+    "hgb_track_pca4"
+  ],
+  "strategy_interpretation": "diagnostic generated from held-out predicted curves; not observed-race strategy accuracy",
+  "production_changed": false
+}

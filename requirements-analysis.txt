@@ -1,0 +1,2 @@
+# Optional analysis dependencies. Core analysis uses packages already in requirements.txt.
+matplotlib>=3.8.0

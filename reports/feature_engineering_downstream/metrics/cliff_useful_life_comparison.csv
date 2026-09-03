@@ -1,0 +1,137 @@
+variant,event_date,event_name,compound,curve_mae,observed_cliff,predicted_cliff,cliff_abs_error,observed_useful_life,predicted_useful_life,useful_life_abs_error
+hgb_raw,2025-03-16,Australian Grand Prix,HARD,2.0001614527821534,,,,8,14,6
+hgb_raw,2025-03-16,Australian Grand Prix,INTERMEDIATE,1.8909719516910353,,,,30,30,0
+hgb_raw,2025-03-16,Australian Grand Prix,MEDIUM,1.7810475886946704,,,,11,21,10
+hgb_raw,2025-03-16,Australian Grand Prix,SOFT,2.9806583998143834,15.0,,,11,16,5
+hgb_raw,2025-03-23,Chinese Grand Prix,HARD,2.5839129665731835,,,,44,44,0
+hgb_raw,2025-03-23,Chinese Grand Prix,MEDIUM,1.919572929044268,12.0,,,28,28,0
+hgb_raw,2025-04-06,Japanese Grand Prix,HARD,3.9404565271199363,,,,36,36,0
+hgb_raw,2025-04-06,Japanese Grand Prix,MEDIUM,3.2808399674871365,30.0,,,30,30,0
+hgb_raw,2025-04-06,Japanese Grand Prix,SOFT,3.490490117475778,,,,18,18,0
+hgb_raw,2025-04-13,Bahrain Grand Prix,HARD,0.7930243421167797,25.0,,,20,28,8
+hgb_raw,2025-04-13,Bahrain Grand Prix,MEDIUM,0.7635523630125434,5.0,,,29,29,0
+hgb_raw,2025-04-13,Bahrain Grand Prix,SOFT,1.095274524589538,,,,26,26,0
+hgb_raw,2025-04-20,Saudi Arabian Grand Prix,HARD,0.5383306128097287,42.0,,,40,46,6
+hgb_raw,2025-04-20,Saudi Arabian Grand Prix,MEDIUM,0.7248508489930737,,,,13,26,13
+hgb_raw,2025-05-04,Miami Grand Prix,HARD,1.7255778370345294,,,,33,33,0
+hgb_raw,2025-05-04,Miami Grand Prix,MEDIUM,1.6361456245375945,,,,24,24,0
+hgb_raw,2025-05-18,Emilia Romagna Grand Prix,HARD,0.43876377986564064,,,,32,32,0
+hgb_raw,2025-05-18,Emilia Romagna Grand Prix,MEDIUM,0.37931015466180756,,,,32,32,0
+hgb_raw,2025-05-25,Monaco Grand Prix,HARD,0.9166784264715667,25.0,,,13,50,37
+hgb_raw,2025-05-25,Monaco Grand Prix,MEDIUM,1.2989215059854684,,,,50,50,0
+hgb_raw,2025-05-25,Monaco Grand Prix,SOFT,1.5064918900350137,30.0,,,30,30,0
+hgb_raw,2025-06-01,Spanish Grand Prix,HARD,4.109933149854738,,14.0,,15,15,0
+hgb_raw,2025-06-01,Spanish Grand Prix,MEDIUM,0.5180153412151544,25.0,,,32,33,1
+hgb_raw,2025-06-01,Spanish Grand Prix,SOFT,0.63899900009545,,,,23,23,0
+hgb_raw,2025-06-15,Canadian Grand Prix,HARD,1.5798054886725086,,,,50,50,0
+hgb_raw,2025-06-15,Canadian Grand Prix,MEDIUM,1.1710242219646796,18.0,,,24,24,0
+hgb_raw,2025-06-15,Canadian Grand Prix,SOFT,3.4041487318480828,,,,9,13,4
+hgb_raw,2025-06-29,Austrian Grand Prix,HARD,0.7240487920047919,34.0,,,35,39,4
+hgb_raw,2025-06-29,Austrian Grand Prix,MEDIUM,0.6401265451909474,8.0,,,21,31,10
+hgb_raw,2025-06-29,Austrian Grand Prix,SOFT,0.9464313169754084,,,,8,17,9
+hgb_raw,2025-07-06,British Grand Prix,HARD,0.8690074321959359,,7.0,,13,13,0
+hgb_raw,2025-07-06,British Grand Prix,INTERMEDIATE,3.838768953025819,,,,28,28,0
+hgb_raw,2025-07-06,British Grand Prix,MEDIUM,0.6984026778711038,,,,21,21,0
+hgb_raw,2025-07-06,British Grand Prix,SOFT,0.5830791809702751,,9.0,,13,13,0
+hgb_raw,2025-07-27,Belgian Grand Prix,HARD,5.298429716983264,,,,29,29,0
+hgb_raw,2025-07-27,Belgian Grand Prix,MEDIUM,4.904793828027487,,,,36,36,0
+hgb_raw,2025-07-27,Belgian Grand Prix,SOFT,4.212256844891508,,,,13,13,0
+hgb_raw,2025-08-03,Hungarian Grand Prix,HARD,2.187027872754152,44.0,,,40,50,10
+hgb_raw,2025-08-03,Hungarian Grand Prix,MEDIUM,1.9249633227460232,,,,37,37,0
+hgb_raw,2025-08-03,Hungarian Grand Prix,SOFT,1.6350610565252326,,,,15,15,0
+hgb_raw,2025-08-31,Dutch Grand Prix,HARD,0.6945467872430301,,,,49,49,0
+hgb_raw,2025-08-31,Dutch Grand Prix,MEDIUM,0.9212454556770812,,,,27,27,0
+hgb_raw,2025-08-31,Dutch Grand Prix,SOFT,0.9129534284378049,,,,25,25,0
+hgb_raw,2025-09-07,Italian Grand Prix,HARD,3.2735652372104647,,,,48,48,0
+hgb_raw,2025-09-07,Italian Grand Prix,MEDIUM,3.2467385986641535,,,,42,42,0
+hgb_raw,2025-09-07,Italian Grand Prix,SOFT,3.014339639340258,,,,14,14,0
+hgb_raw,2025-09-21,Azerbaijan Grand Prix,HARD,1.8061513166743512,,,,48,48,0
+hgb_raw,2025-09-21,Azerbaijan Grand Prix,MEDIUM,1.8929579876772957,21.0,,,17,37,20
+hgb_raw,2025-10-05,Singapore Grand Prix,HARD,1.392722620920197,32.0,,,28,46,18
+hgb_raw,2025-10-05,Singapore Grand Prix,MEDIUM,1.1517091671573025,,,,46,46,0
+hgb_raw,2025-10-05,Singapore Grand Prix,SOFT,1.1756479667611606,,,,35,35,0
+hgb_raw,2025-10-19,United States Grand Prix,HARD,0.4425111039406134,,,,22,22,0
+hgb_raw,2025-10-19,United States Grand Prix,MEDIUM,0.9253425582598039,,,,32,32,0
+hgb_raw,2025-10-19,United States Grand Prix,SOFT,0.8792037615414986,,,,28,28,0
+hgb_raw,2025-10-26,Mexico City Grand Prix,HARD,0.8778234078062827,,21.0,,16,44,28
+hgb_raw,2025-10-26,Mexico City Grand Prix,MEDIUM,1.5508583213493672,15.0,,,24,40,16
+hgb_raw,2025-10-26,Mexico City Grand Prix,SOFT,1.9100985120007303,21.0,,,30,35,5
+hgb_raw,2025-11-09,São Paulo Grand Prix,HARD,1.3486406105483077,13.0,,,21,21,0
+hgb_raw,2025-11-09,São Paulo Grand Prix,MEDIUM,1.562508709846679,26.0,,,31,50,19
+hgb_raw,2025-11-09,São Paulo Grand Prix,SOFT,1.8272381973883076,29.0,,,33,36,3
+hgb_raw,2025-11-22,Las Vegas Grand Prix,HARD,1.953917527977027,,,,46,46,0
+hgb_raw,2025-11-22,Las Vegas Grand Prix,MEDIUM,2.6595918756532337,,24.0,,24,24,0
+hgb_raw,2025-11-30,Qatar Grand Prix,HARD,2.9807590785412175,,,,23,23,0
+hgb_raw,2025-11-30,Qatar Grand Prix,MEDIUM,2.0209102521781674,,,,23,23,0
+hgb_raw,2025-11-30,Qatar Grand Prix,SOFT,2.261379074567547,,,,23,23,0
+hgb_raw,2025-12-07,Abu Dhabi Grand Prix,HARD,1.064148707184876,42.0,,,42,42,0
+hgb_raw,2025-12-07,Abu Dhabi Grand Prix,MEDIUM,1.0748847646879258,14.0,,,25,25,0
+hgb_raw,2025-12-07,Abu Dhabi Grand Prix,SOFT,2.0927537714035545,5.0,,,15,16,1
+hgb_track_pca4,2025-03-16,Australian Grand Prix,HARD,1.8887746824700105,,,,8,14,6
+hgb_track_pca4,2025-03-16,Australian Grand Prix,INTERMEDIATE,1.891558047261033,,,,30,30,0
+hgb_track_pca4,2025-03-16,Australian Grand Prix,MEDIUM,1.522119181205625,,,,11,21,10
+hgb_track_pca4,2025-03-16,Australian Grand Prix,SOFT,2.844240865541891,15.0,,,11,16,5
+hgb_track_pca4,2025-03-23,Chinese Grand Prix,HARD,2.497571434887137,,,,44,44,0
+hgb_track_pca4,2025-03-23,Chinese Grand Prix,MEDIUM,1.9646715631184206,12.0,,,28,28,0
+hgb_track_pca4,2025-04-06,Japanese Grand Prix,HARD,4.00963493779228,,,,36,36,0
+hgb_track_pca4,2025-04-06,Japanese Grand Prix,MEDIUM,3.4844244311933883,30.0,,,30,30,0
+hgb_track_pca4,2025-04-06,Japanese Grand Prix,SOFT,3.544057624954697,,,,18,18,0
+hgb_track_pca4,2025-04-13,Bahrain Grand Prix,HARD,0.8490275857996086,25.0,,,20,28,8
+hgb_track_pca4,2025-04-13,Bahrain Grand Prix,MEDIUM,0.771338555542885,5.0,,,29,29,0
+hgb_track_pca4,2025-04-13,Bahrain Grand Prix,SOFT,1.073140017645272,,,,26,26,0
+hgb_track_pca4,2025-04-20,Saudi Arabian Grand Prix,HARD,0.5444638073084681,42.0,,,40,46,6
+hgb_track_pca4,2025-04-20,Saudi Arabian Grand Prix,MEDIUM,0.7553768528948834,,,,13,26,13
+hgb_track_pca4,2025-05-04,Miami Grand Prix,HARD,1.6056804899707502,,,,33,33,0
+hgb_track_pca4,2025-05-04,Miami Grand Prix,MEDIUM,1.505773082130129,,,,24,24,0
+hgb_track_pca4,2025-05-18,Emilia Romagna Grand Prix,HARD,0.4472343823551894,,,,32,32,0
+hgb_track_pca4,2025-05-18,Emilia Romagna Grand Prix,MEDIUM,0.37804738494540036,,,,32,32,0
+hgb_track_pca4,2025-05-25,Monaco Grand Prix,HARD,0.9745804198752103,25.0,,,13,50,37
+hgb_track_pca4,2025-05-25,Monaco Grand Prix,MEDIUM,1.126502568428207,,,,50,50,0
+hgb_track_pca4,2025-05-25,Monaco Grand Prix,SOFT,1.409185446223815,30.0,,,30,30,0
+hgb_track_pca4,2025-06-01,Spanish Grand Prix,HARD,3.770686576442646,,,,15,15,0
+hgb_track_pca4,2025-06-01,Spanish Grand Prix,MEDIUM,0.5223973287392574,25.0,,,32,33,1
+hgb_track_pca4,2025-06-01,Spanish Grand Prix,SOFT,0.6463760702964246,,,,23,23,0
+hgb_track_pca4,2025-06-15,Canadian Grand Prix,HARD,1.5227544652343301,,,,50,50,0
+hgb_track_pca4,2025-06-15,Canadian Grand Prix,MEDIUM,1.1377471921064304,18.0,,,24,24,0
+hgb_track_pca4,2025-06-15,Canadian Grand Prix,SOFT,3.384825934428839,,,,9,13,4
+hgb_track_pca4,2025-06-29,Austrian Grand Prix,HARD,0.6792889888784484,34.0,,,35,39,4
+hgb_track_pca4,2025-06-29,Austrian Grand Prix,MEDIUM,0.5854168416892087,8.0,,,21,31,10
+hgb_track_pca4,2025-06-29,Austrian Grand Prix,SOFT,0.909789658565803,,,,8,17,9
+hgb_track_pca4,2025-07-06,British Grand Prix,HARD,0.7326721775001099,,,,13,13,0
+hgb_track_pca4,2025-07-06,British Grand Prix,INTERMEDIATE,3.828861387540448,,,,28,28,0
+hgb_track_pca4,2025-07-06,British Grand Prix,MEDIUM,0.4704122005185948,,,,21,21,0
+hgb_track_pca4,2025-07-06,British Grand Prix,SOFT,0.4233986903799248,,13.0,,13,13,0
+hgb_track_pca4,2025-07-27,Belgian Grand Prix,HARD,5.901135022885487,,,,29,29,0
+hgb_track_pca4,2025-07-27,Belgian Grand Prix,MEDIUM,5.440061514782836,,,,36,36,0
+hgb_track_pca4,2025-07-27,Belgian Grand Prix,SOFT,4.602843993257439,,,,13,13,0
+hgb_track_pca4,2025-08-03,Hungarian Grand Prix,HARD,2.0232734580960563,44.0,,,40,50,10
+hgb_track_pca4,2025-08-03,Hungarian Grand Prix,MEDIUM,1.8115698504708335,,,,37,37,0
+hgb_track_pca4,2025-08-03,Hungarian Grand Prix,SOFT,1.540215651778734,,,,15,15,0
+hgb_track_pca4,2025-08-31,Dutch Grand Prix,HARD,0.6957392480422853,,,,49,49,0
+hgb_track_pca4,2025-08-31,Dutch Grand Prix,MEDIUM,0.9214723177009899,,,,27,27,0
+hgb_track_pca4,2025-08-31,Dutch Grand Prix,SOFT,0.9240479275121964,,,,25,25,0
+hgb_track_pca4,2025-09-07,Italian Grand Prix,HARD,3.4006075011384556,,,,48,48,0
+hgb_track_pca4,2025-09-07,Italian Grand Prix,MEDIUM,3.368178920344216,,,,42,42,0
+hgb_track_pca4,2025-09-07,Italian Grand Prix,SOFT,3.120616128924912,,,,14,14,0
+hgb_track_pca4,2025-09-21,Azerbaijan Grand Prix,HARD,1.5831830374925109,,,,48,48,0
+hgb_track_pca4,2025-09-21,Azerbaijan Grand Prix,MEDIUM,1.671712239712682,21.0,,,17,37,20
+hgb_track_pca4,2025-10-05,Singapore Grand Prix,HARD,1.3352683737085174,32.0,,,28,46,18
+hgb_track_pca4,2025-10-05,Singapore Grand Prix,MEDIUM,1.2314839252255712,,,,46,46,0
+hgb_track_pca4,2025-10-05,Singapore Grand Prix,SOFT,1.3004693789338253,,,,35,35,0
+hgb_track_pca4,2025-10-19,United States Grand Prix,HARD,0.5875008624219936,,,,22,22,0
+hgb_track_pca4,2025-10-19,United States Grand Prix,MEDIUM,0.7972335338678196,,,,32,32,0
+hgb_track_pca4,2025-10-19,United States Grand Prix,SOFT,0.7110344923989725,,,,28,28,0
+hgb_track_pca4,2025-10-26,Mexico City Grand Prix,HARD,0.9714558620564122,,,,16,44,28
+hgb_track_pca4,2025-10-26,Mexico City Grand Prix,MEDIUM,1.5900770979400978,15.0,,,24,40,16
+hgb_track_pca4,2025-10-26,Mexico City Grand Prix,SOFT,1.9352324639001859,21.0,,,30,35,5
+hgb_track_pca4,2025-11-09,São Paulo Grand Prix,HARD,1.1921515408266217,13.0,,,21,21,0
+hgb_track_pca4,2025-11-09,São Paulo Grand Prix,MEDIUM,1.4485832686392268,26.0,,,31,50,19
+hgb_track_pca4,2025-11-09,São Paulo Grand Prix,SOFT,1.6821593508899417,29.0,,,33,36,3
+hgb_track_pca4,2025-11-22,Las Vegas Grand Prix,HARD,1.9790045006884496,,,,46,46,0
+hgb_track_pca4,2025-11-22,Las Vegas Grand Prix,MEDIUM,2.6602151093349558,,24.0,,24,24,0
+hgb_track_pca4,2025-11-30,Qatar Grand Prix,HARD,2.7232067140003466,,,,23,23,0
+hgb_track_pca4,2025-11-30,Qatar Grand Prix,MEDIUM,1.7150495980604052,,,,23,23,0
+hgb_track_pca4,2025-11-30,Qatar Grand Prix,SOFT,2.003209876060078,,,,23,23,0
+hgb_track_pca4,2025-12-07,Abu Dhabi Grand Prix,HARD,1.0239967187729055,42.0,,,42,42,0
+hgb_track_pca4,2025-12-07,Abu Dhabi Grand Prix,MEDIUM,1.0535765512059774,14.0,,,25,25,0
+hgb_track_pca4,2025-12-07,Abu Dhabi Grand Prix,SOFT,1.9546972762416488,5.0,,,15,16,1

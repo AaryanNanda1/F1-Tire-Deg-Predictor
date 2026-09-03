@@ -1,0 +1,4 @@
+{
+  "status": "not_run",
+  "reason": "Existing cliff and strategy benchmarks require simulation-specific curve and race-state inputs; no production behavior was changed by this analysis runner."
+}

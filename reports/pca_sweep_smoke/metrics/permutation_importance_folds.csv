@@ -1,0 +1,149 @@
+fold,feature,importance_in_mae,std
+2024-11-03::São Paulo Grand Prix,Driver,-0.008273419454004246,0.0016784278362541058
+2024-11-03::São Paulo Grand Prix,Team,-0.0037666480841694514,0.00016522116473203195
+2024-11-03::São Paulo Grand Prix,Compound,-0.0,0.0
+2024-11-03::São Paulo Grand Prix,TrackType,-0.0,0.0
+2024-11-03::São Paulo Grand Prix,SessionCode,-0.0,0.0
+2024-11-03::São Paulo Grand Prix,TyreLife,0.0004211238876556204,0.0008535228170143896
+2024-11-03::São Paulo Grand Prix,TyreLifeKM,0.027829967195684684,0.0019855124989242964
+2024-11-03::São Paulo Grand Prix,TyreLifeSquared,-0.0,0.0
+2024-11-03::São Paulo Grand Prix,TireAgeRatio,0.01794263510510004,0.00019466057825783897
+2024-11-03::São Paulo Grand Prix,LapNumber,0.0031805192305742005,0.0016314568606264133
+2024-11-03::São Paulo Grand Prix,NormalizedLap,0.012551471378545878,0.0008983742907128742
+2024-11-03::São Paulo Grand Prix,LapsRemaining,0.0058545550718213475,0.0016123778552166695
+2024-11-03::São Paulo Grand Prix,FuelLoad,-0.03398905533734128,0.0018148661193262063
+2024-11-03::São Paulo Grand Prix,Stint,-0.0,0.0
+2024-11-03::São Paulo Grand Prix,AirTemp,-0.0,0.0
+2024-11-03::São Paulo Grand Prix,TrackTemp,-0.0,0.0
+2024-11-03::São Paulo Grand Prix,Humidity,-0.028229375140581325,0.0019281278027528932
+2024-11-03::São Paulo Grand Prix,Rainfall,-0.0,0.0
+2024-11-03::São Paulo Grand Prix,WindSpeed,1.79428859959548e-05,0.0017846448777838742
+2024-11-03::São Paulo Grand Prix,IsWet,-0.0,0.0
+2024-11-03::São Paulo Grand Prix,FuelLoadMissing,-0.0,0.0
+2024-11-03::São Paulo Grand Prix,traction,-0.0,0.0
+2024-11-03::São Paulo Grand Prix,tyre_stress,-0.0,0.0
+2024-11-03::São Paulo Grand Prix,asphalt_grip,-0.0,0.0
+2024-11-03::São Paulo Grand Prix,corner_speed_energy,-0.0,0.0
+2024-11-03::São Paulo Grand Prix,abrasiveness,-0.0,0.0
+2024-11-03::São Paulo Grand Prix,braking_severity,-0.0,0.0
+2024-11-03::São Paulo Grand Prix,lateral_load,-0.0,0.0
+2024-11-03::São Paulo Grand Prix,tire_age_x_abrasiveness,0.023066023888667075,0.000659157179236492
+2024-11-03::São Paulo Grand Prix,track_temp_x_tyre_stress,-0.0,0.0
+2024-11-03::São Paulo Grand Prix,tire_age_x_traction,0.0009530386217531847,0.0003947166439447506
+2024-11-03::São Paulo Grand Prix,tire_age_x_lateral_load,0.007761454669331869,0.0006566602373354091
+2024-11-03::São Paulo Grand Prix,soft_abrasiveness_interaction,-0.0,0.0
+2024-11-03::São Paulo Grand Prix,soft_traction_interaction,-0.0,0.0
+2024-11-03::São Paulo Grand Prix,soft_age_interaction,-0.0,0.0
+2024-11-03::São Paulo Grand Prix,medium_age_interaction,-0.0,0.0
+2024-11-03::São Paulo Grand Prix,hard_age_interaction,-0.0,0.0
+2024-11-23::Las Vegas Grand Prix,Driver,-0.016969668113399134,0.008505293356038609
+2024-11-23::Las Vegas Grand Prix,Team,-0.03435305992531449,0.014433634337430992
+2024-11-23::Las Vegas Grand Prix,Compound,-0.0,0.0
+2024-11-23::Las Vegas Grand Prix,TrackType,-0.0,0.0
+2024-11-23::Las Vegas Grand Prix,SessionCode,-0.0,0.0
+2024-11-23::Las Vegas Grand Prix,TyreLife,0.00789397696217294,0.00048280447019538846
+2024-11-23::Las Vegas Grand Prix,TyreLifeKM,0.05655780008718114,0.003164415927542592
+2024-11-23::Las Vegas Grand Prix,TyreLifeSquared,-0.0,0.0
+2024-11-23::Las Vegas Grand Prix,TireAgeRatio,0.0100053522609261,0.0004350478210344973
+2024-11-23::Las Vegas Grand Prix,LapNumber,0.0012756297762287854,0.004126695082563092
+2024-11-23::Las Vegas Grand Prix,NormalizedLap,-0.029670784585775028,0.013708466668935193
+2024-11-23::Las Vegas Grand Prix,LapsRemaining,0.00913058319148874,0.0006989378453733083
+2024-11-23::Las Vegas Grand Prix,FuelLoad,0.027913261170461705,0.006205242548145456
+2024-11-23::Las Vegas Grand Prix,Stint,0.014703362861544278,0.007154259916213223
+2024-11-23::Las Vegas Grand Prix,AirTemp,0.020485134559652767,0.00731217006750245
+2024-11-23::Las Vegas Grand Prix,TrackTemp,-0.000263878164814102,0.0018659003974711293
+2024-11-23::Las Vegas Grand Prix,Humidity,0.012142742312378848,0.012119402529327519
+2024-11-23::Las Vegas Grand Prix,Rainfall,-0.0,0.0
+2024-11-23::Las Vegas Grand Prix,WindSpeed,0.007533513760681861,0.0009064144858189962
+2024-11-23::Las Vegas Grand Prix,IsWet,-0.0,0.0
+2024-11-23::Las Vegas Grand Prix,FuelLoadMissing,5.895475246061229e-05,0.0004913229326105739
+2024-11-23::Las Vegas Grand Prix,traction,-0.0,0.0
+2024-11-23::Las Vegas Grand Prix,tyre_stress,-0.0,0.0
+2024-11-23::Las Vegas Grand Prix,asphalt_grip,-0.0,0.0
+2024-11-23::Las Vegas Grand Prix,corner_speed_energy,-0.0,0.0
+2024-11-23::Las Vegas Grand Prix,abrasiveness,-0.0,0.0
+2024-11-23::Las Vegas Grand Prix,braking_severity,-0.0,0.0
+2024-11-23::Las Vegas Grand Prix,lateral_load,-0.0,0.0
+2024-11-23::Las Vegas Grand Prix,tire_age_x_abrasiveness,-7.451614174295666e-05,0.0005241012418293875
+2024-11-23::Las Vegas Grand Prix,track_temp_x_tyre_stress,-0.009944239593557983,0.0007938131816888546
+2024-11-23::Las Vegas Grand Prix,tire_age_x_traction,0.006391768526048243,1.5895669357175467e-05
+2024-11-23::Las Vegas Grand Prix,tire_age_x_lateral_load,-0.034666122257850006,0.005309462574918767
+2024-11-23::Las Vegas Grand Prix,soft_abrasiveness_interaction,0.0053707481421589875,0.0011456858503864527
+2024-11-23::Las Vegas Grand Prix,soft_traction_interaction,-0.00024271263664280932,0.00040631278159446426
+2024-11-23::Las Vegas Grand Prix,soft_age_interaction,0.008852095255068507,0.005748029578957744
+2024-11-23::Las Vegas Grand Prix,medium_age_interaction,0.005492057751390611,0.0008691340968423895
+2024-11-23::Las Vegas Grand Prix,hard_age_interaction,-0.009669762202802504,0.0002772010530483875
+2024-12-01::Qatar Grand Prix,Driver,-0.021575065294478463,0.0023789882624923814
+2024-12-01::Qatar Grand Prix,Team,-0.028598271609587833,0.0011528980453180211
+2024-12-01::Qatar Grand Prix,Compound,-0.0,0.0
+2024-12-01::Qatar Grand Prix,TrackType,-0.0,0.0
+2024-12-01::Qatar Grand Prix,SessionCode,-0.0,0.0
+2024-12-01::Qatar Grand Prix,TyreLife,0.0020188749844125553,0.0003959846122616799
+2024-12-01::Qatar Grand Prix,TyreLifeKM,0.03495939093686647,0.000832684776556698
+2024-12-01::Qatar Grand Prix,TyreLifeSquared,-0.0,0.0
+2024-12-01::Qatar Grand Prix,TireAgeRatio,0.007361835278842932,0.001102346704089396
+2024-12-01::Qatar Grand Prix,LapNumber,0.00018842966010135243,0.0003038691246812641
+2024-12-01::Qatar Grand Prix,NormalizedLap,0.029167741422949128,0.0009827131003236813
+2024-12-01::Qatar Grand Prix,LapsRemaining,0.003960551121195237,0.0011380564113947903
+2024-12-01::Qatar Grand Prix,FuelLoad,0.10083199361081278,0.013495839371647797
+2024-12-01::Qatar Grand Prix,Stint,0.00015651186322710822,0.0002321007711380523
+2024-12-01::Qatar Grand Prix,AirTemp,-0.0,0.0
+2024-12-01::Qatar Grand Prix,TrackTemp,-0.0,0.0
+2024-12-01::Qatar Grand Prix,Humidity,-0.0037876368386105717,0.0002536864311383427
+2024-12-01::Qatar Grand Prix,Rainfall,-0.0,0.0
+2024-12-01::Qatar Grand Prix,WindSpeed,-0.00016912853338520625,0.00016018716330395196
+2024-12-01::Qatar Grand Prix,IsWet,-0.0,0.0
+2024-12-01::Qatar Grand Prix,FuelLoadMissing,-0.0,0.0
+2024-12-01::Qatar Grand Prix,traction,-0.0,0.0
+2024-12-01::Qatar Grand Prix,tyre_stress,-0.0,0.0
+2024-12-01::Qatar Grand Prix,asphalt_grip,-0.0,0.0
+2024-12-01::Qatar Grand Prix,corner_speed_energy,-0.0,0.0
+2024-12-01::Qatar Grand Prix,abrasiveness,-0.0,0.0
+2024-12-01::Qatar Grand Prix,braking_severity,-0.0,0.0
+2024-12-01::Qatar Grand Prix,lateral_load,-0.0,0.0
+2024-12-01::Qatar Grand Prix,tire_age_x_abrasiveness,-0.0009487067287322996,0.0006087565303851552
+2024-12-01::Qatar Grand Prix,track_temp_x_tyre_stress,0.0011731541587557774,0.0012293294880675024
+2024-12-01::Qatar Grand Prix,tire_age_x_traction,0.00038917211118505435,0.0008402722040716524
+2024-12-01::Qatar Grand Prix,tire_age_x_lateral_load,0.003747908899599898,0.0011761988451267497
+2024-12-01::Qatar Grand Prix,soft_abrasiveness_interaction,-0.0,0.0
+2024-12-01::Qatar Grand Prix,soft_traction_interaction,-0.0,0.0
+2024-12-01::Qatar Grand Prix,soft_age_interaction,-0.0,0.0
+2024-12-01::Qatar Grand Prix,medium_age_interaction,0.012080097330281259,0.001273535534640847
+2024-12-01::Qatar Grand Prix,hard_age_interaction,-0.001484696741917535,0.002245232928923196
+2024-12-08::Abu Dhabi Grand Prix,Driver,-0.007646810364626999,0.0007373283031338548
+2024-12-08::Abu Dhabi Grand Prix,Team,-0.03266226633046735,0.005088130927182008
+2024-12-08::Abu Dhabi Grand Prix,Compound,-0.0,0.0
+2024-12-08::Abu Dhabi Grand Prix,TrackType,-0.0,0.0
+2024-12-08::Abu Dhabi Grand Prix,SessionCode,-0.0,0.0
+2024-12-08::Abu Dhabi Grand Prix,TyreLife,0.0011549359078687853,0.0035010415179256736
+2024-12-08::Abu Dhabi Grand Prix,TyreLifeKM,-0.001880648002172321,0.004876149315873158
+2024-12-08::Abu Dhabi Grand Prix,TyreLifeSquared,-0.0,0.0
+2024-12-08::Abu Dhabi Grand Prix,TireAgeRatio,0.013077391828579513,0.004091137400760857
+2024-12-08::Abu Dhabi Grand Prix,LapNumber,0.01562697706989417,0.0035349245022510954
+2024-12-08::Abu Dhabi Grand Prix,NormalizedLap,-0.02287830130261718,0.0011040658194298111
+2024-12-08::Abu Dhabi Grand Prix,LapsRemaining,0.005669731093435419,0.0020684711950320137
+2024-12-08::Abu Dhabi Grand Prix,FuelLoad,-0.37545433611073326,0.01711273708807591
+2024-12-08::Abu Dhabi Grand Prix,Stint,-0.17162184301510944,0.02133156833602017
+2024-12-08::Abu Dhabi Grand Prix,AirTemp,-0.0019734190618191003,0.00034201950864415
+2024-12-08::Abu Dhabi Grand Prix,TrackTemp,-0.014817508474815519,0.004921538146190416
+2024-12-08::Abu Dhabi Grand Prix,Humidity,-0.027719971839132624,0.0007419085638520793
+2024-12-08::Abu Dhabi Grand Prix,Rainfall,-0.0,0.0
+2024-12-08::Abu Dhabi Grand Prix,WindSpeed,0.0005508313061329447,0.0008168958243985007
+2024-12-08::Abu Dhabi Grand Prix,IsWet,-0.0,0.0
+2024-12-08::Abu Dhabi Grand Prix,FuelLoadMissing,0.0007274440264649998,0.0002568149141760842
+2024-12-08::Abu Dhabi Grand Prix,traction,-0.0,0.0
+2024-12-08::Abu Dhabi Grand Prix,tyre_stress,-0.0,0.0
+2024-12-08::Abu Dhabi Grand Prix,asphalt_grip,-0.0,0.0
+2024-12-08::Abu Dhabi Grand Prix,corner_speed_energy,-0.0,0.0
+2024-12-08::Abu Dhabi Grand Prix,abrasiveness,-0.0,0.0
+2024-12-08::Abu Dhabi Grand Prix,braking_severity,-0.0,0.0
+2024-12-08::Abu Dhabi Grand Prix,lateral_load,-0.0,0.0
+2024-12-08::Abu Dhabi Grand Prix,tire_age_x_abrasiveness,-0.015818777064162754,0.0037743667102384483
+2024-12-08::Abu Dhabi Grand Prix,track_temp_x_tyre_stress,0.00034370752122381276,0.0001215189595010886
+2024-12-08::Abu Dhabi Grand Prix,tire_age_x_traction,0.008752503501465133,0.0015041411221950567
+2024-12-08::Abu Dhabi Grand Prix,tire_age_x_lateral_load,-0.0005142994633748899,0.0011962967946013464
+2024-12-08::Abu Dhabi Grand Prix,soft_abrasiveness_interaction,-0.007326645964358243,0.0008296667668490308
+2024-12-08::Abu Dhabi Grand Prix,soft_traction_interaction,-0.010254058525727508,0.0007900961172451529
+2024-12-08::Abu Dhabi Grand Prix,soft_age_interaction,-3.252386733576529e-05,2.2997847143531285e-05
+2024-12-08::Abu Dhabi Grand Prix,medium_age_interaction,0.0009492171992780593,0.00046800836730068353
+2024-12-08::Abu Dhabi Grand Prix,hard_age_interaction,0.002462523384932543,0.0018393181143517177

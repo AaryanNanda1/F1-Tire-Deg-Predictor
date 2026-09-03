@@ -1,0 +1,83 @@
+{
+  "git_commit": "d119b075575812485eff10a53c7c71cf1e831e5e",
+  "generation_timestamp_utc": "2026-09-01T21:55:20.251757+00:00",
+  "python_version": "3.13.7",
+  "sklearn_version": "1.8.0",
+  "random_state": 42,
+  "input_manifest": "training_data/ground_effect/manifest.json",
+  "input_manifest_sha256": "99d4d02a6a7f2814f48a9bfa70cb7087bacfd4e58c565f18c6e064788873ed7d",
+  "dataset_years": [
+    2022,
+    2023,
+    2024,
+    2025
+  ],
+  "row_count": 104857,
+  "session_count": 92,
+  "feature_groups": {
+    "circuit": [
+      "traction",
+      "tyre_stress",
+      "asphalt_grip",
+      "corner_speed_energy",
+      "abrasiveness",
+      "braking_severity",
+      "lateral_load"
+    ],
+    "tyre_age": [
+      "TyreLife",
+      "TyreLifeKM",
+      "TyreLifeSquared",
+      "TireAgeRatio"
+    ],
+    "race_progress": [
+      "LapNumber",
+      "NormalizedLap",
+      "LapsRemaining",
+      "FuelLoad",
+      "Stint"
+    ],
+    "weather": [
+      "AirTemp",
+      "TrackTemp",
+      "Humidity",
+      "Rainfall",
+      "WindSpeed",
+      "IsWet",
+      "FuelLoadMissing"
+    ],
+    "track_age_interactions": [
+      "tire_age_x_abrasiveness",
+      "track_temp_x_tyre_stress",
+      "tire_age_x_traction",
+      "tire_age_x_lateral_load",
+      "soft_abrasiveness_interaction",
+      "soft_traction_interaction"
+    ],
+    "compound_age_interactions": [
+      "soft_age_interaction",
+      "medium_age_interaction",
+      "hard_age_interaction"
+    ],
+    "categorical_context": [
+      "Driver",
+      "Team",
+      "Compound",
+      "TrackType",
+      "SessionCode"
+    ]
+  },
+  "folds": {
+    "development_folds": 4,
+    "rows": 40,
+    "selected_variant": "hgb_raw"
+  },
+  "pca": {
+    "components": 7,
+    "pc4_cumulative": 0.8705667067611672,
+    "pc5_cumulative": 0.9490061915202493,
+    "circuits": 25
+  },
+  "selected_model": "hgb_raw",
+  "selection_reason": "Initial report runner preserves the current representation until all downstream benchmarks are available; no production change is made."
+}
