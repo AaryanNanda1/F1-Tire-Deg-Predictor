@@ -1,0 +1,1 @@
+Retained Ground Effect processed laps by season and session type, using session roles recorded in the training-data manifest.

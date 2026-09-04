@@ -1,0 +1,44 @@
+[
+  {
+    "filename": "figures/circuit_correlation_heatmap.png",
+    "purpose": "Equal-weight circuit-characteristic correlation",
+    "data_source": "one median profile per circuit",
+    "recommended_caption": "Spearman correlation of the seven source-backed circuit characteristics.",
+    "report_location": "supplementary"
+  },
+  {
+    "filename": "figures/pca_scree_cumulative.png",
+    "purpose": "PCA variance selection",
+    "data_source": "one median profile per circuit",
+    "recommended_caption": "Individual and cumulative explained variance; four components are marked.",
+    "report_location": "main report"
+  },
+  {
+    "filename": "figures/pca4_loadings_heatmap.png",
+    "purpose": "PCA-4 interpretation",
+    "data_source": "standardized circuit profiles",
+    "recommended_caption": "PCA-4 loadings for the seven circuit characteristics.",
+    "report_location": "main report"
+  },
+  {
+    "filename": "figures/four_stage_performance.png",
+    "purpose": "Circuit ablation comparison",
+    "data_source": "chronological development folds",
+    "recommended_caption": "Development MAE across the four circuit representations.",
+    "report_location": "main report"
+  },
+  {
+    "filename": "figures/individual_ablation_delta_mae.png",
+    "purpose": "Input ablation comparison",
+    "data_source": "paired chronological event errors",
+    "recommended_caption": "Paired event-level \u0394MAE; positive values indicate the removed feature block helped.",
+    "report_location": "main report"
+  },
+  {
+    "filename": "figures/performance_vs_complexity.png",
+    "purpose": "Accuracy-complexity tradeoff",
+    "data_source": "development summary",
+    "recommended_caption": "Development MAE versus engineered feature count.",
+    "report_location": "supplementary"
+  }
+]

@@ -1,0 +1,1 @@
+Ground Effect circuit-representation comparison. Development results determine selection; frozen 2025 is reported separately and was not used to select the candidate.

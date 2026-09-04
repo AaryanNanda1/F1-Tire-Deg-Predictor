@@ -59,5 +59,7 @@ dist/
 # Local analysis caches and smoke-test reports
 .analysis-mpl-cache/
 reports/feature_engineering_smoke/
+# Oversized generated Action output; the compressed copy is versioned.
+reports/final_model_selection/metrics/per_event_predictions.csv
 reports/feature_engineering_pca4_interactions_smoke/
 reports/feature_engineering_focused/

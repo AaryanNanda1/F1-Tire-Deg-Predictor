@@ -1,0 +1,1 @@
+Descriptive circuit PCA variance and PCA-4 loadings. Predictive PCA is fitted inside chronological training folds; component signs are arbitrary, and PCA-4 was evaluated but not selected.

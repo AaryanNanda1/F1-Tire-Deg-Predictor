@@ -1,0 +1,1 @@
+Spearman correlation of seven circuit descriptors using equal-weight circuit profiles. Pearson correlations are supplementary.
