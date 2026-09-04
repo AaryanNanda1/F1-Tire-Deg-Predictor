@@ -427,6 +427,31 @@ def evaluate_active_aero_prior_weights(
     return results
 
 
+def select_active_aero_prior_weight(candidate_metrics: Dict[str, Dict]) -> float:
+    """Return the lowest-MAE evaluated prior weight, or fail explicitly."""
+    evaluated = [
+        (float(metrics["mae"]), float(weight))
+        for weight, metrics in candidate_metrics.items()
+        if metrics.get("status") == "evaluated" and metrics.get("mae") is not None
+    ]
+    if not evaluated:
+        raise TrainingDataStoreError(
+            "Active Aero prior-weight selection unavailable: no evaluated candidates"
+        )
+    return min(evaluated)[1]
+
+
+def validate_active_aero_prior_weight_metadata(metadata: Dict) -> None:
+    """Reject metadata where selected, requested, and fitted weights disagree."""
+    selected = metadata.get("active_aero_prior_weight_selected")
+    fitted = metadata.get("active_aero_prior_weight_fitted")
+    if selected is None or fitted is None or float(selected) != float(fitted):
+        raise TrainingDataStoreError(
+            "Active Aero prior-weight metadata is inconsistent: "
+            f"selected={selected!r}, fitted={fitted!r}"
+        )
+
+
 def train_and_save(
     data_df: pd.DataFrame,
     model_path: Path,
@@ -771,19 +796,20 @@ def main():
             data_2026, data_prior, details_2026 = (
                 load_persistent_active_aero_data(Path(args.processed_data_dir))
             )
-            data_df, sampled_prior_rows = build_active_aero_training_data(
-                data_2026,
-                data_prior,
-                prior_weight=args.active_aero_prior_weight,
-            )
             prior_weight_metrics = evaluate_active_aero_prior_weights(
                 data_2026,
                 data_prior,
             )
+            selected_prior_weight = select_active_aero_prior_weight(prior_weight_metrics)
+            data_df, sampled_prior_rows = build_active_aero_training_data(
+                data_2026,
+                data_prior,
+                prior_weight=selected_prior_weight,
+            )
             print(
                 f"  Blended {sampled_prior_rows} prior laps into "
                 f"{len(data_2026)} real 2026 laps from the persistent store "
-                f"(prior weight={args.active_aero_prior_weight:.2f})."
+                f"(selected prior weight={selected_prior_weight:.2f})."
             )
         else:
             # 1. Collect standard 2026 data
@@ -797,12 +823,13 @@ def main():
                     data_2026,
                     data_prior,
                 )
+                selected_prior_weight = select_active_aero_prior_weight(prior_weight_metrics)
                 # Increase sample to 50% for stronger hierarchy enforcement
                 data_prior = data_prior.sample(
                     frac=ACTIVE_AERO_PRIOR_SAMPLE_FRACTION,
                     random_state=42,
                 )
-                data_prior['SampleWeight'] = args.active_aero_prior_weight
+                data_prior['SampleWeight'] = selected_prior_weight
 
                 # Combine
                 data_df = pd.concat([data_2026, data_prior], ignore_index=True)
@@ -817,11 +844,12 @@ def main():
                 print(
                     f"  Blended {len(data_prior)} prior laps into "
                     f"{len(data_2026)} real 2026 laps "
-                    f"(prior weight={args.active_aero_prior_weight:.2f})."
+                    f"(selected prior weight={selected_prior_weight:.2f})."
                 )
             else:
                 data_df = data_2026
                 prior_weight_metrics = {}
+                selected_prior_weight = None
             
         if data_df.empty:
             candidate = {
@@ -840,7 +868,9 @@ def main():
                 features_path,
                 validation_test_start_year=2026,
             )
-            metrics["active_aero_prior_weight"] = args.active_aero_prior_weight
+            metrics["active_aero_prior_weight_requested"] = args.active_aero_prior_weight
+            metrics["active_aero_prior_weight_selected"] = selected_prior_weight
+            metrics["active_aero_prior_weight_fitted"] = selected_prior_weight
             metrics["active_aero_prior_weight_candidates"] = prior_weight_metrics
             candidate = {
                 "status": "trained_hybrid",

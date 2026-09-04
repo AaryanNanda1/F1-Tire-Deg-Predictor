@@ -7,6 +7,7 @@ from analysis.feature_groups import TRACK_FEATURES, TRACK_AGE_INTERACTIONS, LEAK
 from analysis.run_final_model_selection import (
     ABLATIONS, REFERENCE, VARIANTS, apply_ablation, prepare, stage_features,
 )
+from train_era_models import select_active_aero_prior_weight, validate_active_aero_prior_weight_metadata
 
 
 def frame():
@@ -45,6 +46,13 @@ class FinalSelectionFeatureTests(unittest.TestCase):
     def test_pca_variant_has_no_prohibited_columns(self):
         features = stage_features(frame(), REFERENCE) + [f"PC{i}" for i in range(1, 5)]
         self.assertFalse(set(features) & (LEAKAGE_FEATURES - {"EventName", "EventDate"}))
+
+    def test_active_aero_selected_and_fitted_prior_weight_must_match(self):
+        candidates = {"0.20": {"status": "evaluated", "mae": 2.0}, "0.30": {"status": "evaluated", "mae": 1.9}}
+        self.assertEqual(select_active_aero_prior_weight(candidates), 0.30)
+        validate_active_aero_prior_weight_metadata({"active_aero_prior_weight_selected": 0.30, "active_aero_prior_weight_fitted": 0.30})
+        with self.assertRaises(Exception):
+            validate_active_aero_prior_weight_metadata({"active_aero_prior_weight_selected": 0.30, "active_aero_prior_weight_fitted": 0.20})
 
 
 if __name__ == "__main__":

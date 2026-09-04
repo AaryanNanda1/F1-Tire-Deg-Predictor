@@ -19,7 +19,7 @@ The inference engine generates full-race degradation curves for Soft, Medium, Ha
 
 - Driver and team
 - Circuit type, length, surface, and stress characteristics
-- Tire age and normalized tire life
+- Tire age and squared tire age
 - Air temperature, estimated track temperature, humidity, rainfall, and wind
 - Compound-specific interactions with sourced abrasion, traction, tyre stress, and tire age
 
@@ -115,12 +115,12 @@ The `--as-of-date` boundary enforces chronological data availability, allowing p
 
 The training pipeline combines:
 
-- Tire age, stint length, normalized tire life, and squared tire age
+- Tire age and squared tire age
 - Fuel-load and race-distance context
 - Driver, team, compound, track type, and event categorical features
 - Weather conditions, including air and track temperature, humidity, rainfall, and wind
 - Seven source-backed circuit characteristics
-- Interaction features such as tire age × abrasiveness, tire age × traction, tire age × lateral load, temperature × tyre stress, and normalized tire life × tyre stress
+- Interaction features such as tire age × abrasiveness, tire age × traction, tire age × lateral load, and temperature × tyre stress
 - Compound-specific age and circuit interactions
 
 Categorical values are one-hot encoded with fixed category domains. Each model persists its training feature schema, and inference matrices are explicitly reindexed against that schema to prevent training-serving skew.
