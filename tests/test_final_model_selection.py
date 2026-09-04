@@ -5,14 +5,15 @@ import pandas as pd
 
 from analysis.feature_groups import TRACK_FEATURES, TRACK_AGE_INTERACTIONS, LEAKAGE_FEATURES
 from analysis.run_final_model_selection import (
-    ABLATIONS, REFERENCE, VARIANTS, apply_ablation, stage_features,
+    ABLATIONS, REFERENCE, VARIANTS, apply_ablation, prepare, stage_features,
 )
 
 
 def frame():
-    data = {"EventName": ["A", "A", "B", "B"], "EventDate": pd.date_range("2022-01-01", periods=4), "TyreLife": [1, 2, 1, 2], "LapTimeDelta": np.zeros(4)}
-    for col in TRACK_FEATURES: data[col] = [0.1, 0.2, 0.3, 0.4]
-    for col in TRACK_AGE_INTERACTIONS: data[col] = [0.1, 0.2, 0.3, 0.4]
+    rows = 16
+    data = {"EventName": [f"C{i // 2}" for i in range(rows)], "EventDate": pd.date_range("2022-01-01", periods=rows), "TyreLife": ([1, 2] * 8), "LapTimeDelta": np.zeros(rows)}
+    for col in TRACK_FEATURES: data[col] = np.linspace(0.1, 0.9, rows)
+    for col in TRACK_AGE_INTERACTIONS: data[col] = np.linspace(0.1, 0.9, rows)
     for col in ["Driver", "Team", "Compound", "TrackType", "SessionCode"]: data[col] = "x"
     for col in ["TyreLifeKM", "TyreLifeSquared", "TireAgeRatio", "LapNumber", "NormalizedLap", "LapsRemaining", "FuelLoad", "FuelLoadMissing", "Stint", "AirTemp", "TrackTemp"]: data[col] = 1.0
     return pd.DataFrame(data)
@@ -33,6 +34,13 @@ class FinalSelectionFeatureTests(unittest.TestCase):
         self.assertNotIn("Team", apply_ablation(features, "no_constructor"))
         for name in ("no_tire_age", "no_compound", "no_fuel_race_progress"):
             self.assertFalse(set(ABLATIONS[name]) & set(apply_ablation(features, name)))
+
+    def test_every_pca4_ablation_contains_four_components(self):
+        training = frame(); held_out = frame()
+        for name in ABLATIONS:
+            train_x, test_x, _ = prepare(training, held_out, REFERENCE, removed=name)
+            self.assertEqual([f"PC{i}" for i in range(1, 5)], [c for c in train_x if c.startswith("PC")])
+            self.assertFalse(set(TRACK_FEATURES) & set(train_x.columns))
 
     def test_pca_variant_has_no_prohibited_columns(self):
         features = stage_features(frame(), REFERENCE) + [f"PC{i}" for i in range(1, 5)]

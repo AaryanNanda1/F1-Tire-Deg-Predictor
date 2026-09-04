@@ -2,6 +2,13 @@ name: Ground Effect model selection analysis
 
 on:
   workflow_dispatch:
+    inputs:
+      run_mode:
+        description: "Run a small smoke check or the complete analysis"
+        required: true
+        type: choice
+        options: [smoke, full]
+        default: full
 
 concurrency:
   group: ground-effect-model-selection
@@ -34,6 +41,19 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt -r requirements-analysis.txt
 
+      - name: Run analysis and model tests
+        env:
+          MPLBACKEND: Agg
+          MPLCONFIGDIR: ${{ runner.temp }}/matplotlib-tests
+          OMP_NUM_THREADS: "1"
+          OPENBLAS_NUM_THREADS: "1"
+          MKL_NUM_THREADS: "1"
+          NUMEXPR_NUM_THREADS: "1"
+          LOKY_MAX_CPU_COUNT: "2"
+        run: |
+          mkdir -p "$MPLCONFIGDIR"
+          python -m unittest discover -s tests -v
+
       - name: Run Ground Effect model selection
         env:
           MPLBACKEND: Agg
@@ -44,11 +64,42 @@ jobs:
           NUMEXPR_NUM_THREADS: "1"
           LOKY_MAX_CPU_COUNT: "2"
           PYTHONUNBUFFERED: "1"
+          RUN_MODE: ${{ inputs.run_mode || 'full' }}
         run: |
           mkdir -p "$MPLCONFIGDIR"
-          python -u analysis/run_final_model_selection.py \
-            --output-dir reports/final_model_selection \
-            --seed 42
+          mkdir -p reports/final_model_selection
+          set -o pipefail
+          if [ "$RUN_MODE" = "smoke" ]; then
+            python -u analysis/run_final_model_selection.py \
+              --output-dir reports/final_model_selection --seed 42 \
+              --smoke --skip-ablation --skip-artifact 2>&1 | tee reports/final_model_selection/run.log
+          else
+            python -u analysis/run_final_model_selection.py \
+              --output-dir reports/final_model_selection --seed 42 2>&1 | tee reports/final_model_selection/run.log
+          fi
+
+      - name: Validate complete result package
+        if: ${{ inputs.run_mode == 'full' }}
+        run: |
+          test -s reports/final_model_selection/metrics/model_comparison_summary.csv
+          test -s reports/final_model_selection/metrics/per_event_predictions.csv
+          test -s reports/final_model_selection/selection_decision.json
+          test -s reports/final_model_selection/provenance.json
+          test -s reports/final_model_selection/artifacts/submission_manifest.json
+          test -s reports/final_model_selection/artifacts/ground_effect_final_submission_bundle.joblib
+          python - <<'PY'
+          import pandas as pd
+          p = 'reports/final_model_selection/metrics/model_comparison_summary.csv'
+          df = pd.read_csv(p)
+          required = {'no_driver','no_constructor','no_air_temperature','no_track_temperature','no_fuel_race_progress','no_tire_age','no_compound'}
+          if not required.issubset(set(df['variant'])):
+              raise SystemExit(f'Missing required ablations: {sorted(required - set(df["variant"]))}')
+          frozen = df[df['split'].eq('frozen_2025')]
+          if frozen.empty or frozen['event_count'].min() < 2:
+              raise SystemExit('Frozen 2025 results are not genuinely per-event')
+          if not (df['mae'] > 0).all():
+              raise SystemExit('Invalid zero/non-positive MAE found')
+          PY
 
       - name: Upload analysis package
         if: always()
@@ -57,4 +108,16 @@ jobs:
           name: ground-effect-model-selection-${{ github.run_id }}
           path: reports/final_model_selection/
           if-no-files-found: warn
-          retention-days: 14
+          retention-days: 30
+
+      - name: Upload failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ground-effect-model-selection-failure-${{ github.run_id }}
+          path: |
+            reports/final_model_selection/run.log
+            reports/final_model_selection/provenance.json
+            reports/final_model_selection/FAILED_RUNS.md
+          if-no-files-found: warn
+          retention-days: 30

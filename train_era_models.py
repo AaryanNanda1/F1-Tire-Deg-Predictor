@@ -44,6 +44,21 @@ CATEGORICAL_FEATURES = ["Driver", "Team", "Compound", "TrackType", "SessionCode"
 ACTIVE_AERO_PRIOR_SAMPLE_FRACTION = 0.50
 ACTIVE_AERO_PRIOR_WEIGHT_CANDIDATES = (0.10, 0.20, 0.30)
 
+# Single source of truth for the estimator used by production Ground Effect
+# training and the analysis-only model-selection runner. Keep all parameters
+# explicit so an analysis cannot silently drift from production defaults.
+PRODUCTION_HGB_PARAMS = {
+    "loss": "absolute_error",
+    "early_stopping": True,
+    "validation_fraction": 0.1,
+    "n_iter_no_change": 10,
+    "random_state": 42,
+}
+
+
+def make_production_hgb() -> HistGradientBoostingRegressor:
+    return HistGradientBoostingRegressor(**PRODUCTION_HGB_PARAMS)
+
 
 def _model_input_columns(data_df: pd.DataFrame) -> List[str]:
     """Return canonical model inputs without provenance or target columns."""
@@ -101,13 +116,7 @@ def _make_model_pipeline(X: pd.DataFrame) -> Pipeline:
         )
 
     preprocessor = ColumnTransformer(transformers, remainder="drop")
-    estimator = HistGradientBoostingRegressor(
-        loss="absolute_error",
-        early_stopping=True,
-        validation_fraction=0.1,
-        n_iter_no_change=10,
-        random_state=42,
-    )
+    estimator = make_production_hgb()
     return Pipeline([("preprocessor", preprocessor), ("regressor", estimator)])
 
 

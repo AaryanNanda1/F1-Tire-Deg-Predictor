@@ -42,6 +42,7 @@ from analysis.feature_groups import (
     ALL_RAW_FEATURES, CATEGORICAL_FEATURES, LEAKAGE_FEATURES, TARGET,
     TRACK_AGE_INTERACTIONS, TRACK_FEATURES, assert_safe_features,
 )
+from train_era_models import make_production_hgb, PRODUCTION_HGB_PARAMS
 
 VARIANTS = ["no_circuit", "raw_circuit_7", "raw_circuit_age_interactions", "pca4_no_age_interactions"]
 REFERENCE = "pca4_no_age_interactions"
@@ -88,10 +89,16 @@ def stage_features(frame: pd.DataFrame, variant: str) -> list[str]:
     return [col for col in features if col not in removed]
 
 
-def apply_ablation(features: list[str], name: str) -> list[str]:
-    if name not in ABLATIONS:
+def apply_ablation(features: list[str], name: str | list[str] | None) -> list[str]:
+    if not name:
         return features
-    return [col for col in features if col not in ABLATIONS[name]]
+    if isinstance(name, list):
+        removed = name
+    else:
+        if name not in ABLATIONS:
+            raise ValueError(f"Unknown ablation {name}")
+        removed = ABLATIONS[name]
+    return [col for col in features if col not in removed]
 
 
 def encoder():
@@ -111,18 +118,14 @@ def fit_hgb(train_x: pd.DataFrame, train_y: pd.Series, weights: pd.Series | None
         transforms.append(("categorical", Pipeline([("imputer", SimpleImputer(strategy="most_frequent")), ("onehot", encoder())]), categorical))
     model = Pipeline([
         ("preprocessor", ColumnTransformer(transforms, remainder="drop")),
-        ("regressor", HistGradientBoostingRegressor(
-            loss="absolute_error", max_iter=12, max_leaf_nodes=15,
-            early_stopping=True, validation_fraction=0.1, n_iter_no_change=10,
-            random_state=42,
-        )),
+        ("regressor", make_production_hgb()),
     ])
     kwargs = {"regressor__sample_weight": weights} if weights is not None else {}
     model.fit(train_x, train_y, **kwargs)
     return model
 
 
-def prepare(train: pd.DataFrame, test: pd.DataFrame, variant: str, removed: list[str] | None = None):
+def prepare(train: pd.DataFrame, test: pd.DataFrame, variant: str, removed: str | list[str] | None = None):
     pca = None
     if variant == "pca4_no_age_interactions":
         pca = TrackPCATransformer(4).fit(train)
@@ -131,7 +134,7 @@ def prepare(train: pd.DataFrame, test: pd.DataFrame, variant: str, removed: list
     features = stage_features(train, variant)
     if pca is not None:
         features += [f"PC{i}" for i in range(1, 5)]
-    features = apply_ablation(features, removed) if removed else features
+    features = apply_ablation(features, removed)
     assert_safe_features(features)
     return train.reindex(columns=features), test.reindex(columns=features), pca
 
@@ -213,19 +216,29 @@ def evaluate(data: pd.DataFrame, output: Path, seed: int = 42, max_events: int |
             model = fit_hgb(train_x, train[TARGET], train.get("SampleWeight"))
             pred = model.predict(test_x)
             summary = metrics(test[TARGET], pred, test)
-            rows.append({"variant": variant, "split": "development", "fold": fold, "event_date": str(event.EventDate.date()), "event_name": event.EventName, "n_features": len(train_x.columns), "n_rows": len(test), "n_events": 1, "runtime_seconds": time.perf_counter() - started, **summary})
+            rows.append({"variant": variant, "split": "development", "fold": fold, "event_date": str(event.EventDate.date()), "event_name": event.EventName, "n_features": len(train_x.columns), "n_rows": len(test), "n_train_rows": len(train), "n_train_events": int(train[["EventDate", "EventName"]].drop_duplicates().shape[0]), "n_events": 1, "runtime_seconds": time.perf_counter() - started, **summary})
             for index, (_, observation) in enumerate(test.iterrows()):
                 event_rows.append({"variant": variant, "split": "development", "fold": fold, "event_date": str(event.EventDate.date()), "event_name": event.EventName, "row_index": int(index), "y_true": float(observation[TARGET]), "prediction": float(pred[index]), "absolute_error": abs(float(observation[TARGET]) - float(pred[index]))})
             del model, train_x, test_x, pred
             gc.collect()
-    # Evaluate each candidate on frozen 2025 after all development decisions.
+    # Evaluate each candidate on frozen 2025 after development selection, but
+    # retain one metric row per actual event so event dispersion is genuine.
     for variant in variants:
-        train_x, test_x, _ = prepare(dev, frozen, variant)
+        first_event = events_for(data, development=False).iloc[0]
+        first_test = frozen[(pd.to_datetime(frozen.EventDate) == first_event.EventDate) & (frozen.EventName == first_event.EventName)]
+        train_x, _, _ = prepare(dev, first_test, variant)
         model = fit_hgb(train_x, dev[TARGET], dev.get("SampleWeight"))
-        pred = model.predict(test_x)
-        summary = metrics(frozen[TARGET], pred, frozen)
-        rows.append({"variant": variant, "split": "frozen_2025", "fold": "2025-final", "event_date": "2025", "event_name": "ALL_2025", "n_features": len(train_x.columns), "n_rows": len(frozen), "n_events": int(frozen[["EventDate", "EventName"]].drop_duplicates().shape[0]), "runtime_seconds": 0.0, **summary})
-        del model, train_x, test_x, pred
+        for _, event in events_for(data, development=False).iterrows():
+            test = frozen[(pd.to_datetime(frozen.EventDate) == event.EventDate) & (frozen.EventName == event.EventName)]
+            if test.empty:
+                continue
+            _, test_x, _ = prepare(dev, test, variant)
+            pred = model.predict(test_x); summary = metrics(test[TARGET], pred, test)
+            fold = f"{event.EventDate.date()}::{event.EventName}"
+            rows.append({"variant": variant, "split": "frozen_2025", "fold": fold, "event_date": str(event.EventDate.date()), "event_name": event.EventName, "n_features": len(train_x.columns), "n_rows": len(test), "n_train_rows": len(dev), "n_train_events": int(dev[["EventDate", "EventName"]].drop_duplicates().shape[0]), "n_events": 1, "runtime_seconds": 0.0, **summary})
+            for index, (_, observation) in enumerate(test.iterrows()):
+                event_rows.append({"variant": variant, "split": "frozen_2025", "fold": fold, "event_date": str(event.EventDate.date()), "event_name": event.EventName, "row_index": int(index), "y_true": float(observation[TARGET]), "prediction": float(pred[index]), "absolute_error": abs(float(observation[TARGET]) - float(pred[index]))})
+        del model, train_x
         gc.collect()
     result = pd.DataFrame(rows)
     event_result = pd.DataFrame(event_rows)
@@ -245,14 +258,45 @@ def add_ablation_results(data: pd.DataFrame, result: pd.DataFrame, event_result:
         test = dev[(pd.to_datetime(dev.EventDate) == event.EventDate) & (dev.EventName == event.EventName)]
         fold = f"{event.EventDate.date()}::{event.EventName}"
         for name in ABLATIONS:
-            train_x, test_x, _ = prepare(train, test, name, removed=name)
+            train_x, test_x, _ = prepare(train, test, REFERENCE, removed=name)
             model = fit_hgb(train_x, train[TARGET], train.get("SampleWeight"))
             pred = model.predict(test_x); summary = metrics(test[TARGET], pred, test)
-            added.append({"variant": name, "split": "ablation_development", "fold": fold, "event_date": str(event.EventDate.date()), "event_name": event.EventName, "n_features": len(train_x.columns), "n_rows": len(test), "n_events": 1, "runtime_seconds": 0.0, **summary})
+            added.append({"variant": name, "split": "ablation_development", "fold": fold, "event_date": str(event.EventDate.date()), "event_name": event.EventName, "n_features": len(train_x.columns), "n_rows": len(test), "n_train_rows": len(train), "n_train_events": int(train[["EventDate", "EventName"]].drop_duplicates().shape[0]), "n_events": 1, "runtime_seconds": 0.0, **summary})
             for index, (_, observation) in enumerate(test.iterrows()):
                 event_added.append({"variant": name, "split": "ablation_development", "fold": fold, "event_date": str(event.EventDate.date()), "event_name": event.EventName, "row_index": int(index), "y_true": float(observation[TARGET]), "prediction": float(pred[index]), "absolute_error": abs(float(observation[TARGET]) - float(pred[index]))})
             del model, train_x, test_x, pred; gc.collect()
     return pd.concat([result, pd.DataFrame(added)], ignore_index=True), pd.concat([event_result, pd.DataFrame(event_added)], ignore_index=True)
+
+
+def evaluate_pca4_custom(data: pd.DataFrame, specs: dict[str, list[str]]) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Evaluate combined/conditional PCA-4 removals with the same folds."""
+    dev = data[pd.to_datetime(data.EventDate).dt.year <= 2024].copy()
+    frozen = data[pd.to_datetime(data.EventDate).dt.year == 2025].copy()
+    events = events_for(data)
+    events = pd.DataFrame([event for _, event in events.iterrows() if dev[pd.to_datetime(dev.EventDate) < event.EventDate]["EventName"].nunique() >= 7], columns=events.columns)
+    rows, event_rows = [], []
+    for name, removed in specs.items():
+        for _, event in events.iterrows():
+            train = dev[pd.to_datetime(dev.EventDate) < event.EventDate]
+            test = dev[(pd.to_datetime(dev.EventDate) == event.EventDate) & (dev.EventName == event.EventName)]
+            if train.empty or test.empty: continue
+            tx, vx, _ = prepare(train, test, REFERENCE, removed=removed); model = fit_hgb(tx, train[TARGET], train.get("SampleWeight")); pred = model.predict(vx)
+            fold = f"{event.EventDate.date()}::{event.EventName}"; rows.append({"variant": name, "split": "conditional_development", "fold": fold, "event_date": str(event.EventDate.date()), "event_name": event.EventName, "n_features": len(tx.columns), "n_rows": len(test), "n_train_rows": len(train), "n_train_events": int(train[["EventDate", "EventName"]].drop_duplicates().shape[0]), "n_events": 1, "runtime_seconds": 0.0, **metrics(test[TARGET], pred, test)})
+            for index, (_, observation) in enumerate(test.iterrows()): event_rows.append({"variant": name, "split": "conditional_development", "fold": fold, "event_date": str(event.EventDate.date()), "event_name": event.EventName, "row_index": index, "y_true": float(observation[TARGET]), "prediction": float(pred[index]), "absolute_error": abs(float(observation[TARGET]) - float(pred[index]))})
+            del model, tx, vx, pred; gc.collect()
+        # Frozen evaluation is intentionally performed only after the custom
+        # candidate has been defined from development evidence.
+        first = events_for(data, development=False).iloc[0]
+        first_test = frozen[(pd.to_datetime(frozen.EventDate) == first.EventDate) & (frozen.EventName == first.EventName)]
+        tx, _, _ = prepare(dev, first_test, REFERENCE, removed=removed); model = fit_hgb(tx, dev[TARGET], dev.get("SampleWeight"))
+        for _, event in events_for(data, development=False).iterrows():
+            test = frozen[(pd.to_datetime(frozen.EventDate) == event.EventDate) & (frozen.EventName == event.EventName)]
+            if test.empty: continue
+            _, vx, _ = prepare(dev, test, REFERENCE, removed=removed); pred = model.predict(vx); fold = f"{event.EventDate.date()}::{event.EventName}"
+            rows.append({"variant": name, "split": "conditional_frozen_2025", "fold": fold, "event_date": str(event.EventDate.date()), "event_name": event.EventName, "n_features": len(tx.columns), "n_rows": len(test), "n_train_rows": len(dev), "n_train_events": int(dev[["EventDate", "EventName"]].drop_duplicates().shape[0]), "n_events": 1, "runtime_seconds": 0.0, **metrics(test[TARGET], pred, test)})
+            for index, (_, observation) in enumerate(test.iterrows()): event_rows.append({"variant": name, "split": "conditional_frozen_2025", "fold": fold, "event_date": str(event.EventDate.date()), "event_name": event.EventName, "row_index": index, "y_true": float(observation[TARGET]), "prediction": float(pred[index]), "absolute_error": abs(float(observation[TARGET]) - float(pred[index]))})
+        del model, tx; gc.collect()
+    return pd.concat([pd.DataFrame(rows)], ignore_index=True), pd.concat([pd.DataFrame(event_rows)], ignore_index=True)
 
 
 def summarize(result: pd.DataFrame) -> pd.DataFrame:
@@ -272,14 +316,18 @@ def figures(summary: pd.DataFrame, event_result: pd.DataFrame, output: Path):
     for metric, filename, title in [("mae", "four_stage_performance.png", "Ground Effect development MAE"), ("rmse", "four_stage_rmse.png", "Ground Effect development RMSE")]:
         fig, ax = plt.subplots(figsize=(10, 5)); ax.bar(dev.variant, dev[metric], color=["#9b2c2c" if v == REFERENCE else "#2f6f9f" for v in dev.variant]); ax.set_ylabel("Seconds per lap"); ax.set_title(title); ax.tick_params(axis="x", rotation=35); ax.grid(axis="y", alpha=.25); fig.tight_layout(); fig.savefig(output / "figures" / filename, dpi=300); plt.close(fig)
     # Paired event bootstrap ablations relative to PCA-4.
-    piv = event_result[event_result.split == "development"].pivot_table(index="fold", columns="variant", values="absolute_error", aggfunc="mean")
+    piv = event_result[event_result.split.isin(["development", "ablation_development", "conditional_development"])].pivot_table(index="fold", columns="variant", values="absolute_error", aggfunc="mean")
     paired = []
-    for name in list(VARIANTS[:3]) + list(ABLATIONS):
+    comparison_names = list(VARIANTS[:3]) + list(ABLATIONS) + ["pca4_pruned", "pca4_joint_no_temperatures", "pca4_joint_no_driver_constructor"]
+    for name in comparison_names:
         if name not in piv or REFERENCE not in piv: continue
         diff = (piv[name] - piv[REFERENCE]).dropna()
         lo, hi = bootstrap_ci(diff.to_numpy())
         paired.append({"comparison": f"{name}_minus_{REFERENCE}", "baseline": REFERENCE, "candidate": name, "event_count": len(diff), "mean_difference": float(diff.mean()), "median_difference": float(diff.median()), "proportion_events_improved": float((diff < 0).mean()), "bootstrap_95ci_lower": lo, "bootstrap_95ci_upper": hi})
     paired_df = pd.DataFrame(paired); paired_df.to_csv(output / "tables" / "paired_event_mae_differences.csv", index=False); write_markdown(paired_df, output / "tables" / "paired_event_mae_differences.md")
+    expected = set(ABLATIONS)
+    if not expected.issubset(set(paired_df.candidate)):
+        raise RuntimeError(f"Missing paired event ablation results: {sorted(expected - set(paired_df.candidate))}")
     ab = paired_df[paired_df.candidate.isin(ABLATIONS)]
     fig, ax = plt.subplots(figsize=(9, 5));
     if not ab.empty:
@@ -326,22 +374,25 @@ class SubmissionCircuitPCA:
     def fit_transform(self, X, y=None): return self.fit(X, y).transform(X)
 
 
-def train_bundle(data: pd.DataFrame, output: Path, selected: str):
-    if selected != REFERENCE:
-        raise ValueError("Only the leakage-safe PCA-4 submission bundle is supported by this analysis script")
+def train_bundle(data: pd.DataFrame, output: Path, selected: str, removed: list[str] | None = None):
     # Refit a production-shaped pipeline with the persisted full-data circuit transform.
-    feature_names = stage_features(data, selected) + [f"PC{i}" for i in range(1, 5)]
-    feature_names = [c for c in feature_names if c not in TRACK_FEATURES + TRACK_AGE_INTERACTIONS]
-    circuit = SubmissionCircuitPCA(4)
-    transformed = circuit.fit_transform(data)
-    transformed = transformed.reindex(columns=feature_names)
+    is_pca = selected in {REFERENCE, "pca4_pruned"}
+    if is_pca:
+        feature_names = stage_features(data, REFERENCE) + [f"PC{i}" for i in range(1, 5)]
+        feature_names = apply_ablation(feature_names, removed)
+        circuit = SubmissionCircuitPCA(4)
+        transformed = circuit.fit_transform(data).reindex(columns=feature_names)
+    else:
+        feature_names = stage_features(data, selected)
+        transformed = data.reindex(columns=feature_names)
+        circuit = None
     model = fit_hgb(transformed, data[TARGET], data.get("SampleWeight"))
     # Compose the PCA step with the fitted preprocessing/model pipeline so the
     # saved bundle accepts canonical raw rows and never refits at inference.
-    inference_model = Pipeline([("circuit_pca", circuit), *model.steps])
-    bundle = {"model": inference_model, "circuit_pca": circuit, "input_features": ["EventName"] + raw_features(data), "transformed_features": feature_names, "selected_variant": selected, "target": TARGET, "pca_policy": "full-data submission fit; circuit median profiles, scaler and PCA persisted; no inference refit"}
+    inference_model = Pipeline([("circuit_pca", circuit), *model.steps]) if circuit is not None else model
+    bundle = {"model": inference_model, "circuit_pca": circuit, "input_features": (["EventName"] + raw_features(data)) if circuit is not None else feature_names, "transformed_features": feature_names, "selected_variant": selected, "target": TARGET, "pca_policy": "full-data submission fit; circuit median profiles, scaler and PCA persisted; no inference refit"}
     artifact = output / "artifacts" / "ground_effect_final_submission_bundle.joblib"; joblib.dump(bundle, artifact)
-    manifest = {"selected_variant": selected, "feature_count": len(feature_names), "input_features": ["EventName"] + raw_features(data), "transformed_features": feature_names, "circuit_features": TRACK_FEATURES, "pca_components": 4, "pca_loadings": circuit.loadings_.tolist(), "pca_explained_variance_ratio": circuit.explained_variance_ratio_.tolist(), "rows": len(data), "events": int(data[["EventDate", "EventName"]].drop_duplicates().shape[0]), "training_cutoff": "2025-12-31", "random_seed": 42, "python_version": platform.python_version(), "sklearn_version": sklearn.__version__, "artifact_sha256": None, "production_artifact_changed": False}
+    manifest = {"selected_variant": selected, "feature_count": len(feature_names), "input_features": (["EventName"] + raw_features(data)) if circuit is not None else feature_names, "transformed_features": feature_names, "circuit_features": TRACK_FEATURES if circuit is not None else [], "pca_components": 4 if circuit is not None else 0, "pca_loadings": circuit.loadings_.tolist() if circuit is not None else [], "pca_explained_variance_ratio": circuit.explained_variance_ratio_.tolist() if circuit is not None else [], "rows": len(data), "events": int(data[["EventDate", "EventName"]].drop_duplicates().shape[0]), "training_cutoff": "2025-12-31", "random_seed": 42, "python_version": platform.python_version(), "sklearn_version": sklearn.__version__, "production_estimator_params": PRODUCTION_HGB_PARAMS, "artifact_sha256": None, "production_artifact_changed": False}
     manifest["artifact_sha256"] = hashlib.sha256(artifact.read_bytes()).hexdigest(); (output / "artifacts" / "submission_manifest.json").write_text(json.dumps(manifest, indent=2)); return artifact, manifest
 
 
@@ -351,17 +402,29 @@ def main():
     output = Path(args.output_dir); [ (output / name).mkdir(parents=True, exist_ok=True) for name in ("metrics", "tables", "figures", "artifacts") ]
     variants = args.variants or VARIANTS
     data = load_data(); result, event_result, fold_info = evaluate(data, output, args.seed, max_events=2 if args.smoke else args.max_events, rows_per_event=100 if args.smoke else args.rows_per_event, variants=variants)
-    if not args.skip_ablation and not args.smoke: result, event_result = add_ablation_results(data, result, event_result, args.seed)
+    if not args.skip_ablation and not args.smoke:
+        result, event_result = add_ablation_results(data, result, event_result, args.seed)
+        base_summary = summarize(result)
+        reference_mae = float(base_summary[(base_summary.variant == REFERENCE) & (base_summary.split == "development")].mae.iloc[0])
+        supported = [name for name in ("no_driver", "no_constructor", "no_air_temperature", "no_track_temperature", "no_fuel_race_progress") if float(base_summary[(base_summary.variant == name) & (base_summary.split == "ablation_development")].mae.iloc[0]) <= reference_mae * 1.01]
+        removed = sorted({column for name in supported for column in ABLATIONS[name]})
+        custom = {"pca4_pruned": removed}
+        if "no_air_temperature" in supported and "no_track_temperature" in supported:
+            custom["pca4_joint_no_temperatures"] = sorted(set(ABLATIONS["no_air_temperature"] + ABLATIONS["no_track_temperature"]))
+        if "no_driver" in supported and "no_constructor" in supported:
+            custom["pca4_joint_no_driver_constructor"] = sorted(set(ABLATIONS["no_driver"] + ABLATIONS["no_constructor"]))
+        custom_result, custom_events = evaluate_pca4_custom(data, custom)
+        result = pd.concat([result, custom_result], ignore_index=True); event_result = pd.concat([event_result, custom_events], ignore_index=True)
     summary = summarize(result); result.to_csv(output / "metrics/model_comparison.csv", index=False); write_markdown(result, output / "metrics/model_comparison.md"); event_result.to_csv(output / "metrics/per_event_predictions.csv", index=False); summary.to_csv(output / "metrics/model_comparison_summary.csv", index=False); write_markdown(summary, output / "metrics/model_comparison_summary.md")
     paired = figures(summary, event_result, output); pca_info = pca_visuals(data, output)
-    dev = summary[summary.split == "development"].sort_values("mae"); selected = REFERENCE if dev.empty or float(dev.iloc[0].mae) >= float(dev.loc[dev.variant == REFERENCE, "mae"].iloc[0]) else str(dev.iloc[0].variant)
-    # Keep the submission bundle PCA-4 only; no unverified pruned candidate is submitted automatically.
+    dev = summary[summary.split.isin(["development", "conditional_development"])].copy(); eligible_names = {"no_circuit", "raw_circuit_7", "raw_circuit_age_interactions", REFERENCE, "pca4_pruned"}; dev = dev[dev.variant.isin(eligible_names)].sort_values("mae"); selected = str(dev.iloc[0].variant) if not dev.empty else REFERENCE
+    selected_removed = sorted({column for name in (supported if not args.skip_ablation and not args.smoke else []) for column in ABLATIONS[name]}) if selected == "pca4_pruned" else None
     if args.skip_artifact:
         artifact, artifact_manifest = None, {"status": "not_run", "reason": "--skip-artifact"}
     else:
-        artifact, artifact_manifest = train_bundle(data, output, REFERENCE)
+        artifact, artifact_manifest = train_bundle(data, output, selected, selected_removed)
     source = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(); manifest_path = ROOT / "training_data/ground_effect/manifest.json"
-    provenance = {"source_commit": source, "input_manifest_sha256": hashlib.sha256(manifest_path.read_bytes()).hexdigest(), "row_count": len(data), "folds": fold_info, "variants": VARIANTS + list(ABLATIONS), "feature_definitions": {name: stage_features(data, name) for name in VARIANTS}, "ablations": ABLATIONS, "pca_fitting_policy": "training-fold-only for validation; one median circuit profile per training circuit; submission bundle refit on all eligible 2022-2025 data", "seed": args.seed, "pca": pca_info, "selected_submission_variant": REFERENCE, "selection_note": "Selection is based on development results; frozen 2025 is reported after locking. The submission bundle remains full PCA-4 unless a documented pruned candidate is defensible.", "production_artifact_changed": False, "active_aero_changed": False, "artifact": str(artifact), "artifact_manifest": artifact_manifest, "no_cliff_or_useful_life_retuning": True}
+    provenance = {"source_commit": source, "input_manifest_sha256": hashlib.sha256(manifest_path.read_bytes()).hexdigest(), "row_count": len(data), "folds": fold_info, "variants": VARIANTS + list(ABLATIONS) + ["pca4_pruned", "pca4_joint_no_temperatures", "pca4_joint_no_driver_constructor"], "feature_definitions": {name: stage_features(data, name) for name in VARIANTS}, "ablations": ABLATIONS, "pca_fitting_policy": "training-fold-only for validation; one median circuit profile per training circuit; submission bundle refit on all eligible 2022-2025 data", "seed": args.seed, "pca": pca_info, "selected_submission_variant": selected, "selection_note": "Selection uses development results only; frozen 2025 is reported after locking. Tire age and compound are diagnostic controls and remain eligible features.", "production_estimator_params": PRODUCTION_HGB_PARAMS, "production_artifact_changed": False, "active_aero_changed": False, "artifact": str(artifact), "artifact_manifest": artifact_manifest, "no_cliff_or_useful_life_retuning": True}
     (output / "provenance.json").write_text(json.dumps(provenance, indent=2, default=str))
     figure_manifest = [
         {"filename": "figures/circuit_correlation_heatmap.png", "purpose": "Equal-weight circuit-characteristic correlation", "data_source": "one median profile per circuit", "recommended_caption": "Spearman correlation of the seven source-backed circuit characteristics.", "report_location": "supplementary"},
@@ -372,8 +435,10 @@ def main():
         {"filename": "figures/performance_vs_complexity.png", "purpose": "Accuracy-complexity tradeoff", "data_source": "development summary", "recommended_caption": "Development MAE versus engineered feature count.", "report_location": "supplementary"},
     ]
     (output / "tables" / "figure_manifest.json").write_text(json.dumps(figure_manifest, indent=2))
-    guide = output / "REPORT_GUIDE.md"; guide.write_text("# Final Ground Effect model selection\n\nThis package compares four circuit representations and seven requested feature ablations using chronological development folds through 2024 and a frozen 2025 evaluation. PCA is fitted only on training-fold median circuit profiles during validation.\n\n## Interpretation\n\nPCA-4 describes variance in circuit characteristics; it does not by itself establish predictive accuracy. Positive ablation ΔMAE means removing that feature block worsened MAE. Tire-age and compound removals are diagnostic controls and are not eligible submission models. Cliff detection was not retuned.\n\nSee `provenance.json`, `metrics/model_comparison_summary.csv`, and `artifacts/submission_manifest.json` for authoritative generated values.\n")
-    print(json.dumps({"rows": len(data), "summary": str(output / 'metrics/model_comparison_summary.csv'), "artifact": str(artifact), "selected": REFERENCE}, indent=2))
+    guide = output / "REPORT_GUIDE.md"; guide.write_text(f"# Final Ground Effect model selection\n\nSelected submission variant: **{selected}**. The package compares four circuit representations, corrected PCA-4 feature ablations, conditional joint ablations, and a combined pruned candidate using chronological development folds through 2024 and a genuine per-event frozen 2025 evaluation.\n\nPCA describes variance in circuit descriptors; predictive value is established only through chronological model comparison. Positive ablation ΔMAE means removal worsened MAE. Tire-age and compound are diagnostic positive controls and remain required for compound-specific degradation predictions. Cliff thresholds were not retuned and useful-life ranges are operational ranges, not calibrated confidence intervals.\n\nSee `provenance.json`, `selection_decision.json`, `metrics/model_comparison_summary.csv`, and `artifacts/submission_manifest.json` for authoritative generated values.\n")
+    decision = {"eligible_candidates": sorted(eligible_names), "selected_variant": selected, "development_selection_only": True, "selection_thresholds": {"primary": "lowest development MAE", "smaller_model_tolerance": 0.01, "bootstrap_draws": 2000}, "supported_removals": supported if not args.skip_ablation and not args.smoke else [], "rejected_alternatives": [name for name in eligible_names if name != selected], "rationale": "Selected by development MAE; secondary metrics and paired event results are reported separately. Frozen 2025 was not used for selection.", "seed": args.seed}
+    (output / "selection_decision.json").write_text(json.dumps(decision, indent=2))
+    print(json.dumps({"rows": len(data), "summary": str(output / 'metrics/model_comparison_summary.csv'), "artifact": str(artifact), "selected": selected}, indent=2))
 
 
 if __name__ == "__main__": main()
