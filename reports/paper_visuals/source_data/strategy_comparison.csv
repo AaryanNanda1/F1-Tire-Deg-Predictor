@@ -1,0 +1,43 @@
+variant,event_date,event_name,strategy,predicted_total_time_sec
+hgb_raw,2025-03-16,Australian Grand Prix,"{""compounds"": [""MEDIUM"", ""HARD""], ""predicted_total_time_sec"": 5346.642, ""stint_laps"": [30, 28], ""stops"": 1}",5346.642
+hgb_raw,2025-04-06,Japanese Grand Prix,"{""compounds"": [""HARD"", ""SOFT""], ""predicted_total_time_sec"": 4910.665, ""stint_laps"": [32, 21], ""stops"": 1}",4910.665
+hgb_raw,2025-04-13,Bahrain Grand Prix,"{""compounds"": [""MEDIUM"", ""HARD""], ""predicted_total_time_sec"": 5269.221, ""stint_laps"": [25, 32], ""stops"": 1}",5269.221
+hgb_raw,2025-04-20,Saudi Arabian Grand Prix,"{""compounds"": [""MEDIUM"", ""SOFT""], ""predicted_total_time_sec"": 4607.102, ""stint_laps"": [34, 16], ""stops"": 1}",4607.102
+hgb_raw,2025-05-04,Miami Grand Prix,"{""compounds"": [""MEDIUM"", ""HARD""], ""predicted_total_time_sec"": 5259.544, ""stint_laps"": [29, 28], ""stops"": 1}",5259.544
+hgb_raw,2025-05-18,Emilia Romagna Grand Prix,"{""compounds"": [""SOFT"", ""MEDIUM"", ""SOFT""], ""predicted_total_time_sec"": 5840.767, ""stint_laps"": [13, 36, 14], ""stops"": 2}",5840.767
+hgb_raw,2025-05-25,Monaco Grand Prix,"{""compounds"": [""SOFT"", ""MEDIUM""], ""predicted_total_time_sec"": 7199.955, ""stint_laps"": [36, 42], ""stops"": 1}",7199.955
+hgb_raw,2025-06-01,Spanish Grand Prix,"{""compounds"": [""SOFT"", ""MEDIUM""], ""predicted_total_time_sec"": 6076.429, ""stint_laps"": [25, 41], ""stops"": 1}",6076.429
+hgb_raw,2025-06-15,Canadian Grand Prix,"{""compounds"": [""MEDIUM"", ""HARD""], ""predicted_total_time_sec"": 6489.858, ""stint_laps"": [32, 38], ""stops"": 1}",6489.858
+hgb_raw,2025-06-29,Austrian Grand Prix,"{""compounds"": [""SOFT"", ""HARD""], ""predicted_total_time_sec"": 6564.586, ""stint_laps"": [25, 46], ""stops"": 1}",6564.586
+hgb_raw,2025-07-06,British Grand Prix,"{""compounds"": [""SOFT"", ""MEDIUM"", ""SOFT""], ""predicted_total_time_sec"": 4833.701, ""stint_laps"": [17, 17, 18], ""stops"": 2}",4833.701
+hgb_raw,2025-07-27,Belgian Grand Prix,"{""compounds"": [""MEDIUM"", ""SOFT""], ""predicted_total_time_sec"": 4061.629, ""stint_laps"": [32, 12], ""stops"": 1}",4061.629
+hgb_raw,2025-08-03,Hungarian Grand Prix,"{""compounds"": [""MEDIUM"", ""HARD""], ""predicted_total_time_sec"": 6448.662, ""stint_laps"": [33, 37], ""stops"": 1}",6448.662
+hgb_raw,2025-08-31,Dutch Grand Prix,"{""compounds"": [""SOFT"", ""HARD""], ""predicted_total_time_sec"": 6634.291, ""stint_laps"": [33, 39], ""stops"": 1}",6634.291
+hgb_raw,2025-09-07,Italian Grand Prix,"{""compounds"": [""SOFT"", ""HARD""], ""predicted_total_time_sec"": 4892.067, ""stint_laps"": [19, 34], ""stops"": 1}",4892.067
+hgb_raw,2025-09-21,Azerbaijan Grand Prix,"{""compounds"": [""SOFT"", ""MEDIUM""], ""predicted_total_time_sec"": 4695.122, ""stint_laps"": [8, 43], ""stops"": 1}",4695.122
+hgb_raw,2025-10-19,United States Grand Prix,"{""compounds"": [""SOFT"", ""MEDIUM""], ""predicted_total_time_sec"": 5183.024, ""stint_laps"": [28, 28], ""stops"": 1}",5183.024
+hgb_raw,2025-10-26,Mexico City Grand Prix,"{""compounds"": [""SOFT"", ""HARD""], ""predicted_total_time_sec"": 6517.125, ""stint_laps"": [37, 34], ""stops"": 1}",6517.125
+hgb_raw,2025-11-09,São Paulo Grand Prix,"{""compounds"": [""MEDIUM"", ""SOFT""], ""predicted_total_time_sec"": 6529.557, ""stint_laps"": [34, 37], ""stops"": 1}",6529.557
+hgb_raw,2025-11-30,Qatar Grand Prix,"{""compounds"": [""HARD"", ""SOFT""], ""predicted_total_time_sec"": 5241.939, ""stint_laps"": [31, 26], ""stops"": 1}",5241.939
+hgb_raw,2025-12-07,Abu Dhabi Grand Prix,"{""compounds"": [""HARD"", ""MEDIUM""], ""predicted_total_time_sec"": 5357.482, ""stint_laps"": [34, 24], ""stops"": 1}",5357.482
+hgb_track_pca4,2025-03-16,Australian Grand Prix,"{""compounds"": [""MEDIUM"", ""HARD""], ""predicted_total_time_sec"": 5325.664, ""stint_laps"": [30, 28], ""stops"": 1}",5325.664
+hgb_track_pca4,2025-04-06,Japanese Grand Prix,"{""compounds"": [""HARD"", ""SOFT""], ""predicted_total_time_sec"": 4921.285, ""stint_laps"": [32, 21], ""stops"": 1}",4921.285
+hgb_track_pca4,2025-04-13,Bahrain Grand Prix,"{""compounds"": [""MEDIUM"", ""HARD""], ""predicted_total_time_sec"": 5273.851, ""stint_laps"": [25, 32], ""stops"": 1}",5273.851
+hgb_track_pca4,2025-04-20,Saudi Arabian Grand Prix,"{""compounds"": [""MEDIUM"", ""SOFT""], ""predicted_total_time_sec"": 4607.182, ""stint_laps"": [34, 16], ""stops"": 1}",4607.182
+hgb_track_pca4,2025-05-04,Miami Grand Prix,"{""compounds"": [""MEDIUM"", ""HARD""], ""predicted_total_time_sec"": 5234.553, ""stint_laps"": [29, 28], ""stops"": 1}",5234.553
+hgb_track_pca4,2025-05-18,Emilia Romagna Grand Prix,"{""compounds"": [""HARD"", ""MEDIUM""], ""predicted_total_time_sec"": 5835.709, ""stint_laps"": [28, 35], ""stops"": 1}",5835.709
+hgb_track_pca4,2025-05-25,Monaco Grand Prix,"{""compounds"": [""SOFT"", ""MEDIUM""], ""predicted_total_time_sec"": 7210.588, ""stint_laps"": [38, 40], ""stops"": 1}",7210.588
+hgb_track_pca4,2025-06-01,Spanish Grand Prix,"{""compounds"": [""SOFT"", ""MEDIUM""], ""predicted_total_time_sec"": 6095.023, ""stint_laps"": [25, 41], ""stops"": 1}",6095.023
+hgb_track_pca4,2025-06-15,Canadian Grand Prix,"{""compounds"": [""MEDIUM"", ""HARD""], ""predicted_total_time_sec"": 6484.941, ""stint_laps"": [32, 38], ""stops"": 1}",6484.941
+hgb_track_pca4,2025-06-29,Austrian Grand Prix,"{""compounds"": [""SOFT"", ""HARD""], ""predicted_total_time_sec"": 6560.151, ""stint_laps"": [25, 46], ""stops"": 1}",6560.151
+hgb_track_pca4,2025-07-06,British Grand Prix,"{""compounds"": [""SOFT"", ""MEDIUM""], ""predicted_total_time_sec"": 4820.929, ""stint_laps"": [23, 29], ""stops"": 1}",4820.929
+hgb_track_pca4,2025-07-27,Belgian Grand Prix,"{""compounds"": [""MEDIUM"", ""SOFT""], ""predicted_total_time_sec"": 4079.025, ""stint_laps"": [32, 12], ""stops"": 1}",4079.025
+hgb_track_pca4,2025-08-03,Hungarian Grand Prix,"{""compounds"": [""MEDIUM"", ""HARD""], ""predicted_total_time_sec"": 6444.437, ""stint_laps"": [33, 37], ""stops"": 1}",6444.437
+hgb_track_pca4,2025-08-31,Dutch Grand Prix,"{""compounds"": [""SOFT"", ""HARD""], ""predicted_total_time_sec"": 6637.717, ""stint_laps"": [33, 39], ""stops"": 1}",6637.717
+hgb_track_pca4,2025-09-07,Italian Grand Prix,"{""compounds"": [""SOFT"", ""HARD""], ""predicted_total_time_sec"": 4893.631, ""stint_laps"": [19, 34], ""stops"": 1}",4893.631
+hgb_track_pca4,2025-09-21,Azerbaijan Grand Prix,"{""compounds"": [""SOFT"", ""MEDIUM""], ""predicted_total_time_sec"": 4685.349, ""stint_laps"": [8, 43], ""stops"": 1}",4685.349
+hgb_track_pca4,2025-10-19,United States Grand Prix,"{""compounds"": [""HARD"", ""SOFT""], ""predicted_total_time_sec"": 5169.727, ""stint_laps"": [21, 35], ""stops"": 1}",5169.727
+hgb_track_pca4,2025-10-26,Mexico City Grand Prix,"{""compounds"": [""SOFT"", ""MEDIUM""], ""predicted_total_time_sec"": 6521.966, ""stint_laps"": [33, 38], ""stops"": 1}",6521.966
+hgb_track_pca4,2025-11-09,São Paulo Grand Prix,"{""compounds"": [""MEDIUM"", ""SOFT""], ""predicted_total_time_sec"": 6518.593, ""stint_laps"": [34, 37], ""stops"": 1}",6518.593
+hgb_track_pca4,2025-11-30,Qatar Grand Prix,"{""compounds"": [""HARD"", ""SOFT""], ""predicted_total_time_sec"": 5234.616, ""stint_laps"": [31, 26], ""stops"": 1}",5234.616
+hgb_track_pca4,2025-12-07,Abu Dhabi Grand Prix,"{""compounds"": [""HARD"", ""MEDIUM""], ""predicted_total_time_sec"": 5362.289, ""stint_laps"": [34, 24], ""stops"": 1}",5362.289

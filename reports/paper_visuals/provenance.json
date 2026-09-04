@@ -1,0 +1,13 @@
+{
+  "source_commit": "e62b1c7bfffb6bb55e19c626d397c0a88e49be0b",
+  "workflow_run": 33846305685,
+  "input_files": {
+    "reports/final_model_selection/metrics/model_comparison_summary.csv": "b96677faf1c21cf4d7aae257daa90eaef52a591cf04a35a247ac05f8d1a37cc3",
+    "reports/final_model_selection/tables/track_spearman.csv": "106c4c26bb79c50e9948336c747d7880d2da54587b63036c185b78ba5c45427b",
+    "reports/final_model_selection/tables/pca_explained_variance.csv": "bd95a3385b28f5915b7b516692ecc46f8b33ae56925575ec07a5f5023eff0274",
+    "training_data/ground_effect/manifest.json": "99d4d02a6a7f2814f48a9bfa70cb7087bacfd4e58c565f18c6e064788873ed7d"
+  },
+  "seed": 42,
+  "selection": "no_circuit",
+  "production_changed": false
+}

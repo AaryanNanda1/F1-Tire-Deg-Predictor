@@ -1,0 +1,28 @@
+{
+  "eligible_candidates": [
+    "no_circuit",
+    "pca4_no_age_interactions",
+    "pca4_pruned",
+    "raw_circuit_7",
+    "raw_circuit_age_interactions"
+  ],
+  "selected_variant": "no_circuit",
+  "development_selection_only": true,
+  "selection_thresholds": {
+    "primary": "lowest development MAE",
+    "smaller_model_tolerance": 0.01,
+    "bootstrap_draws": 2000
+  },
+  "supported_removals": [
+    "no_constructor",
+    "no_track_temperature"
+  ],
+  "rejected_alternatives": [
+    "pca4_no_age_interactions",
+    "pca4_pruned",
+    "raw_circuit_7",
+    "raw_circuit_age_interactions"
+  ],
+  "rationale": "Selected by development MAE; secondary metrics and paired event results are reported separately. Frozen 2025 was not used for selection.",
+  "seed": 42
+}

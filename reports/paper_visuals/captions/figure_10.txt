@@ -1,0 +1,1 @@
+Operational useful-life interval examples. The displayed range is a sensitivity range, not a calibrated statistical confidence interval.

@@ -1,0 +1,1 @@
+Paired event-level feature ablations relative to full PCA-4. Positive ΔMAE means removal increased error; these are predictive ablations, not causal effects.

@@ -1,0 +1,1 @@
+End-to-end research pipeline. FastF1 provides historical laps; Open-Meteo supplies simulation-time weather context. The learned era model is separated from deterministic tire-life and strategy post-processing.

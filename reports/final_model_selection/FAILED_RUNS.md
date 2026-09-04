@@ -1,7 +1,9 @@
-# Incomplete final-selection runs
+# Historical incomplete final-selection runs (superseded)
 
-These runs are retained as evidence and must not be interpreted as model
-results.
+These runs are retained as historical evidence and must not be interpreted as
+final model-selection results. The corrected full Ground Effect run is
+workflow `33846305685`; its outputs are in this directory and its publication
+visualization package is in `reports/paper_visuals/`.
 
 ## Full selection experiment
 

@@ -1,0 +1,77 @@
+{
+  "source_commit": "e62b1c7bfffb6bb55e19c626d397c0a88e49be0b",
+  "authoritative_workflow_run": "33846305685",
+  "seed": 42,
+  "figures": [
+    {
+      "filename": "figure_01_research_pipeline.png",
+      "svg_filename": "figure_01_research_pipeline.svg",
+      "sha256": "6c036daac017453218829c5aecc09708c4ab94946c90569c8c4a6f01da8245ef",
+      "source": "committed full-run tables or committed downstream report"
+    },
+    {
+      "filename": "figure_02_dataset_coverage.png",
+      "svg_filename": "figure_02_dataset_coverage.svg",
+      "sha256": "a7aceb8f538ac37068a97b71bb80b950eb0166d68fc963923d15ce0170ed9cc1",
+      "source": "committed full-run tables or committed downstream report"
+    },
+    {
+      "filename": "figure_03_circuit_correlation.png",
+      "svg_filename": "figure_03_circuit_correlation.svg",
+      "sha256": "9ca1f38db0bce88c4a64b8c7d185582ec85bf8d9c9da0e633f6fcb615d5d40e7",
+      "source": "committed full-run tables or committed downstream report"
+    },
+    {
+      "filename": "figure_04_pca_variance_loadings.png",
+      "svg_filename": "figure_04_pca_variance_loadings.svg",
+      "sha256": "f11da66c45d9870747478da96074ebe73fe77b1d9569c43b64ed975612e70b41",
+      "source": "committed full-run tables or committed downstream report"
+    },
+    {
+      "filename": "figure_05_representation_comparison.png",
+      "svg_filename": "figure_05_representation_comparison.svg",
+      "sha256": "ae17d7f3356a6e8831f765e5148b4725011058f385a54002af279587158a1152",
+      "source": "committed full-run tables or committed downstream report"
+    },
+    {
+      "filename": "figure_06_feature_ablation.png",
+      "svg_filename": "figure_06_feature_ablation.svg",
+      "sha256": "276a8d290fb31e38171daba5384e0dd25585fc50db4c0ad63512d8d6ae8ce330",
+      "source": "committed full-run tables or committed downstream report"
+    },
+    {
+      "filename": "figure_07_event_error_distribution.png",
+      "svg_filename": "figure_07_event_error_distribution.svg",
+      "sha256": "d4fa30f97fc252e9f529048319630a70c8a16ad85e2f8a6e456b521571166a51",
+      "source": "committed full-run tables or committed downstream report"
+    },
+    {
+      "filename": "figure_08_predicted_vs_observed_curves.png",
+      "svg_filename": null,
+      "sha256": "071bf889c3dca6dd40f546082358a58a7829df9fc0cdb8be319216f869162659",
+      "source": "committed full-run tables or committed downstream report"
+    },
+    {
+      "filename": "figure_09_cliff_comparison.png",
+      "svg_filename": null,
+      "sha256": "12d37fbe15f891ef8ec806f3fa303b818f75a26d7a2c17be0606fab0a617f0f0",
+      "source": "committed full-run tables or committed downstream report"
+    },
+    {
+      "filename": "figure_10_useful_life_examples.png",
+      "svg_filename": null,
+      "sha256": "0d234bfbef4178dfbd9c5c79cdee892b9f966351c8e127785880f903f9962492",
+      "source": "committed full-run tables or committed downstream report"
+    },
+    {
+      "filename": "figure_11_strategy_comparison.png",
+      "svg_filename": null,
+      "sha256": "96a353e96af9b90d3d2263e477658741f39f10f9657fc572893b6934ff94841d",
+      "source": "committed full-run tables or committed downstream report"
+    }
+  ],
+  "limitations": [
+    "Figures 8\u201311 reuse earlier committed downstream candidate outputs where available; they do not establish performance of selected no_circuit unless explicitly included.",
+    "The selected final artifact is not described as live production."
+  ]
+}

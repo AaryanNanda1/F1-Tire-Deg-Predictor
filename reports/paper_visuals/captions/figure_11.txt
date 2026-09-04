@@ -1,0 +1,1 @@
+Earlier candidate strategy comparison using common scenarios. It does not establish downstream performance for the selected no-circuit model unless that candidate is present in the source table.

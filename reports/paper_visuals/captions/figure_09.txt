@@ -1,0 +1,1 @@
+Earlier committed cliff comparison. Stints without an observable cliff are treated as no-cliff labels; thresholds were not retuned in this visual package.
