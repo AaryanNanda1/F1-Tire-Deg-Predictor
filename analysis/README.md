@@ -26,6 +26,29 @@ This second stage compares the raw baseline with PCA-1, PCA-2, and PCA-4. It gen
 
 The full run uses the committed Ground Effect processed store (2022–2025). Runtime depends on hardware because every serious candidate is refit on chronological event folds. The smoke run uses the final four development events. No external API calls are made.
 
+## Final Ground Effect selection package
+
+The final selection entry point evaluates the four circuit stages and the
+requested feature ablations. It uses expanding chronological folds through
+2024, locks selection on development data, and reports 2025 separately:
+
+```bash
+MPLBACKEND=Agg MPLCONFIGDIR=.analysis-mpl-cache \
+OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+python analysis/run_final_model_selection.py \
+  --output-dir reports/final_model_selection --seed 42
+```
+
+For an infrastructure check, use `--smoke`; for a controlled pilot use
+`--max-events` and `--rows-per-event`. These options must not be described as
+full-data evidence. `--skip-artifact` avoids the final full-data bundle fit
+when only validating the experiment runner.
+
+The submission bundle is analysis-only and is written under the report
+directory. It does not overwrite `models/`, change Active Aero, or alter
+dashboard inference. The persisted PCA transformer accepts canonical raw rows
+and stores the scaler, loadings, signs, and explained-variance values.
+
 ## Methodology
 
 The development folds use expanding chronological training windows through 2022–2024. A frozen 2025 evaluation is reported separately and is not used to choose features. Every variant uses identical rows and folds. Track PCA is fit on one median profile per circuit from the training fold, then applied to lap rows. Imputation, scaling, categorical encoding, and PCA therefore never see the held-out event. `LapTimeDelta`, metadata, identifiers, and legacy leakage fields are rejected from model matrices.
