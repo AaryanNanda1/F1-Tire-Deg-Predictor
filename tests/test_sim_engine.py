@@ -228,6 +228,55 @@ class StrategySimulatorWetToDryTest(unittest.TestCase):
             strategy["max_performance_cliff_overshoot_laps"]
         )
 
+    def test_useful_life_bounds_drive_safe_and_risky_caps(self):
+        profiles = self._build_profiles()
+        for profile in profiles["compounds"].values():
+            profile.update(
+                strategy_useful_life_lap=10,
+                strategy_useful_life_lower=8,
+                strategy_useful_life_upper=12,
+                strategy_useful_life_uncertainty_laps=2,
+            )
+        simulator = StrategySimulator(profiles)
+        self.assertEqual(simulator._get_stint_cap("SOFT", "safe"), 8)
+        self.assertEqual(simulator._get_stint_cap("SOFT", "risky"), 12)
+        self.assertLessEqual(simulator._get_stint_cap("SOFT", "risky"), 25)
+
+    def test_formatted_output_contains_useful_life_window_and_pit_window(self):
+        profiles = self._build_ranked_profiles()
+        for profile in profiles["compounds"].values():
+            profile.update(
+                strategy_useful_life_lap=8,
+                strategy_useful_life_lower=7,
+                strategy_useful_life_upper=9,
+                strategy_useful_life_uncertainty_laps=1,
+                strategy_useful_life_confidence="high",
+            )
+        simulator = StrategySimulator(profiles)
+        strategy = simulator._eval_strategy(
+            ["SOFT", "MEDIUM"], [10, 10], position=1,
+            laps_to_complete=20,
+        )
+        formatted = simulator._format_output(strategy, start_lap=0, strategy_role="safe")
+        stint = formatted["stints_data"][0]
+        self.assertEqual(stint["strategy_useful_life_lower"], 7)
+        self.assertEqual(stint["strategy_useful_life_lap"], 8)
+        self.assertEqual(stint["strategy_useful_life_upper"], 9)
+        self.assertEqual(stint["recommended_pit_window_start"], 7)
+        self.assertEqual(stint["recommended_pit_window_end"], 9)
+
+    def test_interval_does_not_multiply_candidate_search(self):
+        before = self._build_ranked_profiles()
+        after = self._build_ranked_profiles()
+        for profile in after["compounds"].values():
+            profile.update(strategy_useful_life_lower=17, strategy_useful_life_upper=20, strategy_useful_life_uncertainty_laps=3)
+        first = StrategySimulator(before)
+        second = StrategySimulator(after)
+        first.generate_strategies(total_laps=20, grid_pos=1)
+        second.generate_strategies(total_laps=20, grid_pos=1)
+        self.assertEqual(first.last_strategy_searches, second.last_strategy_searches)
+        self.assertEqual(first.last_candidate_count, second.last_candidate_count)
+
     def test_allows_switch_from_wet_to_single_dry_compound_in_dry_conditions(self):
         profiles = {
             "compounds": {

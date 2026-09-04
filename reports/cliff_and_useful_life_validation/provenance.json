@@ -1,0 +1,48 @@
+{
+  "source_commit": "4b2c3ea0e92486ba93d7d0c2754b1e90093232da",
+  "input_manifest": "training_data/ground_effect/manifest.json",
+  "input_manifest_sha256": "99d4d02a6a7f2814f48a9bfa70cb7087bacfd4e58c565f18c6e064788873ed7d",
+  "reviewed_label_file_sha256": "dd2913c69c091545a33e4dc945f0032ed300c7c0bc598581d0f1805d9f8f2c2d",
+  "prediction_capture_file_sha256": "b2f68b71e69094c86ef23de292f57e72818ebe1faecfb0bb2def9384eaa9a18a",
+  "row_count": 104857,
+  "reviewed_stints": 67,
+  "model_variants": [
+    "hgb_raw",
+    "hgb_track_pca4"
+  ],
+  "detector_methods": [
+    "sustained",
+    "rolling_sustained",
+    "piecewise",
+    "hybrid"
+  ],
+  "random_seed": 42,
+  "uncertainty_draws": 200,
+  "pca_fitting_policy": "PCA-4 is fit only on one median profile per training-fold circuit and held-out rows are transformed with that fold object when model fitting is enabled.",
+  "model_training_policy": {
+    "year": 2022,
+    "rows_used": 12000,
+    "sampling": "deterministic random sample for analysis-only resource control",
+    "prediction_source": "captured_raw_model_predictions",
+    "pca_prediction_status": "not available; analysis-only HGB fitting aborted with exit code 134"
+  },
+  "threshold_validation": {
+    "type": "grouped development/holdout",
+    "development_events": [
+      "Bahrain Grand Prix",
+      "British Grand Prix",
+      "Hungarian Grand Prix",
+      "Italian Grand Prix",
+      "Monaco Grand Prix"
+    ],
+    "holdout_events": [
+      "Qatar Grand Prix"
+    ],
+    "false_cliff_guardrail": 0.3
+  },
+  "useful_life_interval_method": "Empirical residual perturbation using held-out residual variation; operational width mapped to \u00b11, \u00b12, or \u00b13 laps and capped status retained.",
+  "production_defaults_changed": false,
+  "production_model_artifacts_changed": false,
+  "production_training_data_changed": false,
+  "limitation": "Only one held-out Grand Prix is available for grouped threshold evaluation, reviewed labels are a small manually reviewed 2023 set, and new PCA held-out curves could not be generated because the analysis-only HGB fit aborted with exit code 134. PCA cliff metrics from the prior committed comparison are not relabeled as new shape diagnostics."
+}

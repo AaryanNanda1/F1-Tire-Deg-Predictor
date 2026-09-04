@@ -56,6 +56,8 @@ DEFAULT_CONFIG = {
     "sc_aging_reduction": 0.70,       # Safety-car laps count as 70% of normal wear
     "min_stint_laps": 8,              # Minimum viable stint length
     "max_stint_laps": 50,             # Hard ceiling for any stint
+    "useful_life_uncertainty_draws": 200,
+    "useful_life_uncertainty_seed": 42,
 }
 
 
@@ -654,6 +656,88 @@ def recommend_strategy_useful_life(
     }
 
 
+def estimate_useful_life_uncertainty(
+    smoothed_times: np.ndarray,
+    pit_loss: float = None,
+    config: dict = None,
+    fuel_correction: bool = True,
+    residuals: np.ndarray | None = None,
+    draws: int = None,
+    seed: int = None,
+) -> dict:
+    """Estimate a bounded operational uncertainty range for useful life.
+
+    The point estimate remains the deterministic pit-loss crossover.  Each
+    perturbation resamples leakage-safe residuals when supplied (normally
+    held-out residuals); otherwise it uses the local curve residuals as a
+    deterministic inference fallback.  This is an operational range, not a
+    formal confidence interval.
+    """
+    cfg = {**DEFAULT_CONFIG, **(config or {})}
+    arr = np.asarray(smoothed_times, dtype=float)
+    point_result = recommend_strategy_useful_life(
+        arr, pit_loss, cfg, fuel_correction=fuel_correction
+    )
+    point = int(point_result["strategy_useful_life_lap"])
+    draws = int(draws or cfg["useful_life_uncertainty_draws"])
+    seed = int(seed if seed is not None else cfg["useful_life_uncertainty_seed"])
+    if draws < 1:
+        raise ValueError("useful-life uncertainty draws must be positive")
+
+    if residuals is None:
+        # At inference there is no observed target. Estimate a small local
+        # noise distribution from the curve itself rather than inventing a
+        # compound-specific constant. Analysis runs should pass held-out
+        # residuals explicitly.
+        local_fit = np.polyval(np.polyfit(np.arange(len(arr)), arr, 1), np.arange(len(arr)))
+        residual_pool = arr - local_fit
+    else:
+        residual_pool = np.asarray(residuals, dtype=float)
+    residual_pool = residual_pool[np.isfinite(residual_pool)]
+    if residual_pool.size == 0 or np.allclose(residual_pool, 0.0):
+        residual_pool = np.asarray([0.0], dtype=float)
+
+    rng = np.random.default_rng(seed)
+    crossovers = []
+    for _ in range(draws):
+        perturbation = rng.choice(residual_pool, size=len(arr), replace=True)
+        perturbed = arr + perturbation
+        perturbed_result = recommend_strategy_useful_life(
+            perturbed, pit_loss, cfg, fuel_correction=fuel_correction
+        )
+        crossovers.append(int(perturbed_result["strategy_useful_life_lap"]))
+
+    empirical_lower = float(np.quantile(crossovers, 0.10))
+    empirical_upper = float(np.quantile(crossovers, 0.90))
+    raw_half_width = max(point - empirical_lower, empirical_upper - point)
+    uncertainty_laps = int(min(3, max(1, np.ceil(raw_half_width))))
+    capped = bool(raw_half_width > 3)
+    lower = max(int(cfg["min_stint_laps"]), point - uncertainty_laps)
+    upper = min(int(cfg["max_stint_laps"]), max(1, len(arr) - 1), point + uncertainty_laps)
+    lower = min(lower, point)
+    upper = max(upper, point)
+    if point_result["strategy_confidence"] == "low" or capped:
+        confidence = "low"
+    elif uncertainty_laps == 1:
+        confidence = "high"
+    elif uncertainty_laps == 2:
+        confidence = "medium"
+    else:
+        confidence = "low"
+    return {
+        "strategy_useful_life_lap": point,
+        "strategy_useful_life_lower": int(lower),
+        "strategy_useful_life_upper": int(upper),
+        "strategy_useful_life_uncertainty_laps": uncertainty_laps,
+        "strategy_useful_life_confidence": confidence,
+        "strategy_useful_life_interval_method": "empirical_residual_perturbation",
+        "strategy_useful_life_interval_capped": capped,
+        "strategy_useful_life_empirical_lower": empirical_lower,
+        "strategy_useful_life_empirical_upper": empirical_upper,
+        "strategy_useful_life_crossover_samples": crossovers,
+    }
+
+
 # --------------------------------------------------------------------------- #
 #  4. MASTER FUNCTION — combines both detectors                                #
 # --------------------------------------------------------------------------- #
@@ -716,6 +800,12 @@ def analyze_tire_life(
         cfg,
         fuel_correction=fuel_correction,
     )
+    uncertainty_result = estimate_useful_life_uncertainty(
+        smoothed,
+        pit_loss,
+        cfg,
+        fuel_correction=fuel_correction,
+    )
 
     # ---- Step 4: Baseline degradation rate ----
     eval_start = min(2, n - 1)
@@ -739,7 +829,14 @@ def analyze_tire_life(
 
         # Strategy useful life (race strategy)
         "strategy_useful_life_lap": strategy_result["strategy_useful_life_lap"],
-        "strategy_confidence": strategy_result["strategy_confidence"],
+        "strategy_confidence": uncertainty_result["strategy_useful_life_confidence"],
         "strategy_reason": strategy_result["strategy_reason"],
         "cumulative_deg_cost": strategy_result["cumulative_deg_cost"],
+        "strategy_useful_life_lower": uncertainty_result["strategy_useful_life_lower"],
+        "strategy_useful_life_upper": uncertainty_result["strategy_useful_life_upper"],
+        "strategy_useful_life_uncertainty_laps": uncertainty_result["strategy_useful_life_uncertainty_laps"],
+        "strategy_useful_life_interval_method": uncertainty_result["strategy_useful_life_interval_method"],
+        "strategy_useful_life_interval_capped": uncertainty_result["strategy_useful_life_interval_capped"],
+        "strategy_useful_life_empirical_lower": uncertainty_result["strategy_useful_life_empirical_lower"],
+        "strategy_useful_life_empirical_upper": uncertainty_result["strategy_useful_life_empirical_upper"],
     }

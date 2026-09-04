@@ -166,7 +166,7 @@ class StrategySimulator:
                 compound, effective_age, weather_condition
             )
 
-        useful_life = self._get_useful_life(compound)
+        useful_life_lower, useful_life, useful_life_upper, uncertainty_laps = self._get_useful_life_bounds(compound)
         performance_cliff = self._get_performance_cliff(compound)
         useful_life_overshoot = max(0.0, effective_age - useful_life)
         performance_cliff_overshoot = (
@@ -192,8 +192,18 @@ class StrategySimulator:
             ),
             "performance_cliff_overshoot_laps": performance_cliff_overshoot,
             "strategy_useful_life_lap": useful_life,
+            "strategy_useful_life_lower": useful_life_lower,
+            "strategy_useful_life_upper": useful_life_upper,
+            "strategy_useful_life_uncertainty_laps": uncertainty_laps,
             "strategy_useful_life_confidence": self.profiles[compound].get(
-                "strategy_confidence"
+                "strategy_useful_life_confidence",
+                self.profiles[compound].get("strategy_confidence", "low"),
+            ),
+            "strategy_useful_life_interval_method": self.profiles[compound].get(
+                "strategy_useful_life_interval_method", "legacy_fixed_fallback"
+            ),
+            "strategy_useful_life_interval_capped": bool(
+                self.profiles[compound].get("strategy_useful_life_interval_capped", False)
             ),
             "useful_life_overshoot_laps": useful_life_overshoot,
         }
@@ -229,6 +239,19 @@ class StrategySimulator:
         """Return the physical performance cliff, if the detector found one."""
         return self.profiles[compound].get("performance_cliff_lap")
 
+    def _get_useful_life_bounds(self, compound: str):
+        """Return lower/point/upper useful-life bounds with legacy fallback."""
+        profile = self.profiles[compound]
+        point = int(round(float(self._get_useful_life(compound))))
+        absolute_max = COMPOUND_ABSOLUTE_MAX_LAPS.get(compound, 50)
+        uncertainty = int(profile.get("strategy_useful_life_uncertainty_laps", 2))
+        uncertainty = min(3, max(1, uncertainty))
+        lower = int(profile.get("strategy_useful_life_lower", point - uncertainty))
+        upper = int(profile.get("strategy_useful_life_upper", point + uncertainty))
+        lower = max(1, min(lower, point, absolute_max))
+        upper = min(absolute_max, max(upper, point))
+        return lower, point, upper, uncertainty
+
     def _get_stint_cap(self, compound: str, mode: str = "optimal"):
         """
         Returns the maximum allowed stint length for a compound based on strategy mode.
@@ -237,14 +260,18 @@ class StrategySimulator:
         - optimal: bounded only by absolute max
         - risky:   bounded only by absolute max (willing to push to the limit)
         """
-        useful_life = self._get_useful_life(compound)
         absolute_max = COMPOUND_ABSOLUTE_MAX_LAPS.get(compound, 50)
         
         if mode == "safe":
-            # Safe: never exceed useful life
-            return min(useful_life, absolute_max)
+            # Safe: use the lower operational bound as the conservative cap.
+            return min(self._get_useful_life_bounds(compound)[0], absolute_max)
+        elif mode == "risky":
+            # Risky: use the upper operational bound without enumerating the
+            # individual uncertainty laps.
+            return min(self._get_useful_life_bounds(compound)[2], absolute_max)
         else:
-            # Optimal and Risky: can push up to absolute physical limits
+            # Optimal ranking remains backward-compatible and uses the hard
+            # absolute compound limit.
             return absolute_max
 
     def _eval_strategy(self, compounds: list, stint_lengths: list, position: int,
@@ -475,6 +502,8 @@ class StrategySimulator:
             compounds_used: List of compounds already used in the race (for 2-compound rule)
             compounds_used_count: Number of distinct compounds used so far, including current tire
         """
+        self.last_candidate_count = 0
+        self.last_strategy_searches = 1
         # Derive laps remaining
         laps_remaining = total_laps - current_lap
         if laps_remaining <= 0:
@@ -601,6 +630,7 @@ class StrategySimulator:
                     weather_condition=weather_condition,
                 )
                 all_evaluations.append(eval_result)
+                self.last_candidate_count += 1
                 continue
                 
             num_stints = stops + 1
@@ -634,6 +664,7 @@ class StrategySimulator:
                         weather_condition=weather_condition,
                     )
                     all_evaluations.append(eval_result)
+                    self.last_candidate_count += 1
                     
         if not all_evaluations:
             return {
@@ -775,6 +806,18 @@ class StrategySimulator:
             strat["stint_diagnostics"],
         ):
             end_lap = current_lap + length - 1
+            useful_lower = int(diagnostics["strategy_useful_life_lower"])
+            useful_upper = int(diagnostics["strategy_useful_life_upper"])
+            start_age = float(diagnostics["effective_start_age_laps"])
+            pit_window_start = max(
+                current_lap,
+                current_lap + max(0, math.ceil(useful_lower - start_age)) - 1,
+            )
+            pit_window_end = max(
+                pit_window_start,
+                current_lap + max(0, math.ceil(useful_upper - start_age)) - 1,
+            )
+            pit_window_end = min(end_lap, pit_window_end)
             sequence_labels.append(f"{comp} [L{current_lap} - L{end_lap}]")
             stints_data.append({
                 "compound": comp,
@@ -801,9 +844,22 @@ class StrategySimulator:
                 "strategy_useful_life_lap": diagnostics[
                     "strategy_useful_life_lap"
                 ],
+                "strategy_useful_life_lower": useful_lower,
+                "strategy_useful_life_upper": useful_upper,
+                "strategy_useful_life_uncertainty_laps": diagnostics[
+                    "strategy_useful_life_uncertainty_laps"
+                ],
                 "strategy_useful_life_confidence": diagnostics[
                     "strategy_useful_life_confidence"
                 ],
+                "strategy_useful_life_interval_method": diagnostics[
+                    "strategy_useful_life_interval_method"
+                ],
+                "strategy_useful_life_interval_capped": diagnostics[
+                    "strategy_useful_life_interval_capped"
+                ],
+                "recommended_pit_window_start": pit_window_start,
+                "recommended_pit_window_end": pit_window_end,
                 "useful_life_overshoot_laps": round(
                     diagnostics["useful_life_overshoot_laps"], 2
                 ),

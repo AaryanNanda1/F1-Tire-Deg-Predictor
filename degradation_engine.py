@@ -13,7 +13,7 @@ from mappings import (
     normalize_team_name,
 )
 from weather_api import get_track_weather
-from tire_life_analysis import analyze_tire_life
+from tire_life_analysis import analyze_tire_life, estimate_useful_life_uncertainty
 
 FUTURE_INFORMATION_FEATURES = {
     "StintLength",
@@ -237,12 +237,20 @@ class TireDegradationSimulator:
         result = analyze_tire_life(
             raw_times=absolute_lap_times,
             pit_loss=pit_loss,
+            # The inference curve holds fuel/race progress constant, so fuel
+            # burn must not be added a second time.
+            fuel_correction=False,
         )
 
         useful_life = result["strategy_useful_life_lap"]
         cliff_lap = result["performance_cliff_lap"]
-        suggested_lo = max(1, useful_life - 2)
-        suggested_hi = useful_life + 2
+        uncertainty = estimate_useful_life_uncertainty(
+            result["smoothed_times"],
+            pit_loss=pit_loss,
+            fuel_correction=False,
+        )
+        suggested_lo = uncertainty["strategy_useful_life_lower"]
+        suggested_hi = uncertainty["strategy_useful_life_upper"]
 
         return {
             # --- Existing fields (frontend backward compatibility) ---
@@ -252,6 +260,20 @@ class TireDegradationSimulator:
             "cliff_point_lap": useful_life,
             "drop_off_per_lap_sec": result["drop_off_per_lap_sec"],
             "suggested_lifespan": f"{suggested_lo}-{suggested_hi} laps",
+            "strategy_useful_life_lower": suggested_lo,
+            "strategy_useful_life_upper": suggested_hi,
+            "strategy_useful_life_uncertainty_laps": uncertainty[
+                "strategy_useful_life_uncertainty_laps"
+            ],
+            "strategy_useful_life_confidence": uncertainty[
+                "strategy_useful_life_confidence"
+            ],
+            "strategy_useful_life_interval_method": uncertainty[
+                "strategy_useful_life_interval_method"
+            ],
+            "strategy_useful_life_interval_capped": uncertainty[
+                "strategy_useful_life_interval_capped"
+            ],
             "graph_data": {lap: val for lap, val in enumerate(absolute_lap_times, start=1)},
 
             # --- Smoothed data for charting ---
